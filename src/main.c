@@ -47,10 +47,28 @@ typedef struct
 
 typedef struct
 {
+	float values[16];
+} Matrix4;
+
+typedef struct
+{
 	Vector3 origin;
 	int polyCount;
 	Triangle* polygons;
 } Mesh;
+
+typedef struct
+{
+	Matrix4 rotation;
+	Matrix4 translation;
+	Matrix4 scale;
+} Transform;
+
+typedef struct
+{
+	Mesh mesh;
+	Transform transform;
+} Entity;
 
 void drawRect(int x, int y, int w, int h, uint32_t color, PixelBuffer* pixelBuffer)
 {
@@ -113,6 +131,30 @@ void drawLine(Vector3 start, Vector3 end, uint32_t color, PixelBuffer* pixelBuff
     }
 }
 
+Matrix4 mulMatrix4(Matrix4 mat1, Matrix4 mat2)
+{
+	Matrix4 result;
+	for (int i = 0; i < 16; i++)
+	{
+		result.values[i] = mat1.values[(i/4)*4 + 0] * mat2.values[i%4 + 0*4] +
+						   mat1.values[(i/4)*4 + 1] * mat2.values[i%4 + 1*4] +
+						   mat1.values[(i/4)*4 + 2] * mat2.values[i%4 + 2*4] +
+						   mat1.values[(i/4)*4 + 3] * mat2.values[i%4 + 3*4];
+	}
+	return result;
+}
+
+Vector3 transform(Matrix4 matrix, Vector3 vector, float w) 
+{
+	vector.x = matrix.values[0] * vector.x + matrix.values[1] * vector.y +
+			   matrix.values[2] * vector.z + matrix.values[3] * w;
+	vector.y = matrix.values[4] * vector.x + matrix.values[5] * vector.y +
+			   matrix.values[6] * vector.z + matrix.values[7] * w;
+	vector.z = matrix.values[8] * vector.x + matrix.values[9] * vector.y +
+			   matrix.values[10] * vector.z + matrix.values[11] * w;
+	return vector;
+}
+
 void draw(PixelBuffer* pixelBuffer, Mesh* cube)
 {
 	//Bob cube
@@ -122,6 +164,28 @@ void draw(PixelBuffer* pixelBuffer, Mesh* cube)
 	float a = 0.01;
 	float b = 0.02;
 	uint32_t lineColor = 0xffffffff;
+
+	//YAxis Rotation Matrix
+	Matrix4 yRotMat;
+	{
+		float tmp[16] = { cosf(a), 0, sinf(a), 0,
+					   	   0      , 1, 0      , 0,
+					      -sinf(a), 0, cosf(a), 0,
+					       0      , 0, 0      , 1};
+		memcpy((void*) yRotMat.values, tmp, 16*sizeof(float));
+	}
+	//XAxis Rotation Matrix
+	Matrix4 xRotMat;
+	{
+		float tmp[16] = {1,  0      , 0      , 0,
+					 	 0,  cosf(b), sinf(b), 0,
+					 	 0, -sinf(b), cosf(b), 0,
+	 	 				 0,  0      , 0      , 1};
+		memcpy((void*) xRotMat.values, tmp, 16*sizeof(float));
+	}
+
+	Matrix4 finalTransform = mulMatrix4(xRotMat, yRotMat);
+
 	for (int i = 0; i < cube->polyCount; i++)
 	{	
 		Triangle* poly = &cube->polygons[i];
@@ -130,24 +194,8 @@ void draw(PixelBuffer* pixelBuffer, Mesh* cube)
 		for (int j = 0; j < 3; j++)
 		{
 			//Rotate =====
-			/*
-			 * 3d y axis rotation matrix = |cos(a)  0 sin(a)|
-			 *							   | 0      1     0 |
-			 * 							   |-sin(a) 0 cos(a)|
-			 */
-			//rotate around y axis
-			Vector3 tmp;
-			tmp.x = cos(a) * poly->vectors[j].x + sin(a) * poly->vectors[j].z;
-			tmp.y = poly->vectors[j].y;
-			tmp.z = (-sin(a)) * poly->vectors[j].x + cos(a) * poly->vectors[j].z;
-			poly->vectors[j] = tmp;
-
-			//rotate around x axis
-			tmp.x = poly->vectors[j].x;
-			tmp.y = cos(b) * poly->vectors[j].y + (-sin(b)) * poly->vectors[j].z;
-			tmp.z = sin(b) * poly->vectors[j].y + cos(b) * poly->vectors[j].z;
-			poly->vectors[j] = tmp;
-
+			poly->vectors[j] = transform(finalTransform, poly->vectors[j], 1);
+			
 			//Shift display poly to world coords
 			displayPoly.vectors[j].x = poly->vectors[j].x + cube->origin.x;		
 			displayPoly.vectors[j].y = poly->vectors[j].y + cube->origin.y;		
