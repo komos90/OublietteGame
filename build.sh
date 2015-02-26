@@ -1,4 +1,4 @@
 #/bin/bash
 
-gcc -std=c99 -Wall main.c -lSDL2 -lm -o game
+gcc -std=c99 -Wall src/*.c -lSDL2 -lm -o bin/game.elf
 
