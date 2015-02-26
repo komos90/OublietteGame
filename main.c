@@ -5,16 +5,22 @@ seoras1@gmail.com
 2015
 */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include <string.h>
 
-#include <SDL2/SDL.h>
+#ifdef __linux__
+	#include <SDL2/SDL.h>
+#elif _WIN32
+	#include <SDL.h>
+#endif
 
 
-const int SCREEN_WIDTH = 300;//1366;//300;//640;
-const int SCREEN_HEIGHT = 300;//768;//300;//480;
+const int SCREEN_WIDTH = 640;//1366;//300;//640;
+const int SCREEN_HEIGHT = 480;//768;//300;//480;
 
 //Temp Globals
 static uint32_t globalCounter;
@@ -110,7 +116,7 @@ void drawLine(Vector3 start, Vector3 end, uint32_t color, PixelBuffer* pixelBuff
 void draw(PixelBuffer* pixelBuffer, Mesh* cube)
 {
 	//Bob cube
-	cube->origin.y = 150 + 50 * sinf(globalCounter / 100.f);
+	cube->origin.y = 240 + 100 * sinf(globalCounter / 100.f);
 	
 	// Rotation angles, y-axis then x-axis
 	float a = 0.01;
@@ -188,7 +194,7 @@ int main( int argc, char* args[] )
 
 	//temp
 	Mesh cube;
-	Vector3 meshOrigin = {150, 150, 150};
+	Vector3 meshOrigin = {320, 240, 150};
 	cube.origin = meshOrigin;
 	cube.polyCount = 12;
 	cube.polygons = malloc(cube.polyCount * sizeof(Triangle));
