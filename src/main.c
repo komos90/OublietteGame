@@ -14,11 +14,11 @@ seoras1@gmail.com
 
 #ifdef __linux__
 	#include <SDL2/SDL.h>
+	#define M_PI 3.14159265358979323846
 #elif _WIN32
 	#include <SDL.h>
 #endif
 
-#define M_PI 3.14159265358979323846
 
 const int SCREEN_WIDTH = 640;//1366;//300;//640;
 const int SCREEN_HEIGHT = 480;//768;//300;//480;
@@ -175,151 +175,155 @@ Vector3 transform(Matrix4 matrix, Vector3 vector, float w)
 	return result;
 }
 
-void draw(PixelBuffer* pixelBuffer, Entity* camera, Entity* entity)
+void draw(PixelBuffer* pixelBuffer, Entity* camera, Entity** entityList, int entityCount)
 {
-	// Rotation angles, y-axis then x-axis
-	uint32_t lineColor = 0xffffffff;
-	//SCale Matrix
-	Matrix4 scaleMat;
+	for (int k = 0; k < entityCount; k++) 
 	{
-		Vector3 s = entity->scale;
-		float tmp[16] = {  s.x, 0  , 0  , 0,
-					   	   0  , s.y, 0  , 0,
-					       0  , 0  , s.z, 0,
-					       0  , 0  , 0  , 1};
-		memcpy((void*) scaleMat.values, tmp, 16*sizeof(float));
-	}
-	//YAxis Rotation Matrix
-	Matrix4 yRotMat;
-	{
-		float a = entity->rotation.y;
-		float tmp[16] = { cosf(a), 0, sinf(a), 0,
-					   	  0      , 1, 0      , 0,
-					     -sinf(a), 0, cosf(a), 0,
-					      0      , 0, 0      , 1};
-		memcpy((void*) yRotMat.values, tmp, 16*sizeof(float));
-	}
-	//XAxis Rotation Matrix
-	Matrix4 xRotMat;
-	{
-		float b = entity->rotation.x;
-		float tmp[16] = {1,  0      , 0      , 0,
-					 	 0,  cosf(b), sinf(b), 0,
-					 	 0, -sinf(b), cosf(b), 0,
-	 	 				 0,  0      , 0      , 1};
-		memcpy((void*) xRotMat.values, tmp, 16*sizeof(float));
-	}
-	Matrix4 worldTranslate;
-	{
-		Vector3 p = entity->position;
-		float tmp[16] = { 1, 0, 0, p.x,
-					 	  0, 1, 0, p.y,
-					 	  0, 0, 1, p.z,
-	 	 				  0, 0, 0, 1  };
-		memcpy((void*) worldTranslate.values, tmp, 16*sizeof(float));
-	}
-	//Camera Rotation Matrix
-	Matrix4 cameraYRotation;
-	{
-		float a = camera->rotation.y;
-		float tmp[16] = { cosf(-a), 0, sinf(-a), 0,
-					   	  0       , 1, 0       , 0,
-					     -sinf(-a), 0, cosf(-a), 0,
-					      0       , 0, 0       , 1};
-		memcpy((void*) cameraYRotation.values, tmp, 16*sizeof(float));
-	}
-	//Camera translate Matrix	
-	Matrix4 cameraTranslate;
-	{
-		float tmp[16] = { 1, 0, 0, -camera->position.x,
-					 	  0, 1, 0, -camera->position.y,
-					 	  0, 0, 1, -camera->position.z,
-	 	 				  0, 0, 0, 1        };
-		memcpy((void*) cameraTranslate.values, tmp, 16*sizeof(float));
-	}
-	Matrix4 cameraInvTranslate;
-	{
-		float tmp[16] = { 1, 0, 0, camera->position.x,
-					 	  0, 1, 0, camera->position.y,
-					 	  0, 0, 1, camera->position.z,
-	 	 				  0, 0, 0, 1        };
-		memcpy((void*) cameraInvTranslate.values, tmp, 16*sizeof(float));
-	}
-	//Camera translate Matrix	
-	Matrix4 orthoProjection;
-	{
-		float tmp[16] = { 1.f/VIEW_WIDTH, 0              ,  0                   ,   0                                 ,
-					 	  0             , 1.f/VIEW_HEIGHT,  0                   ,   0                                 ,
-					 	  0             , 0              , -2.f/(Z_FAR - Z_NEAR), -(Z_FAR + Z_NEAR) / (Z_FAR - Z_NEAR),
-	 	 				  0             , 0              ,  0                   ,   1                                 };
-		memcpy((void*) orthoProjection.values, tmp, 16*sizeof(float));
-	}
-	// perspectiveProjection
-	Matrix4 perspectiveProjection;
-	{
-		float tmp[16] = { atanf((FOV_X/VIEW_WIDTH)/2), 0                           ,  0                                  ,   0                                   ,
-					 	  0                          , atanf((FOV_Y/VIEW_HEIGHT)/2),  0                                  ,   0                                   ,
-					 	  0                          , 0                           , -(Z_FAR + Z_NEAR) / (Z_FAR - Z_NEAR), (-2 * (Z_FAR*Z_NEAR))/(Z_FAR - Z_NEAR),
-	 	 				  0                          , 0                           , -1                                  ,   0                                   };
-		memcpy((void*) perspectiveProjection.values, tmp, 16*sizeof(float));
-	}
-	Matrix4 correctForScreen;
-	{
-		float tmp[16] = { SCREEN_WIDTH/2, 0              ,0, SCREEN_WIDTH/2 ,
-					 	  0             , SCREEN_HEIGHT/2,0, SCREEN_HEIGHT/2,
-					 	  0             , 0              ,1, 1              ,
-	 	 				  0             , 0              ,0, 1              };
-		memcpy((void*) correctForScreen.values, tmp, 16*sizeof(float));
-	}
-	
-	//Combine matrices into one transformation matrix
-	//Model Space -> World Space
-	Matrix4 finalTransform = mulMatrix4(xRotMat, scaleMat);
-	finalTransform = mulMatrix4(yRotMat, finalTransform);	
-	finalTransform = mulMatrix4(worldTranslate, finalTransform);
-	//World Space -> View Space	
-	finalTransform = mulMatrix4(cameraTranslate, finalTransform);	
-	finalTransform = mulMatrix4(cameraTranslate, finalTransform);	
-	finalTransform = mulMatrix4(cameraYRotation, finalTransform);	
-	finalTransform = mulMatrix4(cameraInvTranslate, finalTransform);	
-	//View Space -> Projection Space
-	finalTransform = mulMatrix4(perspectiveProjection, finalTransform);	
-	//Projection Space -> Screen Friendly
-	//finalTransform = mulMatrix4(correctForScreen, finalTransform);	
-
-	for (int i = 0; i < entity->mesh.polyCount; i++)
-	{	
-		Triangle* poly = &entity->mesh.polygons[i];
-		Triangle displayPoly;
-		bool isVectorCulled[3] = {false, false, false};		
-
-		for (int j = 0; j < 3; j++)
+		Entity* entity = entityList[k];
+		// Rotation angles, y-axis then x-axis
+		uint32_t lineColor = 0xffffffff;
+		//SCale Matrix
+		Matrix4 scaleMat;
 		{
-			//Apply all transformations =====
-			displayPoly.vectors[j] = transform(finalTransform, poly->vectors[j], 1);
-			
-			//Cull vertices
-			if (displayPoly.vectors[j].x < -1.f || displayPoly.vectors[j].x > 1.f ||
-				displayPoly.vectors[j].y < -1.f || displayPoly.vectors[j].y > 1.f ||
-				displayPoly.vectors[j].z < -1.f || displayPoly.vectors[j].z > 1.f)
-			{
-				isVectorCulled[j] = true;
-			}
-
-			//Transform to Screen Friendly view
-			displayPoly.vectors[j] = transform(correctForScreen, displayPoly.vectors[j], 1);
+			Vector3 s = entity->scale;
+			float tmp[16] = {  s.x, 0  , 0  , 0,
+						   	   0  , s.y, 0  , 0,
+						       0  , 0  , s.z, 0,
+						       0  , 0  , 0  , 1};
+			memcpy((void*) scaleMat.values, tmp, 16*sizeof(float));
 		}
-		if(!isVectorCulled[0] && !isVectorCulled[1])
+		//YAxis Rotation Matrix
+		Matrix4 yRotMat;
 		{
-			drawLine(displayPoly.vectors[0], displayPoly.vectors[1], lineColor, pixelBuffer);		
-		}		
-		if(!isVectorCulled[1] && !isVectorCulled[2])
+			float a = entity->rotation.y;
+			float tmp[16] = { cosf(a), 0, sinf(a), 0,
+						   	  0      , 1, 0      , 0,
+						     -sinf(a), 0, cosf(a), 0,
+						      0      , 0, 0      , 1};
+			memcpy((void*) yRotMat.values, tmp, 16*sizeof(float));
+		}
+		//XAxis Rotation Matrix
+		Matrix4 xRotMat;
 		{
-			drawLine(displayPoly.vectors[1], displayPoly.vectors[2], lineColor, pixelBuffer);
-		}		
-		if(!isVectorCulled[0] && !isVectorCulled[2])
+			float b = entity->rotation.x;
+			float tmp[16] = {1,  0      , 0      , 0,
+						 	 0,  cosf(b), sinf(b), 0,
+						 	 0, -sinf(b), cosf(b), 0,
+		 	 				 0,  0      , 0      , 1};
+			memcpy((void*) xRotMat.values, tmp, 16*sizeof(float));
+		}
+		Matrix4 worldTranslate;
 		{
-			drawLine(displayPoly.vectors[2], displayPoly.vectors[0], lineColor, pixelBuffer);		
+			Vector3 p = entity->position;
+			float tmp[16] = { 1, 0, 0, p.x,
+						 	  0, 1, 0, p.y,
+						 	  0, 0, 1, p.z,
+		 	 				  0, 0, 0, 1  };
+			memcpy((void*) worldTranslate.values, tmp, 16*sizeof(float));
+		}
+		//Camera Rotation Matrix
+		Matrix4 cameraYRotation;
+		{
+			float a = camera->rotation.y;
+			float tmp[16] = { cosf(-a), 0, sinf(-a), 0,
+						   	  0       , 1, 0       , 0,
+						     -sinf(-a), 0, cosf(-a), 0,
+						      0       , 0, 0       , 1};
+			memcpy((void*) cameraYRotation.values, tmp, 16*sizeof(float));
+		}
+		//Camera translate Matrix	
+		Matrix4 cameraTranslate;
+		{
+			float tmp[16] = { 1, 0, 0, -camera->position.x,
+						 	  0, 1, 0, -camera->position.y,
+						 	  0, 0, 1, -camera->position.z,
+		 	 				  0, 0, 0, 1        };
+			memcpy((void*) cameraTranslate.values, tmp, 16*sizeof(float));
+		}
+		Matrix4 cameraInvTranslate;
+		{
+			float tmp[16] = { 1, 0, 0, camera->position.x,
+						 	  0, 1, 0, camera->position.y,
+						 	  0, 0, 1, camera->position.z,
+		 	 				  0, 0, 0, 1        };
+			memcpy((void*) cameraInvTranslate.values, tmp, 16*sizeof(float));
+		}
+		//Camera translate Matrix	
+		Matrix4 orthoProjection;
+		{
+			float tmp[16] = { 1.f/VIEW_WIDTH, 0              ,  0                   ,   0                                 ,
+						 	  0             , 1.f/VIEW_HEIGHT,  0                   ,   0                                 ,
+						 	  0             , 0              , -2.f/(Z_FAR - Z_NEAR), -(Z_FAR + Z_NEAR) / (Z_FAR - Z_NEAR),
+		 	 				  0             , 0              ,  0                   ,   1                                 };
+			memcpy((void*) orthoProjection.values, tmp, 16*sizeof(float));
+		}
+		// perspectiveProjection
+		Matrix4 perspectiveProjection;
+		{
+			float tmp[16] = { atanf((FOV_X/VIEW_WIDTH)/2), 0                           ,  0                                  ,   0                                   ,
+						 	  0                          , atanf((FOV_Y/VIEW_HEIGHT)/2),  0                                  ,   0                                   ,
+						 	  0                          , 0                           , -(Z_FAR + Z_NEAR) / (Z_FAR - Z_NEAR), (-2 * (Z_FAR*Z_NEAR))/(Z_FAR - Z_NEAR),
+		 	 				  0                          , 0                           , -1                                  ,   0                                   };
+			memcpy((void*) perspectiveProjection.values, tmp, 16*sizeof(float));
+		}
+		Matrix4 correctForScreen;
+		{
+			float tmp[16] = { SCREEN_WIDTH/2, 0              ,0, SCREEN_WIDTH/2 ,
+						 	  0             , SCREEN_HEIGHT/2,0, SCREEN_HEIGHT/2,
+						 	  0             , 0              ,1, 1              ,
+		 	 				  0             , 0              ,0, 1              };
+			memcpy((void*) correctForScreen.values, tmp, 16*sizeof(float));
+		}
+		
+		//Combine matrices into one transformation matrix
+		//Model Space -> World Space
+		Matrix4 finalTransform = mulMatrix4(xRotMat, scaleMat);
+		finalTransform = mulMatrix4(yRotMat, finalTransform);	
+		finalTransform = mulMatrix4(worldTranslate, finalTransform);
+		//World Space -> View Space	
+		finalTransform = mulMatrix4(cameraTranslate, finalTransform);	
+		finalTransform = mulMatrix4(cameraTranslate, finalTransform);	
+		finalTransform = mulMatrix4(cameraYRotation, finalTransform);	
+		finalTransform = mulMatrix4(cameraInvTranslate, finalTransform);	
+		//View Space -> Projection Space
+		finalTransform = mulMatrix4(perspectiveProjection, finalTransform);	
+		//Projection Space -> Screen Friendly
+		//finalTransform = mulMatrix4(correctForScreen, finalTransform);	
+
+		for (int i = 0; i < entity->mesh.polyCount; i++)
+		{	
+			Triangle* poly = &entity->mesh.polygons[i];
+			Triangle displayPoly;
+			bool isVectorCulled[3] = {false, false, false};		
+
+			for (int j = 0; j < 3; j++)
+			{
+				//Apply all transformations =====
+				displayPoly.vectors[j] = transform(finalTransform, poly->vectors[j], 1);
+				
+				//Cull vertices
+				if (displayPoly.vectors[j].x < -1.f || displayPoly.vectors[j].x > 1.f ||
+					displayPoly.vectors[j].y < -1.f || displayPoly.vectors[j].y > 1.f ||
+					displayPoly.vectors[j].z < -1.f || displayPoly.vectors[j].z > 1.f)
+				{
+					isVectorCulled[j] = true;
+				}
+
+				//Transform to Screen Friendly view
+				displayPoly.vectors[j] = transform(correctForScreen, displayPoly.vectors[j], 1);
+			}
+			if(!isVectorCulled[0] && !isVectorCulled[1])
+			{
+				drawLine(displayPoly.vectors[0], displayPoly.vectors[1], lineColor, pixelBuffer);		
+			}		
+			if(!isVectorCulled[1] && !isVectorCulled[2])
+			{
+				drawLine(displayPoly.vectors[1], displayPoly.vectors[2], lineColor, pixelBuffer);
+			}		
+			if(!isVectorCulled[0] && !isVectorCulled[2])
+			{
+				drawLine(displayPoly.vectors[2], displayPoly.vectors[0], lineColor, pixelBuffer);		
+			}
 		}
 	}
 }
@@ -341,7 +345,7 @@ int main( int argc, char* args[] )
 	window = SDL_CreateWindow(
 		"Pixel buffer Playground :P", SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT,
-		SDL_WINDOW_FULLSCREEN_DESKTOP);
+		0);//SDL_WINDOW_FULLSCREEN_DESKTOP);
 	if( window == NULL )
 	{
 		printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
@@ -361,17 +365,29 @@ int main( int argc, char* args[] )
 	Entity camera = {{0}};//GCC bug temp fix
 	Vector3 tmpCamPos = {0};
 	camera.position = tmpCamPos;
-	Entity cubeEntity = {{0}};//GCC Bug temp fix
 	Mesh cube;
 	Vector3 meshOrigin = {0, 0, -200};
 	cube.origin = meshOrigin;
 	cube.polyCount = 12;
 	cube.polygons = malloc(cube.polyCount * sizeof(Triangle));
+	Entity cubeEntity = {{0}};//GCC Bug temp fix
 	cubeEntity.mesh = cube;
 	cubeEntity.position = meshOrigin;
 	//cubeEntity.rotation.x = 0.5;
 	Vector3 tmpScale = {100, 100, 100};
 	cubeEntity.scale = tmpScale;
+
+	Entity cubeEntity2 = {{0}};
+	cubeEntity2.mesh = cube;
+	Vector3 cubePos = {300, 0, 200};
+	cubeEntity2.position = cubePos;
+	Vector3 tmpScale2 = {50, 50, 50};
+	cubeEntity2.scale = tmpScale2;
+
+	int entityCount = 2;
+	Entity** entityList = (Entity**)malloc(entityCount * sizeof(Entity*));
+	entityList[0] = &cubeEntity;
+	entityList[1] = &cubeEntity2;
 
 	//Vertices
 	Vector3 v0 = { 1, -1, -1};
@@ -471,11 +487,11 @@ int main( int argc, char* args[] )
 			}
 		}
 		globalCounter++;
-		cubeEntity.rotation.x += 0.01;
-		cubeEntity.rotation.y += 0.01;
-		
+		cubeEntity2.rotation.x += 0.01;
+		cubeEntity2.rotation.y += 0.01;
+			
 		// Where all the drawing happens
-		draw(&pixelBuffer, &camera, &cubeEntity);
+		draw(&pixelBuffer, &camera, entityList, entityCount);
 
 		//Rendering pixel buffer to the screen
 		SDL_UpdateTexture(screenTexture, NULL, pixelBuffer.pixels, SCREEN_WIDTH * sizeof(uint32_t));		
