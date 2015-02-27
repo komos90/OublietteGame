@@ -146,16 +146,17 @@ Matrix4 mulMatrix4(Matrix4 mat1, Matrix4 mat2)
 
 Vector3 transform(Matrix4 matrix, Vector3 vector, float w) 
 {
-	vector.x = matrix.values[0] * vector.x + matrix.values[1] * vector.y +
+	Vector3 result = {0};
+	result.x = matrix.values[0] * vector.x + matrix.values[1] * vector.y +
 			   matrix.values[2] * vector.z + matrix.values[3] * w;
-	vector.y = matrix.values[4] * vector.x + matrix.values[5] * vector.y +
+	result.y = matrix.values[4] * vector.x + matrix.values[5] * vector.y +
 			   matrix.values[6] * vector.z + matrix.values[7] * w;
-	vector.z = matrix.values[8] * vector.x + matrix.values[9] * vector.y +
+	result.z = matrix.values[8] * vector.x + matrix.values[9] * vector.y +
 			   matrix.values[10] * vector.z + matrix.values[11] * w;
-	return vector;
+	return result;
 }
 
-void draw(PixelBuffer* pixelBuffer, Mesh* cube)
+void draw(PixelBuffer* pixelBuffer, Vector3 camera, Mesh* cube)
 {
 	//Bob cube
 	cube->origin.y = 240 + 100 * sinf(globalCounter / 100.f);
@@ -183,6 +184,15 @@ void draw(PixelBuffer* pixelBuffer, Mesh* cube)
 	 	 				 0,  0      , 0      , 1};
 		memcpy((void*) xRotMat.values, tmp, 16*sizeof(float));
 	}
+	//Camera translate Matrix	
+	Matrix4 cameraTranslate;
+	{
+		float tmp[16] = { 1, 0, 0, camera.x,
+					 	  0, 1, 0, camera.y,
+					 	  0, 0, 1, camera.z,
+	 	 				  0, 0, 0, 1       };
+		memcpy((void*) cameraTranslate.values, tmp, 16*sizeof(float));
+	}
 
 	Matrix4 finalTransform = mulMatrix4(xRotMat, yRotMat);
 
@@ -200,6 +210,9 @@ void draw(PixelBuffer* pixelBuffer, Mesh* cube)
 			displayPoly.vectors[j].x = poly->vectors[j].x + cube->origin.x;		
 			displayPoly.vectors[j].y = poly->vectors[j].y + cube->origin.y;		
 			displayPoly.vectors[j].z = poly->vectors[j].z + cube->origin.z;
+			
+			//Shift poly to view coords
+			poly->vectors[j] = transform(cameraTranslate, poly->vectors[j], 1);
 		}
 		drawLine(displayPoly.vectors[0], displayPoly.vectors[1], lineColor, pixelBuffer);		
 		drawLine(displayPoly.vectors[1], displayPoly.vectors[2], lineColor, pixelBuffer);		
@@ -241,6 +254,7 @@ int main( int argc, char* args[] )
 	PixelBuffer pixelBuffer = {pixels, SCREEN_WIDTH, SCREEN_HEIGHT};
 
 	//temp
+	Vector3 camera = {0};
 	Mesh cube;
 	Vector3 meshOrigin = {320, 240, 150};
 	cube.origin = meshOrigin;
@@ -312,9 +326,10 @@ int main( int argc, char* args[] )
 			}
     	}
 		globalCounter++;
+		camera.x = sinf(globalCounter / 100.f);
 
 		// Where all the drawing happens
-		draw(&pixelBuffer, &cube);
+		draw(&pixelBuffer, camera, &cube);
 
 		//Rendering pixel buffer to the screen
 		SDL_UpdateTexture(screenTexture, NULL, pixelBuffer.pixels, SCREEN_WIDTH * sizeof(uint32_t));		
