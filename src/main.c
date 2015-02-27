@@ -18,9 +18,17 @@ seoras1@gmail.com
 	#include <SDL.h>
 #endif
 
+#define M_PI 3.14159265358979323846
 
 const int SCREEN_WIDTH = 640;//1366;//300;//640;
 const int SCREEN_HEIGHT = 480;//768;//300;//480;
+//Projection Constants
+const int VIEW_WIDTH = 640;
+const int VIEW_HEIGHT = 480;
+const int Z_FAR = 500;
+const int Z_NEAR = 10;
+const float FOV_X = 1280;//1.5f;
+const float FOV_Y = 960;//1.5f;
 
 //Temp Globals
 static uint32_t globalCounter;
@@ -66,8 +74,10 @@ typedef struct
 
 typedef struct
 {
+	Vector3 position;
+	Vector3 rotation;
+	Vector3 scale;
 	Mesh mesh;
-	Transform transform;
 } Entity;
 
 void drawRect(int x, int y, int w, int h, uint32_t color, PixelBuffer* pixelBuffer)
@@ -153,70 +163,164 @@ Vector3 transform(Matrix4 matrix, Vector3 vector, float w)
 			   matrix.values[6] * vector.z + matrix.values[7] * w;
 	result.z = matrix.values[8] * vector.x + matrix.values[9] * vector.y +
 			   matrix.values[10] * vector.z + matrix.values[11] * w;
+	w        = matrix.values[12] * vector.x + matrix.values[13] * vector.y +
+			   matrix.values[14] * vector.z + matrix.values[15] * w;
+
+	if (w != 0.f && w != 1.f) {
+		result.x /= w;
+		result.y /= w;
+		result.z /= w;
+	}
+
 	return result;
 }
 
-void draw(PixelBuffer* pixelBuffer, Vector3 camera, Mesh* cube)
+void draw(PixelBuffer* pixelBuffer, Entity* camera, Entity* entity)
 {
-	//Bob cube
-	cube->origin.y = 240 + 100 * sinf(globalCounter / 100.f);
-	
 	// Rotation angles, y-axis then x-axis
-	float a = 0.01;
-	float b = 0.02;
 	uint32_t lineColor = 0xffffffff;
-
+	//SCale Matrix
+	Matrix4 scaleMat;
+	{
+		Vector3 s = entity->scale;
+		float tmp[16] = {  s.x, 0  , 0  , 0,
+					   	   0  , s.y, 0  , 0,
+					       0  , 0  , s.z, 0,
+					       0  , 0  , 0  , 1};
+		memcpy((void*) scaleMat.values, tmp, 16*sizeof(float));
+	}
 	//YAxis Rotation Matrix
 	Matrix4 yRotMat;
 	{
+		float a = entity->rotation.y;
 		float tmp[16] = { cosf(a), 0, sinf(a), 0,
-					   	   0      , 1, 0      , 0,
-					      -sinf(a), 0, cosf(a), 0,
-					       0      , 0, 0      , 1};
+					   	  0      , 1, 0      , 0,
+					     -sinf(a), 0, cosf(a), 0,
+					      0      , 0, 0      , 1};
 		memcpy((void*) yRotMat.values, tmp, 16*sizeof(float));
 	}
 	//XAxis Rotation Matrix
 	Matrix4 xRotMat;
 	{
+		float b = entity->rotation.x;
 		float tmp[16] = {1,  0      , 0      , 0,
 					 	 0,  cosf(b), sinf(b), 0,
 					 	 0, -sinf(b), cosf(b), 0,
 	 	 				 0,  0      , 0      , 1};
 		memcpy((void*) xRotMat.values, tmp, 16*sizeof(float));
 	}
+	Matrix4 worldTranslate;
+	{
+		Vector3 p = entity->position;
+		float tmp[16] = { 1, 0, 0, p.x,
+					 	  0, 1, 0, p.y,
+					 	  0, 0, 1, p.z,
+	 	 				  0, 0, 0, 1  };
+		memcpy((void*) worldTranslate.values, tmp, 16*sizeof(float));
+	}
+	//Camera Rotation Matrix
+	Matrix4 cameraYRotation;
+	{
+		float a = camera->rotation.y;
+		float tmp[16] = { cosf(-a), 0, sinf(-a), 0,
+					   	  0       , 1, 0       , 0,
+					     -sinf(-a), 0, cosf(-a), 0,
+					      0       , 0, 0       , 1};
+		memcpy((void*) cameraYRotation.values, tmp, 16*sizeof(float));
+	}
 	//Camera translate Matrix	
 	Matrix4 cameraTranslate;
 	{
-		float tmp[16] = { 1, 0, 0, camera.x,
-					 	  0, 1, 0, camera.y,
-					 	  0, 0, 1, camera.z,
-	 	 				  0, 0, 0, 1       };
+		float tmp[16] = { 1, 0, 0, -camera->position.x,
+					 	  0, 1, 0, -camera->position.y,
+					 	  0, 0, 1, -camera->position.z,
+	 	 				  0, 0, 0, 1        };
 		memcpy((void*) cameraTranslate.values, tmp, 16*sizeof(float));
 	}
+	Matrix4 cameraInvTranslate;
+	{
+		float tmp[16] = { 1, 0, 0, camera->position.x,
+					 	  0, 1, 0, camera->position.y,
+					 	  0, 0, 1, camera->position.z,
+	 	 				  0, 0, 0, 1        };
+		memcpy((void*) cameraInvTranslate.values, tmp, 16*sizeof(float));
+	}
+	//Camera translate Matrix	
+	Matrix4 orthoProjection;
+	{
+		float tmp[16] = { 1.f/VIEW_WIDTH, 0              ,  0                   ,   0                                 ,
+					 	  0             , 1.f/VIEW_HEIGHT,  0                   ,   0                                 ,
+					 	  0             , 0              , -2.f/(Z_FAR - Z_NEAR), -(Z_FAR + Z_NEAR) / (Z_FAR - Z_NEAR),
+	 	 				  0             , 0              ,  0                   ,   1                                 };
+		memcpy((void*) orthoProjection.values, tmp, 16*sizeof(float));
+	}
+	// perspectiveProjection
+	Matrix4 perspectiveProjection;
+	{
+		float tmp[16] = { atanf((FOV_X/VIEW_WIDTH)/2), 0                           ,  0                                  ,   0                                   ,
+					 	  0                          , atanf((FOV_Y/VIEW_HEIGHT)/2),  0                                  ,   0                                   ,
+					 	  0                          , 0                           , -(Z_FAR + Z_NEAR) / (Z_FAR - Z_NEAR), (-2 * (Z_FAR*Z_NEAR))/(Z_FAR - Z_NEAR),
+	 	 				  0                          , 0                           , -1                                  ,   0                                   };
+		memcpy((void*) perspectiveProjection.values, tmp, 16*sizeof(float));
+	}
+	Matrix4 correctForScreen;
+	{
+		float tmp[16] = { SCREEN_WIDTH/2, 0              ,0, SCREEN_WIDTH/2 ,
+					 	  0             , SCREEN_HEIGHT/2,0, SCREEN_HEIGHT/2,
+					 	  0             , 0              ,1, 1              ,
+	 	 				  0             , 0              ,0, 1              };
+		memcpy((void*) correctForScreen.values, tmp, 16*sizeof(float));
+	}
+	
+	//Combine matrices into one transformation matrix
+	//Model Space -> World Space
+	Matrix4 finalTransform = mulMatrix4(xRotMat, scaleMat);
+	finalTransform = mulMatrix4(yRotMat, finalTransform);	
+	finalTransform = mulMatrix4(worldTranslate, finalTransform);
+	//World Space -> View Space	
+	finalTransform = mulMatrix4(cameraTranslate, finalTransform);	
+	finalTransform = mulMatrix4(cameraTranslate, finalTransform);	
+	finalTransform = mulMatrix4(cameraYRotation, finalTransform);	
+	finalTransform = mulMatrix4(cameraInvTranslate, finalTransform);	
+	//View Space -> Projection Space
+	finalTransform = mulMatrix4(perspectiveProjection, finalTransform);	
+	//Projection Space -> Screen Friendly
+	//finalTransform = mulMatrix4(correctForScreen, finalTransform);	
 
-	Matrix4 finalTransform = mulMatrix4(xRotMat, yRotMat);
-
-	for (int i = 0; i < cube->polyCount; i++)
+	for (int i = 0; i < entity->mesh.polyCount; i++)
 	{	
-		Triangle* poly = &cube->polygons[i];
+		Triangle* poly = &entity->mesh.polygons[i];
 		Triangle displayPoly;
+		bool isVectorCulled[3] = {false, false, false};		
 
 		for (int j = 0; j < 3; j++)
 		{
-			//Rotate =====
-			poly->vectors[j] = transform(finalTransform, poly->vectors[j], 1);
+			//Apply all transformations =====
+			displayPoly.vectors[j] = transform(finalTransform, poly->vectors[j], 1);
 			
-			//Shift display poly to world coords
-			displayPoly.vectors[j].x = poly->vectors[j].x + cube->origin.x;		
-			displayPoly.vectors[j].y = poly->vectors[j].y + cube->origin.y;		
-			displayPoly.vectors[j].z = poly->vectors[j].z + cube->origin.z;
-			
-			//Shift poly to view coords
-			poly->vectors[j] = transform(cameraTranslate, poly->vectors[j], 1);
+			//Cull vertices
+			if (displayPoly.vectors[j].x < -1.f || displayPoly.vectors[j].x > 1.f ||
+				displayPoly.vectors[j].y < -1.f || displayPoly.vectors[j].y > 1.f ||
+				displayPoly.vectors[j].z < -1.f || displayPoly.vectors[j].z > 1.f)
+			{
+				isVectorCulled[j] = true;
+			}
+
+			//Transform to Screen Friendly view
+			displayPoly.vectors[j] = transform(correctForScreen, displayPoly.vectors[j], 1);
 		}
-		drawLine(displayPoly.vectors[0], displayPoly.vectors[1], lineColor, pixelBuffer);		
-		drawLine(displayPoly.vectors[1], displayPoly.vectors[2], lineColor, pixelBuffer);		
-		drawLine(displayPoly.vectors[2], displayPoly.vectors[0], lineColor, pixelBuffer);		
+		if(!isVectorCulled[0] && !isVectorCulled[1])
+		{
+			drawLine(displayPoly.vectors[0], displayPoly.vectors[1], lineColor, pixelBuffer);		
+		}		
+		if(!isVectorCulled[1] && !isVectorCulled[2])
+		{
+			drawLine(displayPoly.vectors[1], displayPoly.vectors[2], lineColor, pixelBuffer);
+		}		
+		if(!isVectorCulled[0] && !isVectorCulled[2])
+		{
+			drawLine(displayPoly.vectors[2], displayPoly.vectors[0], lineColor, pixelBuffer);		
+		}
 	}
 }
 
@@ -254,22 +358,30 @@ int main( int argc, char* args[] )
 	PixelBuffer pixelBuffer = {pixels, SCREEN_WIDTH, SCREEN_HEIGHT};
 
 	//temp
-	Vector3 camera = {0};
+	Entity camera = {{0}};//GCC bug temp fix
+	Vector3 tmpCamPos = {0};
+	camera.position = tmpCamPos;
+	Entity cubeEntity = {{0}};//GCC Bug temp fix
 	Mesh cube;
-	Vector3 meshOrigin = {320, 240, 150};
+	Vector3 meshOrigin = {0, 0, -200};
 	cube.origin = meshOrigin;
 	cube.polyCount = 12;
 	cube.polygons = malloc(cube.polyCount * sizeof(Triangle));
-	
+	cubeEntity.mesh = cube;
+	cubeEntity.position = meshOrigin;
+	//cubeEntity.rotation.x = 0.5;
+	Vector3 tmpScale = {100, 100, 100};
+	cubeEntity.scale = tmpScale;
+
 	//Vertices
-	Vector3 v0 = {50, -50, -50};
-	Vector3 v1 = {50, 50, -50};
-	Vector3 v2 = {-50, 50, -50};
-	Vector3 v3 = {-50, -50, -50};
-	Vector3 v4 = {50, -50, 50};
-	Vector3 v5 = {50, 50, 50};
-	Vector3 v6 = {-50, 50, 50};
-	Vector3 v7 = {-50, -50, 50};
+	Vector3 v0 = { 1, -1, -1};
+	Vector3 v1 = { 1,  1, -1};
+	Vector3 v2 = {-1,  1, -1};
+	Vector3 v3 = {-1, -1, -1};
+	Vector3 v4 = { 1, -1,  1};
+	Vector3 v5 = { 1,  1,  1};
+	Vector3 v6 = {-1,  1,  1};
+	Vector3 v7 = {-1, -1,  1};
 	
 	//Polygons
 	cube.polygons[0].vectors[0] = v0;
@@ -325,11 +437,45 @@ int main( int argc, char* args[] )
 				break;
 			}
     	}
+		//Keyboard Input
+		const uint8_t* keyState = SDL_GetKeyboardState(NULL);	
+		{
+			int moveVel = 3; 
+			if (keyState[SDL_SCANCODE_A])
+			{
+				camera.position.z += moveVel * cosf(camera.rotation.y - M_PI/2);
+				camera.position.x += moveVel * sinf(camera.rotation.y - M_PI/2);
+			}
+			if (keyState[SDL_SCANCODE_D])
+			{
+				camera.position.z += moveVel * cosf(camera.rotation.y + M_PI/2);
+				camera.position.x += moveVel * sinf(camera.rotation.y + M_PI/2);
+			}
+			if (keyState[SDL_SCANCODE_S])
+			{
+				camera.position.z += moveVel * cosf(camera.rotation.y);
+				camera.position.x += moveVel * sinf(camera.rotation.y);
+			}
+			if (keyState[SDL_SCANCODE_W])
+			{
+				camera.position.z += moveVel * cosf(camera.rotation.y + M_PI);
+				camera.position.x += moveVel * sinf(camera.rotation.y + M_PI);
+			}
+			if (keyState[SDL_SCANCODE_LEFT])
+			{
+				camera.rotation.y += 0.02;
+			}
+			if (keyState[SDL_SCANCODE_RIGHT])
+			{
+				camera.rotation.y -= 0.02;
+			}
+		}
 		globalCounter++;
-		camera.x = sinf(globalCounter / 100.f);
-
+		cubeEntity.rotation.x += 0.01;
+		cubeEntity.rotation.y += 0.01;
+		
 		// Where all the drawing happens
-		draw(&pixelBuffer, camera, &cube);
+		draw(&pixelBuffer, &camera, &cubeEntity);
 
 		//Rendering pixel buffer to the screen
 		SDL_UpdateTexture(screenTexture, NULL, pixelBuffer.pixels, SCREEN_WIDTH * sizeof(uint32_t));		
