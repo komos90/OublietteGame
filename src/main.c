@@ -15,26 +15,23 @@ seoras1@gmail.com
 
 #ifdef __linux__
 	#include <SDL2/SDL.h>
-	
-	#define _GNU_SOURCE
 	#define M_PI 3.14159265358979323846
 #elif _WIN32
 	#include <SDL.h>
 #endif
 
-const int SCREEN_WIDTH = 300;//1366;//300;//640;
-const int SCREEN_HEIGHT = 300;//768;//300;//480;
+const int SCREEN_WIDTH = 640;//1366;//300;//640;
+const int SCREEN_HEIGHT = 480;//768;//300;//480;
+
 //Projection Constants
-const int VIEW_WIDTH = 1366;
-const int VIEW_HEIGHT = 768;
+const int VIEW_WIDTH = 640;
+const int VIEW_HEIGHT = 480;
 const int Z_FAR = 500;
 const int Z_NEAR = 10;
 const float FOV_X = 1280;//1.5f;
 const float FOV_Y = 960;//1.5f;
 
 //Temp Globals
-static uint32_t globalCounter;
-
 
 typedef struct 
 {
@@ -62,22 +59,15 @@ typedef struct
 
 typedef struct
 {
-	Vector3 origin;
+	//Vector3 origin;
 	int polyCount;
 	Triangle* polygons;
 } Mesh;
 
 typedef struct
 {
-	Matrix4 rotation;
-	Matrix4 translation;
-	Matrix4 scale;
-} Transform;
-
-typedef struct
-{
 	Vector3 position;
-	Vector3 rotation;
+	Vector3 rotation; //TODO Quaternion?
 	Vector3 scale;
 	Mesh mesh;
 } Entity;
@@ -194,6 +184,16 @@ void draw(PixelBuffer* pixelBuffer, Entity* camera, Entity** entityList, int ent
 						       0  , 0  , 0  , 1};
 			memcpy((void*) scaleMat.values, tmp, 16*sizeof(float));
 		}
+		//ZAis Rotation Matrix
+		Matrix4 zRotMat;
+		{
+			float c = entity->rotation.z;
+			float tmp[16] = { cosf(c), sinf(c), 0, 0,
+						   	 -sinf(c), cosf(c), 0, 0,
+						      0      , 0      , 1, 0,
+						      0      , 0      , 0, 1};
+			memcpy((void*) zRotMat.values, tmp, 16*sizeof(float));
+		}
 		//YAxis Rotation Matrix
 		Matrix4 yRotMat;
 		{
@@ -281,27 +281,23 @@ void draw(PixelBuffer* pixelBuffer, Entity* camera, Entity** entityList, int ent
 		//Model Space -> World Space
 		Matrix4 finalTransform = mulMatrix4(xRotMat, scaleMat);
 		finalTransform = mulMatrix4(yRotMat, finalTransform);	
+		finalTransform = mulMatrix4(zRotMat, finalTransform);	
 		finalTransform = mulMatrix4(worldTranslate, finalTransform);
 		//World Space -> View Space	
 		finalTransform = mulMatrix4(cameraTranslate, finalTransform);	
 		finalTransform = mulMatrix4(cameraYRotation, finalTransform);	
-		//finalTransform = mulMatrix4(cameraTranslate, finalTransform);	
-		//finalTransform = mulMatrix4(cameraInvTranslate, finalTransform);	
 		//View Space -> Projection Space
 		finalTransform = mulMatrix4(perspectiveProjection, finalTransform);	
-		//Projection Space -> Screen Friendly
-		//finalTransform = mulMatrix4(correctForScreen, finalTransform);	
 
 		for (int i = 0; i < entity->mesh.polyCount; i++)
 		{	
-			Triangle* poly = &entity->mesh.polygons[i];
-			Triangle displayPoly;
+			Triangle displayPoly = entity->mesh.polygons[i];
 			bool isVectorCulled[3] = {false, false, false};		
 
 			for (int j = 0; j < 3; j++)
 			{
 				//Apply all transformations =====
-				displayPoly.vectors[j] = transform(finalTransform, poly->vectors[j], 1);
+				displayPoly.vectors[j] = transform(finalTransform, displayPoly.vectors[j], 1);
 				
 				//Cull vertices
 				if (displayPoly.vectors[j].x < -1.f || displayPoly.vectors[j].x > 1.f ||
@@ -311,9 +307,10 @@ void draw(PixelBuffer* pixelBuffer, Entity* camera, Entity** entityList, int ent
 					isVectorCulled[j] = true;
 				}
 
-				//Transform to Screen Friendly view
+				//Projection Space -> Screen Friendly
 				displayPoly.vectors[j] = transform(correctForScreen, displayPoly.vectors[j], 1);
 			}
+			//Only draw lines between vectors that haven't been culled
 			if(!isVectorCulled[0] && !isVectorCulled[1])
 			{
 				drawLine(displayPoly.vectors[0], displayPoly.vectors[1], lineColor, pixelBuffer);		
@@ -341,7 +338,7 @@ Mesh loadMeshFromFile(char* fileName)
 	#endif
 
 	FILE* file = fopen(fullFileName, "r");
-	Mesh mesh = {{0}};	//GCC bug
+	Mesh mesh = {0};
 	int lineCount = 0;
 
 	if (file == NULL)
@@ -384,10 +381,7 @@ Mesh loadMeshFromFile(char* fileName)
 				vertices[k] = atof(strtok(NULL, " "));
 			k++;
 		}
-		/*SDL_Log("%f, %f, %f, %f, %f, %f, %f, %f, %f",
-			vertices[0], vertices[1], vertices[2],
-			vertices[3], vertices[4], vertices[5],
-			vertices[6], vertices[7], vertices[8]);*/
+		//Store the loaded vertices into the return polygon
 		mesh.polygons[i].vectors[0].x = vertices[0];
 		mesh.polygons[i].vectors[0].y = vertices[1];
 		mesh.polygons[i].vectors[0].z = vertices[2];
@@ -411,6 +405,7 @@ int main( int argc, char* args[] )
 	uint32_t* pixels = NULL;
 	bool running = true;
 
+	//Initialise SDL ====
 	if( SDL_Init( SDL_INIT_EVERYTHING) < 0 )
 	{
 		printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
@@ -420,7 +415,7 @@ int main( int argc, char* args[] )
 	window = SDL_CreateWindow(
 		"Pixel buffer Playground :P", SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT,
-		SDL_WINDOW_FULLSCREEN_DESKTOP);
+		SDL_WINDOW_FULLSCREEN_DESKTOP); //TODO add key to toggle fullscreen while running.
 	if( window == NULL )
 	{
 		printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
@@ -436,31 +431,34 @@ int main( int argc, char* args[] )
 	pixels = (uint32_t*) malloc(SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32_t));
 	PixelBuffer pixelBuffer = {pixels, SCREEN_WIDTH, SCREEN_HEIGHT};
 
-	//temp
-	Entity camera = {{0}};//GCC bug temp fix
-	Vector3 tmpCamPos = {0};
-	camera.position = tmpCamPos;
-	Mesh cube = loadMeshFromFile("../res/meshes/monkey.raw");
-	Vector3 meshOrigin = {0, 0, -200};
-	cube.origin = meshOrigin;
-	Entity cubeEntity = {{0}};//GCC Bug temp fix
-	cubeEntity.mesh = cube;
-	cubeEntity.position = meshOrigin;
-	cubeEntity.rotation.x = -M_PI/2;
-	Vector3 tmpScale = {100, 100, 100};
-	cubeEntity.scale = tmpScale;
+	//Initialise Meshes and Entities ====
+	//Load meshes
+	Mesh cube  = loadMeshFromFile("../res/meshes/cube.raw");
+	Mesh plane = loadMeshFromFile("../res/meshes/plane.raw");
+	Mesh monkey  = loadMeshFromFile("../res/meshes/monkeyhd.raw");
 
-	Entity cubeEntity2 = {{0}};
-	cubeEntity2.mesh = cube;
-	Vector3 cubePos = {300, 0, 200};
-	cubeEntity2.position = cubePos;
-	Vector3 tmpScale2 = {50, 50, 50};
-	cubeEntity2.scale = tmpScale2;
+	//Initialise entities
+	Entity camera = {{0}};
+	Entity cubeEntity = {  .position={0, 0, -200},    .mesh=monkey, 
+                           .rotation={-M_PI/2, 0, 0}, .scale={100, 100, 100}};
+	Entity cubeEntity2 = { .position={300, 0, 200},   .mesh=cube,
+                           .scale   ={50, 50, 50}};
 
-	int entityCount = 2;
+	//Temp corridore
+	Entity hall1 = { .position={-300, 0, 200}, .mesh=plane,
+                     .scale   ={50, 50, 50}};
+	Entity hall2 = { .position={-300, 50, 150}, .mesh=plane,
+                     .rotation={M_PI/2, 0, 0}, .scale={50, 50, 50}};
+	Entity hall3 = { .position={-300, 0, 100}, .mesh=plane,
+                     .scale   ={50, 50, 50}};
+	//Create entity list and fill with entities
+	int entityCount = 5;
 	Entity** entityList = (Entity**)malloc(entityCount * sizeof(Entity*));
 	entityList[0] = &cubeEntity;
 	entityList[1] = &cubeEntity2;
+	entityList[2] = &hall1;
+	entityList[3] = &hall2;
+	entityList[4] = &hall3;
 
 	//Main Loop ====
 	while(running)	
@@ -511,11 +509,10 @@ int main( int argc, char* args[] )
 				camera.rotation.y -= 0.02;
 			}
 		}
-		globalCounter++;
-		cubeEntity2.rotation.x += 0.01;
-		cubeEntity2.rotation.y += 0.01;
+		//cubeEntity2.rotation.x += 0.01;
+		cubeEntity2.rotation.z += 0.01;
 			
-		// Where all the drawing happens
+		//Where all the drawing happens
 		draw(&pixelBuffer, &camera, entityList, entityCount);
 
 		//Rendering pixel buffer to the screen
