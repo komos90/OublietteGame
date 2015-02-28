@@ -11,20 +11,22 @@ seoras1@gmail.com
 #include <stdbool.h>
 #include <math.h>
 #include <string.h>
+#include <limits.h>
 
 #ifdef __linux__
 	#include <SDL2/SDL.h>
+	
+	#define _GNU_SOURCE
 	#define M_PI 3.14159265358979323846
 #elif _WIN32
 	#include <SDL.h>
 #endif
 
-
-const int SCREEN_WIDTH = 640;//1366;//300;//640;
-const int SCREEN_HEIGHT = 480;//768;//300;//480;
+const int SCREEN_WIDTH = 300;//1366;//300;//640;
+const int SCREEN_HEIGHT = 300;//768;//300;//480;
 //Projection Constants
-const int VIEW_WIDTH = 640;
-const int VIEW_HEIGHT = 480;
+const int VIEW_WIDTH = 1366;
+const int VIEW_HEIGHT = 768;
 const int Z_FAR = 500;
 const int Z_NEAR = 10;
 const float FOV_X = 1280;//1.5f;
@@ -330,13 +332,22 @@ void draw(PixelBuffer* pixelBuffer, Entity* camera, Entity** entityList, int ent
 
 Mesh loadMeshFromFile(char* fileName)
 {
-	FILE* file = fopen(fileName, "r");
+	//Replace relative path with realpath for linux
+	char fullFileName[256];
+	#ifdef __linux__
+		realpath(fileName, fullFileName);
+	#else
+		strcpy(fullFileName, fileName);
+	#endif
+
+	FILE* file = fopen(fullFileName, "r");
 	Mesh mesh = {{0}};	//GCC bug
 	int lineCount = 0;
 
 	if (file == NULL)
 	{
 		SDL_Log("Could not open mesh file.");
+		SDL_Log(fullFileName);
 	}
 
 	//Save the pos beginning of file
@@ -409,7 +420,7 @@ int main( int argc, char* args[] )
 	window = SDL_CreateWindow(
 		"Pixel buffer Playground :P", SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT,
-		0);//SDL_WINDOW_FULLSCREEN_DESKTOP);
+		SDL_WINDOW_FULLSCREEN_DESKTOP);
 	if( window == NULL )
 	{
 		printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
@@ -429,7 +440,7 @@ int main( int argc, char* args[] )
 	Entity camera = {{0}};//GCC bug temp fix
 	Vector3 tmpCamPos = {0};
 	camera.position = tmpCamPos;
-	Mesh cube = loadMeshFromFile("../res/meshes/monkeyhd.raw");
+	Mesh cube = loadMeshFromFile("../res/meshes/monkey.raw");
 	Vector3 meshOrigin = {0, 0, -200};
 	cube.origin = meshOrigin;
 	Entity cubeEntity = {{0}};//GCC Bug temp fix
