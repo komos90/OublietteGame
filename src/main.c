@@ -516,6 +516,7 @@ int main( int argc, char* args[] )
 
 		//Lock to 60 fps
 		int delta = SDL_GetTicks() - curTime;
+		SDL_Log("%d", delta);
 		if (delta < 1000/60)
 		{
 			SDL_Delay(1000/60 - delta);
