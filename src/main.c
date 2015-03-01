@@ -36,6 +36,7 @@ const float FOV_Y       = 10000;//960;//1.5f;
 typedef struct 
 {
 	uint32_t* pixels;
+	int32_t* zBuffer;
 	int width;
 	int height;
 } PixelBuffer;
@@ -88,13 +89,15 @@ void drawRect(int x, int y, int w, int h, uint32_t color, PixelBuffer* pixelBuff
 		}
 	}
 }
-
+//TODO use floats for depth buffer
 void drawVector(Vector3 vector, uint32_t color, PixelBuffer* pixelBuffer)
 {
 	if (vector.x >= 0 && vector.x < pixelBuffer->width &&
-		vector.y >= 0 && vector.y < pixelBuffer->height)
+		vector.y >= 0 && vector.y < pixelBuffer->height && 
+		vector.z < pixelBuffer->zBuffer[(int)vector.y  * pixelBuffer->width + (int)vector.x])
 	{
 		pixelBuffer->pixels[(int)vector.y  * pixelBuffer->width + (int)vector.x] = color;
+		pixelBuffer->zBuffer[(int)vector.y  * pixelBuffer->width + (int)vector.x] = vector.z;
 	}
 }
 
@@ -276,7 +279,7 @@ void rasterizePolygon(Triangle poly, uint32_t color, PixelBuffer* pixelBuffer)
             //Fill scanline
             for (int i = topL.x; i < topR.x; i++)
             {
-                Vector3 tmp = {(int)i, (int)topL.y, 0};
+                Vector3 tmp = {(int)i, (int)topL.y, poly.vectors[0].z};
                 drawVector(tmp, color, pixelBuffer);
             }
         } 
@@ -410,10 +413,10 @@ void draw(PixelBuffer* pixelBuffer, Entity* camera,
 		}
 		Matrix4 correctForScreen;
 		{
-			float tmp[16] = { SCREEN_WIDTH/2, 0              ,0, SCREEN_WIDTH/2 ,
-						 	  0             , SCREEN_HEIGHT/2,0, SCREEN_HEIGHT/2,
-						 	  0             , 0              ,1, 1              ,
-		 	 				  0             , 0              ,0, 1              };
+			float tmp[16] = { SCREEN_WIDTH/2, 0              ,0      , SCREEN_WIDTH/2 ,
+						 	  0             , SCREEN_HEIGHT/2,0      , SCREEN_HEIGHT/2,
+						 	  0             , 0              ,INT_MAX/2, INT_MAX/2    ,
+		 	 				  0             , 0              ,0      , 1              };
 			memcpy((void*) correctForScreen.values, tmp, 16*sizeof(float));
 		}
 		
@@ -450,6 +453,11 @@ void draw(PixelBuffer* pixelBuffer, Entity* camera,
 				//Projection Space -> Screen Friendly
 				displayPoly.vectors[j] = transform(correctForScreen, displayPoly.vectors[j], 1);
 			}
+            if(!(isVectorCulled[0] || isVectorCulled[1] || isVectorCulled[2]) && shouldDrawSurfaces)
+            {
+            	rasterizePolygon(displayPoly, fillColor, pixelBuffer);
+            }
+            fillColor = ~fillColor;
 			//Only draw lines between vectors that haven't been culled
             if(shouldDrawWireframe)
             {
@@ -466,11 +474,6 @@ void draw(PixelBuffer* pixelBuffer, Entity* camera,
                     drawLine(displayPoly.vectors[2], displayPoly.vectors[0], lineColor, pixelBuffer);		
                 }
             }
-            if(!(isVectorCulled[0] || isVectorCulled[1] || isVectorCulled[2]) && shouldDrawSurfaces)
-            {
-            	rasterizePolygon(displayPoly, fillColor, pixelBuffer);
-            }
-            fillColor = ~fillColor;
 		}
 	}
 }
@@ -551,6 +554,7 @@ int main( int argc, char* args[] )
 	SDL_Renderer* renderer = NULL;
 	SDL_Texture* screenTexture = NULL;
 	uint32_t* pixels = NULL;
+	int32_t* zBuffer = NULL;
 	bool running = true;
     bool paused = false;
     bool shouldDrawWireframe = false;
@@ -583,7 +587,12 @@ int main( int argc, char* args[] )
 	SDL_Joystick* gamePad = SDL_JoystickOpen( 0 );
 
 	pixels = (uint32_t*) malloc(SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32_t));
-	PixelBuffer pixelBuffer = {pixels, SCREEN_WIDTH, SCREEN_HEIGHT};
+	zBuffer = (int32_t*) malloc(SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(int32_t));
+	PixelBuffer pixelBuffer = {pixels, zBuffer, SCREEN_WIDTH, SCREEN_HEIGHT};
+	for (int i = 0; i < pixelBuffer.width * pixelBuffer.height; i++)
+	{
+		pixelBuffer.zBuffer[i] = INT_MAX;
+	}
 
 	//Initialise Meshes and Entities ====
 	//Load meshes
@@ -732,6 +741,12 @@ int main( int argc, char* args[] )
 		SDL_RenderPresent(renderer);
 		//Clear the pixel buffer
 		memset((void*)pixelBuffer.pixels, 0, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32_t));
+
+		//Clear zBuffer
+		for (int i = 0; i < pixelBuffer.width * pixelBuffer.height; i++)
+		{
+			pixelBuffer.zBuffer[i] = INT_MAX;
+		}
 
 		//Lock to 60 fps
 		int delta = SDL_GetTicks() - curTime;
