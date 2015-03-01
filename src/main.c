@@ -20,6 +20,10 @@ seoras1@gmail.com
 	#include <SDL.h>
 #endif
 
+#include "engine_types.h"
+#include "load_level.h"
+#include "meshes.h"
+
 const int SCREEN_WIDTH  = 1366;//300;//640;
 const int SCREEN_HEIGHT = 768;//300;//480;
 
@@ -33,53 +37,9 @@ const float FOV_Y       = 10000;//960;//1.5f;
 
 //Temp Globals
 
-typedef struct 
-{
-	uint32_t* pixels;
-	int32_t* zBuffer;
-	int width;
-	int height;
-} PixelBuffer;
 
-typedef struct
-{
-    int x;
-    int y;
-} Vector2Int;
-
-typedef struct 
-{
-	float x;
-	float y;
-	float z;
-} Vector3;
-
-typedef struct
-{
-	Vector3 vectors[3];
-} Triangle;
-
-typedef struct
-{
-	float values[16];
-} Matrix4;
-
-typedef struct
-{
-	//Vector3 origin;
-	int polyCount;
-	Triangle* polygons;
-} Mesh;
-
-typedef struct
-{
-	Vector3 position;
-	Vector3 rotation; //TODO Quaternion?
-	Vector3 scale;
-	Mesh mesh;
-} Entity;
-
-void drawRect(int x, int y, int w, int h, uint32_t color, PixelBuffer* pixelBuffer)
+void drawRect(int x, int y, int w, int h, uint32_t color,
+              PixelBuffer* pixelBuffer)
 {
 	for (int yy = y; yy < y + h; ++yy)
 	{
@@ -89,7 +49,9 @@ void drawRect(int x, int y, int w, int h, uint32_t color, PixelBuffer* pixelBuff
 		}
 	}
 }
+
 //TODO use floats for depth buffer
+//TODO Get proper per pixel z values for each polygon
 void drawVector(Vector3 vector, uint32_t color, PixelBuffer* pixelBuffer)
 {
 	if (vector.x >= 0 && vector.x < pixelBuffer->width &&
@@ -101,7 +63,8 @@ void drawVector(Vector3 vector, uint32_t color, PixelBuffer* pixelBuffer)
 	}
 }
 
-void drawLine(Vector3 start, Vector3 end, uint32_t color, PixelBuffer* pixelBuffer)
+void drawLine(Vector3 start, Vector3 end, uint32_t color,
+              PixelBuffer* pixelBuffer)
 {
 	int x0 = (int)start.x;
     int y0 = (int)start.y;
@@ -176,7 +139,8 @@ Vector3 transform(Matrix4 matrix, Vector3 vector, float w)
 	return result;
 }
 
-void rasterizePolygon(Triangle poly, uint32_t color, PixelBuffer* pixelBuffer)
+void rasterizePolygon(Triangle poly, uint32_t color,
+                      PixelBuffer* pixelBuffer)
 {
     /*
     Pseudo Code ====
@@ -234,10 +198,13 @@ void rasterizePolygon(Triangle poly, uint32_t color, PixelBuffer* pixelBuffer)
 
     
     //Initilise vertices for triangle drawing
-    Vector2Int topL = {(int)poly.vectors[topIndex].x, (int)poly.vectors[topIndex].y};
-    Vector2Int topR = topL;
-    Vector2Int left = {(int)poly.vectors[leftIndex].x, (int)poly.vectors[leftIndex].y};
-    Vector2Int right = {(int)poly.vectors[rightIndex].x, (int)poly.vectors[rightIndex].y};
+    Vector2Int topL  = {(int)poly.vectors[topIndex].x,
+                        (int)poly.vectors[topIndex].y};
+    Vector2Int left  = {(int)poly.vectors[leftIndex].x,
+                        (int)poly.vectors[leftIndex].y};
+    Vector2Int right = {(int)poly.vectors[rightIndex].x,
+                        (int)poly.vectors[rightIndex].y};
+    Vector2Int topR  = topL;
 
     //Line drawing variables for left line
     int dxL = abs(left.x-topL.x);
@@ -305,13 +272,13 @@ void rasterizePolygon(Triangle poly, uint32_t color, PixelBuffer* pixelBuffer)
 
 //Has some temp debug parameters
 void draw(PixelBuffer* pixelBuffer, Entity* camera,
-          Entity** entityList, int entityCount,
+          Entity* entityList, int entityCount,
           bool shouldDrawWireframe,
           bool shouldDrawSurfaces)
 {
 	for (int k = 0; k < entityCount; k++) 
 	{
-		Entity* entity = entityList[k];
+		Entity* entity = &entityList[k];
 		// Rotation angles, y-axis then x-axis
 		uint32_t lineColor = 0xffffffff;
         uint32_t fillColor = 0x55555555;
@@ -570,7 +537,8 @@ int main( int argc, char* args[] )
 	window = SDL_CreateWindow(
 		"Pixel buffer Playground :P", SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT,
-		SDL_WINDOW_FULLSCREEN_DESKTOP); //TODO add key to toggle fullscreen while running.
+		SDL_WINDOW_FULLSCREEN_DESKTOP);
+    //TODO add key to toggle fullscreen while running.
 	if( window == NULL )
 	{
 		printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
@@ -583,7 +551,7 @@ int main( int argc, char* args[] )
 		SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH,
 		SCREEN_HEIGHT);
 
-	//TEMP OPen joystick
+	//TEMP Open joystick
 	SDL_Joystick* gamePad = SDL_JoystickOpen( 0 );
 
 	pixels = (uint32_t*) malloc(SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32_t));
@@ -596,32 +564,27 @@ int main( int argc, char* args[] )
 
 	//Initialise Meshes and Entities ====
 	//Load meshes
-	Mesh cube  = loadMeshFromFile("../res/meshes/cube.raw");
-	Mesh plane = loadMeshFromFile("../res/meshes/plane.raw");
-	Mesh monkey  = loadMeshFromFile("../res/meshes/monkey.raw");
+	cubeMesh = loadMeshFromFile("../res/meshes/cube.raw");
+	plane = loadMeshFromFile("../res/meshes/plane.raw");
+	monkey = loadMeshFromFile("../res/meshes/monkey.raw");
+	monkeySuperHd = loadMeshFromFile("../res/meshes/monkeysuperhd.raw");
+
+    //TEMP
+    Level level = loadLevel("../res/levels/level1.lvl");
+    EntityArray entities = createLevelEntities(level); 
 
 	//Initialise entities
 	Entity camera = {{0}};
-	Entity cubeEntity = {  .position={0, 0, -600},    .mesh=monkey, 
-                           .rotation={0, 0, 0}, .scale={100, 100, 100}};
-	Entity cubeEntity2 = { .position={300, 0, 200},   .mesh=cube,
-                           .scale   ={50, 50, 50}};
+	//Entity cubeEntity = {  .position={0, 0, -600},    .mesh=monkey, 
+    //                       .rotation={0, 0, 0},       .scale={100, 100, 100}};
+	//Entity cubeEntity2 = { .position={300, 0, 200},   .mesh=monkeySuperHd,
+    //                       .rotation={-M_PI/2, 0, 0},  .scale   ={50, 50, 50}};
 
-	//Temp corridore
-	Entity hall1 = { .position={-300, 0, 200}, .mesh=plane,
-                     .scale   ={50, 50, 50}};
-	Entity hall2 = { .position={-300, 50, 150}, .mesh=plane,
-                     .rotation={M_PI/2, 0, 0}, .scale={50, 50, 50}};
-	Entity hall3 = { .position={-300, 0, 100}, .mesh=plane,
-                     .scale   ={50, 50, 50}};
 	//Create entity list and fill with entities
-	int entityCount = 5;
-	Entity** entityList = (Entity**)malloc(entityCount * sizeof(Entity*));
-	entityList[0] = &cubeEntity;
-	entityList[1] = &cubeEntity2;
-	entityList[2] = &hall1;
-	entityList[3] = &hall2;
-	entityList[4] = &hall3;
+	//int entityCount = 2;
+	//Entity* entityList = (Entity*)malloc(entityCount * sizeof(Entity));
+	//entityList[0] = cubeEntity;
+	//entityList[1] = cubeEntity2;
 
 	//Main Loop ====
 	while(running)	
@@ -727,13 +690,13 @@ int main( int argc, char* args[] )
 		
         if(!paused)
         {
-            cubeEntity.rotation.x += 0.01;
+            //entities.data[0].rotation.x += 0.01;
             //cubeEntity.rotation.z += 0.01;
-            cubeEntity.rotation.y += 0.01;
+            //entities.data[0].rotation.y += 0.01;
         }    
         
 		//Where all the drawing happens
-		draw(&pixelBuffer, &camera, entityList, entityCount, shouldDrawWireframe, shouldDrawSurfaces);
+		draw(&pixelBuffer, &camera, entities.data, entities.length, shouldDrawWireframe, shouldDrawSurfaces);
 
 		//Rendering pixel buffer to the screen
 		SDL_UpdateTexture(screenTexture, NULL, pixelBuffer.pixels, SCREEN_WIDTH * sizeof(uint32_t));		
