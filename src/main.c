@@ -108,7 +108,7 @@ void drawLine(Vector3 start, Vector3 end, uint32_t color, PixelBuffer* pixelBuff
 	//Distance between x0 and x1, y0 and y1
     int dx = abs(x1 - x0);
     int dy = abs(y1 - y0);
-	//Determin whether to step backwards or forwards through the line
+	//Determine whether to step backwards or forwards through the line
    	int sx = (x0 < x1) ? 1 : -1;
     int sy = (y0 < y1) ? 1 : -1;
 
@@ -300,10 +300,12 @@ void rasterizePolygon(Triangle poly, uint32_t color, PixelBuffer* pixelBuffer)
     } 
 }
 
-void draw(PixelBuffer* pixelBuffer, Entity* camera, Entity** entityList, int entityCount)
+//Has some temp debug parameters
+void draw(PixelBuffer* pixelBuffer, Entity* camera,
+          Entity** entityList, int entityCount,
+          bool shouldDrawWireframe,
+          bool shouldDrawSurfaces)
 {
-    bool shouldDrawWireframe = false;
-
 	for (int k = 0; k < entityCount; k++) 
 	{
 		Entity* entity = entityList[k];
@@ -464,8 +466,10 @@ void draw(PixelBuffer* pixelBuffer, Entity* camera, Entity** entityList, int ent
                     drawLine(displayPoly.vectors[2], displayPoly.vectors[0], lineColor, pixelBuffer);		
                 }
             }
-            if(!(isVectorCulled[0] || isVectorCulled[1] || isVectorCulled[2]))
-            rasterizePolygon(displayPoly, fillColor, pixelBuffer);
+            if(!(isVectorCulled[0] || isVectorCulled[1] || isVectorCulled[2]) && shouldDrawSurfaces)
+            {
+            	rasterizePolygon(displayPoly, fillColor, pixelBuffer);
+            }
             fillColor = ~fillColor;
 		}
 	}
@@ -549,6 +553,8 @@ int main( int argc, char* args[] )
 	uint32_t* pixels = NULL;
 	bool running = true;
     bool paused = false;
+    bool shouldDrawWireframe = false;
+    bool shouldDrawSurfaces = true;
 
 	//Initialise SDL ====
 	if( SDL_Init( SDL_INIT_EVERYTHING) < 0 )
@@ -622,6 +628,19 @@ int main( int argc, char* args[] )
 			case SDL_QUIT:
 				running = false;
 				break;
+			case SDL_KEYDOWN:
+				switch(e.key.keysym.sym)
+				{
+					case SDLK_SPACE:
+						paused = !paused;
+						break;
+					case SDLK_1:
+						shouldDrawWireframe = !shouldDrawWireframe;
+						break;
+					case SDLK_2:
+						shouldDrawSurfaces = !shouldDrawSurfaces;
+						break;
+				}
 			}
 		}
 		//Joystick input
@@ -695,10 +714,6 @@ int main( int argc, char* args[] )
 			{
 				camera.rotation.y -= 0.02;
 			}
-			if (keyState[SDL_SCANCODE_SPACE])
-			{
-                paused = !paused;
-			}
 		}
 		
         if(!paused)
@@ -709,7 +724,7 @@ int main( int argc, char* args[] )
         }    
         
 		//Where all the drawing happens
-		draw(&pixelBuffer, &camera, entityList, entityCount);
+		draw(&pixelBuffer, &camera, entityList, entityCount, shouldDrawWireframe, shouldDrawSurfaces);
 
 		//Rendering pixel buffer to the screen
 		SDL_UpdateTexture(screenTexture, NULL, pixelBuffer.pixels, SCREEN_WIDTH * sizeof(uint32_t));		
@@ -725,4 +740,5 @@ int main( int argc, char* args[] )
 			SDL_Delay(1000/60 - delta);
 		}
 	}
+	return 0;
 }
