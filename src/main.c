@@ -20,16 +20,16 @@ seoras1@gmail.com
 	#include <SDL.h>
 #endif
 
-const int SCREEN_WIDTH = 640;//1366;//300;//640;
-const int SCREEN_HEIGHT = 480;//768;//300;//480;
+const int SCREEN_WIDTH = 1366;//300;//640;
+const int SCREEN_HEIGHT = 768;//300;//480;
 
 //Projection Constants
-const int VIEW_WIDTH = 640;
-const int VIEW_HEIGHT = 480;
+const int VIEW_WIDTH = 1366;
+const int VIEW_HEIGHT = 768;
 const int Z_FAR = 500;
 const int Z_NEAR = 10;
-const float FOV_X = 1280;//1.5f;
-const float FOV_Y = 960;//1.5f;
+const float FOV_X = 10000;//1280;//1.5f;
+const float FOV_Y = 10000;//960;//1.5f;
 
 //Temp Globals
 
@@ -428,6 +428,9 @@ int main( int argc, char* args[] )
 		SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH,
 		SCREEN_HEIGHT);
 
+	//TEMP OPen joystick
+	SDL_Joystick* gamePad = SDL_JoystickOpen( 0 );
+
 	pixels = (uint32_t*) malloc(SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32_t));
 	PixelBuffer pixelBuffer = {pixels, SCREEN_WIDTH, SCREEN_HEIGHT};
 
@@ -435,7 +438,7 @@ int main( int argc, char* args[] )
 	//Load meshes
 	Mesh cube  = loadMeshFromFile("../res/meshes/cube.raw");
 	Mesh plane = loadMeshFromFile("../res/meshes/plane.raw");
-	Mesh monkey  = loadMeshFromFile("../res/meshes/monkeyhd.raw");
+	Mesh monkey  = loadMeshFromFile("../res/meshes/monkey.raw");
 
 	//Initialise entities
 	Entity camera = {{0}};
@@ -466,20 +469,59 @@ int main( int argc, char* args[] )
 		int curTime = SDL_GetTicks();
 		
 		//SDL Event Loop
-		SDL_Event event;
-    	while (SDL_PollEvent(&event))
+		SDL_Event e;
+    	while (SDL_PollEvent(&e))
 		{
-			switch(event.type)
+			switch(e.type)
 			{
 			case SDL_QUIT:
 				running = false;
 				break;
 			}
+		}
+		//Joystick input
+		{
+			const int JOYSTICK_DEAD_ZONE = 8000;
+			int moveVel = 3;
+	        if( SDL_JoystickGetAxis(gamePad, 0) < -JOYSTICK_DEAD_ZONE )
+	        {
+	            camera.position.z += moveVel * cosf(camera.rotation.y - M_PI/2);
+				camera.position.x += moveVel * sinf(camera.rotation.y - M_PI/2);
+	        }
+	        //Right of dead zone
+	        else if( SDL_JoystickGetAxis(gamePad, 0) > JOYSTICK_DEAD_ZONE )
+	        {
+	            camera.position.z += moveVel * cosf(camera.rotation.y + M_PI/2);
+				camera.position.x += moveVel * sinf(camera.rotation.y + M_PI/2);
+	        }
+            //Left of dead zone
+            if( SDL_JoystickGetAxis(gamePad, 1) < -JOYSTICK_DEAD_ZONE )
+            {
+                camera.position.z += moveVel * cosf(camera.rotation.y + M_PI);
+				camera.position.x += moveVel * sinf(camera.rotation.y + M_PI);
+            }
+            //Right of dead zone
+            else if( SDL_JoystickGetAxis(gamePad, 1) > JOYSTICK_DEAD_ZONE )
+            {
+                camera.position.z += moveVel * cosf(camera.rotation.y);
+				camera.position.x += moveVel * sinf(camera.rotation.y);
+            }
+            //Left of dead zone
+            if( SDL_JoystickGetAxis(gamePad, 2) < -JOYSTICK_DEAD_ZONE )
+            {
+                camera.rotation.y += 0.04 * -SDL_JoystickGetAxis(gamePad, 2) / 32767.f;
+            }
+            //Right of dead zone
+            else if( SDL_JoystickGetAxis(gamePad, 2) > JOYSTICK_DEAD_ZONE )
+            {
+                camera.rotation.y -= 0.04 * SDL_JoystickGetAxis(gamePad, 2) / 32767.f;
+            }
     	}
+ 
 		//Keyboard Input
 		const uint8_t* keyState = SDL_GetKeyboardState(NULL);	
-		{
-			int moveVel = 3; 
+		{ int moveVel = 3; 
+
 			if (keyState[SDL_SCANCODE_A])
 			{
 				camera.position.z += moveVel * cosf(camera.rotation.y - M_PI/2);
@@ -524,7 +566,6 @@ int main( int argc, char* args[] )
 
 		//Lock to 60 fps
 		int delta = SDL_GetTicks() - curTime;
-		SDL_Log("%d", delta);
 		if (delta < 1000/60)
 		{
 			SDL_Delay(1000/60 - delta);
