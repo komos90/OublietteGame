@@ -4,6 +4,7 @@
  seoras1@gmail.com
  2015
  */
+#pragma once
 
 #include "engine_types.h"
 
