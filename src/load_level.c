@@ -4,10 +4,12 @@
  seoras1@gmail.com
  2015
  */
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #ifdef __linux__
 	#include <SDL2/SDL.h>
+	#define M_PI 3.14159265358979323846
 #elif _WIN32
 	#include <SDL.h>
 #endif
@@ -69,8 +71,19 @@ EntityArray createLevelEntities(Level level)
     int entityCount = 0;
     for (int i = 0; i < level.width * level.height; i++)
     {
-        if (level.data[i] == '#')
-            entityCount++;
+        if (level.data[i] == '.')
+        {
+            if (i - level.width < 0 || level.data[i - level.width] == '#')
+                entityCount++;
+            if (i + level.width > level.width * level.height || level.data[i + level.width] == '#')
+                entityCount++;
+            if (i - 1 < 0 || level.data[i - 1] == '#')
+                entityCount++;
+            if (i + 1 > level.width * level.height || level.data[i + 1] == '#')
+                entityCount++;
+            entityCount += 2;
+        }
+
     }
 
     EntityArray entities = {.length = entityCount};
@@ -83,14 +96,47 @@ EntityArray createLevelEntities(Level level)
         int x = i % level.width;
         int z = i / level.width;
         
-        if (level.data[i] == '#') {
+        if (level.data[i] == '.') {
+           
 
-            //Create cube
-            Entity wallEntity = { .position = {x * 100, 0, z * 100}, .scale = {50, 50, 50},
-                                  .mesh=cubeMesh};
+            Entity floor   = { .position = {x * 100, -50, z * 100},  .scale = {50, 50, 50},
+                               .rotation = {M_PI/2, 0, 0},            .mesh=plane};
+            Entity ceiling = { .position = {x * 100, 50, z * 100}, .scale = {50, 50, 50},
+                               .rotation = {-M_PI/2, 0, 0},          .mesh=plane};
 
-            entities.data[entityIndex] = wallEntity;
-            entityIndex++;
+            //Create north plane
+            Entity northWall = { .position = {x * 100, 0, z * 100 - 50}, .scale = {50, 50, 50},
+                                 .rotation = {0, 0, 0},            .mesh=plane};
+            if (i - level.width < 0 || level.data[i - level.width] == '#')
+            {
+                entities.data[entityIndex++] = northWall;
+            }
+            
+            Entity southWall = { .position = {x * 100, 0, z * 100 + 50}, .scale = {50, 50, 50},
+                                 .rotation = {M_PI, 0, 0},            .mesh=plane};
+            if (i + level.width > level.width * level.height || level.data[i + level.width] == '#')
+            {
+                entities.data[entityIndex++] = southWall;
+            }
+            
+            Entity eastWall = { .position = {x * 100 - 50, 0, z * 100}, .scale = {50, 50, 50},
+                                 .rotation = {0, M_PI/2, 0},            .mesh=plane};
+            if (i - 1 < 0 || level.data[i - 1] == '#')
+            {
+                entities.data[entityIndex++] = eastWall;
+            }
+            
+            Entity westWall = { .position = {x * 100 + 50, 0, z * 100}, .scale = {50, 50, 50},
+                                 .rotation = {0, -M_PI/2, 0},            .mesh=plane};
+            if (i + 1 > level.width * level.height || level.data[i + 1] == '#')
+            {
+                entities.data[entityIndex++] = westWall;
+            }
+
+
+
+            entities.data[entityIndex++] = floor;
+            entities.data[entityIndex++] = ceiling;
         }
     }
     return entities;

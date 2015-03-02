@@ -101,24 +101,23 @@ Matrix4 mulMatrix4(Matrix4 mat1, Matrix4 mat2)
 	return result;
 }
 
-Vector3 transform(Matrix4 matrix, Vector3 vector) 
+Vector4 transform(Matrix4 matrix, Vector4 vector) 
 {
-    float w;
-    Vector3 result;
+    Vector4 result;
 	result.x = matrix.values[0] * vector.x + matrix.values[1] * vector.y +
-			   matrix.values[2] * vector.z + matrix.values[3] * 1.f;
+			   matrix.values[2] * vector.z + matrix.values[3] * vector.w ;
 	result.y = matrix.values[4] * vector.x + matrix.values[5] * vector.y +
-			   matrix.values[6] * vector.z + matrix.values[7] * 1.f;
+			   matrix.values[6] * vector.z + matrix.values[7] * vector.w;
 	result.z = matrix.values[8] * vector.x + matrix.values[9] * vector.y +
-			   matrix.values[10] * vector.z + matrix.values[11] * 1.f;
-	w = matrix.values[12] * vector.x + matrix.values[13] * vector.y +
-			   matrix.values[14] * vector.z + matrix.values[15] * 1.f;
+			   matrix.values[10] * vector.z + matrix.values[11] * vector.w;
+	result.w = matrix.values[12] * vector.x + matrix.values[13] * vector.y +
+			   matrix.values[14] * vector.z + matrix.values[15] * vector.w;
 
-	if (w != 0.f && w != 1.f) {
-		result.x /= w;
-		result.y /= w;
-		result.z /= w;
-		//result.w /= result.w;
+	if (result.w != 0.f && result.w != 1.f) {
+		result.x /= result.w;
+		result.y /= result.w;
+		result.z /= result.w;
+		result.w /= result.w;
 	}
     //SDL_Log("%f, %f, %f, %f", result.x, result.y, result.z, result.w);
 	return result;
@@ -151,7 +150,7 @@ void rasterizePolygon(Triangle poly, uint32_t color,
     rightIndex  = (topIndex + 1) % 3;
     
     //Initilise vertices for triangle drawing
-    Vector3Int top   = {(int)poly.vectors[topIndex].x,
+    Vector3Int topLO = {(int)poly.vectors[topIndex].x,
                         (int)poly.vectors[topIndex].y,
                         (int)poly.vectors[topIndex].z};
     Vector3Int left  = {(int)poly.vectors[leftIndex].x,
@@ -160,8 +159,9 @@ void rasterizePolygon(Triangle poly, uint32_t color,
     Vector3Int right = {(int)poly.vectors[rightIndex].x,
                         (int)poly.vectors[rightIndex].y,
                         (int)poly.vectors[rightIndex].z};
-    Vector3Int topR  = top;
-    Vector3Int topL  = top;
+    Vector3Int topRO  = topLO;
+    Vector3Int topR  = topLO;
+    Vector3Int topL  = topLO;
 
     //Line drawing variables for left line
     int dxL = abs(left.x-topL.x);
@@ -192,6 +192,7 @@ void rasterizePolygon(Triangle poly, uint32_t color,
                 //Handle breakpoint on right line
                 if (topR.x == right.x && topR.y == right.y)
                 {
+                    topRO = right;
                     right = left;
                     dxR = abs(right.x-topR.x);
                     dyR = abs(right.y-topR.y);
@@ -205,10 +206,10 @@ void rasterizePolygon(Triangle poly, uint32_t color,
                 if (e2R < dyR) { errR += dxR; topR.y += syR; }
                 
                 //calculate zR value by interpolating between top.z and right.z
-                if(top.y == right.y) 
-                    zR = top.z;
+                if(topRO.y == right.y) 
+                    zR = topRO.z;
                 else
-                    zR = top.z + (right.z - top.z) * ((float)(topR.y - right.y) / (float)(top.y - right.y));
+                    zR = topRO.z + (right.z - topRO.z) * ((float)(topR.y - right.y) / (float)(topRO.y - right.y));
             }
             //Fill scanline
             for (int i = topL.x; i < topR.x; i++)
@@ -216,7 +217,7 @@ void rasterizePolygon(Triangle poly, uint32_t color,
                 //calculate z value by interpolating between zL and zR
                 float curZ = zL + (zR -zL) * ((float)(i - topL.x) / (float)(topR.x - topL.x));
                 Vector3 tmp = {(int)i, (int)topL.y, curZ};
-                //uint32_t outCol = (uint8_t)(curZ); 
+                //uint32_t outCol = ((uint8_t)(curZ)) + ((uint8_t)(curZ) >> 8) + ((uint8_t)(curZ) >> 16); 
                 drawVector(tmp, color, pixelBuffer);
             }
         } 
@@ -226,6 +227,7 @@ void rasterizePolygon(Triangle poly, uint32_t color,
                 break;
             else
             {
+                topLO = left;
                 left = right;
                 dxL = abs(left.x-topL.x);
                 dyL = abs(left.y-topL.y);
@@ -239,10 +241,10 @@ void rasterizePolygon(Triangle poly, uint32_t color,
         if (e2L < dyL) { errL += dxL; topL.y += syL; }
 
         //calculate zL value by interpolating between top.z and left.z
-        if (top.y == left.y)
-            zL = top.z;
+        if (topLO.y == left.y)
+            zL = topLO.z;
         else
-            zL = top.z + (left.z - top.z) * ((float)(topL.y - left.y) / (float)(top.y - left.y));
+            zL = topLO.z + (left.z - topLO.z) * ((float)(topL.y - left.y) / (float)(topLO.y - left.y));
     } 
 }
 
@@ -380,25 +382,38 @@ void draw(PixelBuffer pixelBuffer, Entity* camera,
 
 		for (int i = 0; i < entity->mesh.polyCount; i++)
 		{	
-			Triangle displayPoly = entity->mesh.polygons[i];
+            Triangle displayPoly;
+			Vector4 displayVertices[5];
+            int displayVerticesLength = 3;
 			bool isVectorCulled[3] = {false, false, false};		
 
 			for (int j = 0; j < 3; j++)
 			{
+                //Convert triangular Vector3 polygon to up to five vector4s
+                displayVertices[j].x = entityList[k].mesh.polygons[i].vectors[j].x;
+                displayVertices[j].y = entityList[k].mesh.polygons[i].vectors[j].y;
+                displayVertices[j].z = entityList[k].mesh.polygons[i].vectors[j].z;
+                displayVertices[j].w = 1.f; 
 				//Apply all transformations =====
-				displayPoly.vectors[j] = transform(finalTransform, displayPoly.vectors[j]);
+				displayVertices[j] = transform(finalTransform, displayVertices[j]);
 				
 				//Cull vertices
-				if (displayPoly.vectors[j].x < -1.f || displayPoly.vectors[j].x > 1.f ||
-					displayPoly.vectors[j].y < -1.f || displayPoly.vectors[j].y > 1.f ||
-					displayPoly.vectors[j].z < -1.f || displayPoly.vectors[j].z > 1.f)
+				if (displayVertices[j].x < -1.f || displayVertices[j].x > 1.f ||
+					displayVertices[j].y < -1.f || displayVertices[j].y > 1.f ||
+					displayVertices[j].z < -1.f || displayVertices[j].z > 1.f)
 				{
 					isVectorCulled[j] = true;
 				}
 
 				//Projection Space -> Screen Friendly
-				displayPoly.vectors[j] = transform(correctForScreen, displayPoly.vectors[j]);
+				displayVertices[j] = transform(correctForScreen, displayVertices[j]);
+
+                //Convert back to vector 3 polygon
+                displayPoly.vectors[j].x = displayVertices[j].x;
+                displayPoly.vectors[j].y = displayVertices[j].y;
+                displayPoly.vectors[j].z = displayVertices[j].z;
 			}
+
             if(!(isVectorCulled[0] || isVectorCulled[1] || isVectorCulled[2]) && shouldDrawSurfaces)
             {
             	rasterizePolygon(displayPoly, fillColor, pixelBuffer);

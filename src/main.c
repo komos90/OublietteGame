@@ -25,8 +25,8 @@ seoras1@gmail.com
 #include "meshes.h"
 #include "gfx_engine.h"
 
-static const int SCREEN_WIDTH  = 854;//1366;//427;//854;//300;//640;
-static const int SCREEN_HEIGHT = 480;//768;//240;//480;//300;//480;
+static const int SCREEN_WIDTH  = 427;//854;//300;//640;
+static const int SCREEN_HEIGHT = 240;//480;//300;//480;
 
 //Temp Globals
 
@@ -53,6 +53,8 @@ int main( int argc, char* args[] )
 		renderer, SDL_PIXELFORMAT_ARGB8888,
 		SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH,
 		SCREEN_HEIGHT);
+    //grab cursor
+    SDL_SetRelativeMouseMode(true);
 
     //Allocate pixel and z-buffer
     uint32_t* pixels = (uint32_t*) malloc(SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32_t));
@@ -69,8 +71,8 @@ int main( int argc, char* args[] )
     //Load level from file and add level entities to entity list
     Level level = loadLevel("../res/levels/level2.lvl");
     EntityArray entities = createLevelEntities(level); 
-    Entity temp = {.position = {-200, 0, -200}, .mesh=monkey, .scale={100, 100, 100}};
-    entities.data[0] = temp;
+    //Entity temp = {.position = {-200, -200, -200}, .mesh=plane, .scale={100, 100, 100}, .rotation={M_PI/2,0,0}};
+    //entities.data[0] = temp;
 
 	//Initialise Entities
 	Entity camera = {{-100, 0, -100}, .rotation={0, -M_PI/2}};
@@ -130,6 +132,11 @@ int main( int argc, char* args[] )
 						shouldDrawSurfaces = !shouldDrawSurfaces;
 						break;
 				}
+                break;
+            case SDL_MOUSEMOTION:
+                camera.rotation.y -= e.motion.xrel * 0.001;
+                //camera.rotation.z -= e.motion.y * 0.001;
+                break;
 			}
 		}
 		//Joystick input
@@ -205,8 +212,8 @@ int main( int argc, char* args[] )
 		
         if(!paused)
         {
-            entities.data[0].rotation.x += 0.01;
-            entities.data[0].rotation.y += 0.01;
+            //entities.data[0].rotation.x += 0.01;
+            //entities.data[0].rotation.y += 0.01;
         }    
        
         //Send game entities to gfx engine to be rendered 
