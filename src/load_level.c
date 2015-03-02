@@ -6,7 +6,6 @@
  */
 #include<stdio.h>
 #include<stdlib.h>
-#include <limits.h>
 #ifdef __linux__
 	#include <SDL2/SDL.h>
 #elif _WIN32
@@ -18,21 +17,12 @@
 
 Level loadLevel(char* fileName)
 {
-	//Replace relative path with realpath for linux
-	char fullFileName[256];
     Level level;
-
-	#ifdef __linux__
-		realpath(fileName, fullFileName);
-	#else
-		strcpy(fullFileName, fileName);
-	#endif
-
-	FILE* file = fopen(fullFileName, "r");
+	FILE* file = fopen(fileName, "r");
 	if (file == NULL)
 	{
 		SDL_Log("Could not open level file.");
-		SDL_Log(fullFileName);
+		SDL_Log(fileName);
 	}
 
 	//Save the pos beginning of file

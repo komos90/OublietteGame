@@ -12,7 +12,8 @@ typedef struct
 {
     int x;
     int y;
-} Vector2Int;
+    int z;
+} Vector3Int;
 
 typedef struct 
 {
@@ -20,6 +21,14 @@ typedef struct
 	float y;
 	float z;
 } Vector3;
+
+typedef struct
+{
+    float x;
+    float y;
+    float z;
+    float w;
+} Vector4;
 
 typedef struct
 {

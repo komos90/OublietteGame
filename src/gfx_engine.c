@@ -5,7 +5,6 @@ Seoras Macdonald
 seoras1@gmail.com
 2015
 */
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -13,6 +12,7 @@ seoras1@gmail.com
 #include <string.h>
 #include <math.h>
 #include <limits.h>
+#include <float.h>
 
 #ifdef __linux__
     #include <SDL2/SDL.h>
@@ -22,7 +22,6 @@ seoras1@gmail.com
 
 #include "gfx_engine.h"
 #include "engine_types.h"
-
 
 void drawRect(int x, int y, int w, int h, uint32_t color,
               PixelBuffer pixelBuffer)
@@ -40,9 +39,7 @@ void drawRect(int x, int y, int w, int h, uint32_t color,
 //TODO Get proper per pixel z values for each polygon
 void drawVector(Vector3 vector, uint32_t color, PixelBuffer pixelBuffer)
 {
-	if (vector.x >= 0 && vector.x < pixelBuffer.width &&
-		vector.y >= 0 && vector.y < pixelBuffer.height && 
-		vector.z < pixelBuffer.zBuffer[(int)vector.y  * pixelBuffer.width + (int)vector.x])
+	if (vector.z < pixelBuffer.zBuffer[(int)vector.y * pixelBuffer.width + (int)vector.x])
 	{
 		pixelBuffer.pixels[(int)vector.y  * pixelBuffer.width + (int)vector.x] = color;
 		pixelBuffer.zBuffer[(int)vector.y  * pixelBuffer.width + (int)vector.x] = vector.z;
@@ -130,37 +127,6 @@ Vector3 transform(Matrix4 matrix, Vector3 vector)
 void rasterizePolygon(Triangle poly, uint32_t color,
                       PixelBuffer pixelBuffer)
 {
-    /*
-    Pseudo Code ====
-    Find the top vertex
-    curX0, curY0 = 0
-    for(;;)
-    {
-        find curX1 for scanline curY0
-        fill scanline
-        if (curX1, curY1) == rightmostVertex
-            topR = rightmostVertex
-            rightmostVertex = leftmostVertex
-        if (curX0, curY0) == leftmostVertex
-            topL = leftmostVertex
-            leftmostVertex = rightmostVertex
-        if (curX0, curY0) == rightmostVertex
-            end
-        find curX0
-    }
-
-    int dx = abs(x1-x0), sx = x0<x1 ? 1 : -1;
-    int dy = abs(y1-y0), sy = y0<y1 ? 1 : -1; 
-    int err = (dx>dy ? dx : -dy)/2, e2;
-    for(;;){
-        setPixel(x0,y0);
-        if (x0==x1 && y0==y1) break;
-        e2 = err;
-        if (e2 >-dx) { err -= dy; x0 += sx; }
-        if (e2 < dy) { err += dx; y0 += sy; }
-    }
-    */
-
     int topIndex = 0;
     int leftIndex = 0;
     int rightIndex = 0;
@@ -183,16 +149,19 @@ void rasterizePolygon(Triangle poly, uint32_t color,
     //Find left and right vertices
     leftIndex  = (topIndex + 2) % 3;
     rightIndex  = (topIndex + 1) % 3;
-
     
     //Initilise vertices for triangle drawing
-    Vector2Int topL  = {(int)poly.vectors[topIndex].x,
-                        (int)poly.vectors[topIndex].y};
-    Vector2Int left  = {(int)poly.vectors[leftIndex].x,
-                        (int)poly.vectors[leftIndex].y};
-    Vector2Int right = {(int)poly.vectors[rightIndex].x,
-                        (int)poly.vectors[rightIndex].y};
-    Vector2Int topR  = topL;
+    Vector3Int top   = {(int)poly.vectors[topIndex].x,
+                        (int)poly.vectors[topIndex].y,
+                        (int)poly.vectors[topIndex].z};
+    Vector3Int left  = {(int)poly.vectors[leftIndex].x,
+                        (int)poly.vectors[leftIndex].y,
+                        (int)poly.vectors[leftIndex].z};
+    Vector3Int right = {(int)poly.vectors[rightIndex].x,
+                        (int)poly.vectors[rightIndex].y,
+                        (int)poly.vectors[rightIndex].z};
+    Vector3Int topR  = top;
+    Vector3Int topL  = top;
 
     //Line drawing variables for left line
     int dxL = abs(left.x-topL.x);
@@ -209,6 +178,10 @@ void rasterizePolygon(Triangle poly, uint32_t color,
     int syR = topR.y<right.y ? 1 : -1; 
     int errR = (dxR>dyR ? dxR : -dyR)/2;
     int e2R;
+
+    //z-buffer
+    float zL = topL.z;
+    float zR = topL.z;
 
     for(;;)
     {
@@ -230,11 +203,20 @@ void rasterizePolygon(Triangle poly, uint32_t color,
                 e2R = errR;
                 if (e2R >-dxR) { errR -= dyR; topR.x += sxR; }
                 if (e2R < dyR) { errR += dxR; topR.y += syR; }
+                
+                //calculate zR value by interpolating between top.z and right.z
+                if(top.y == right.y) 
+                    zR = top.z;
+                else
+                    zR = top.z + (right.z - top.z) * ((float)(topR.y - right.y) / (float)(top.y - right.y));
             }
             //Fill scanline
             for (int i = topL.x; i < topR.x; i++)
             {
-                Vector3 tmp = {(int)i, (int)topL.y, poly.vectors[0].z};
+                //calculate z value by interpolating between zL and zR
+                float curZ = zL + (zR -zL) * ((float)(i - topL.x) / (float)(topR.x - topL.x));
+                Vector3 tmp = {(int)i, (int)topL.y, curZ};
+                //uint32_t outCol = (uint8_t)(curZ); 
                 drawVector(tmp, color, pixelBuffer);
             }
         } 
@@ -255,6 +237,12 @@ void rasterizePolygon(Triangle poly, uint32_t color,
         e2L = errL;
         if (e2L >-dxL) { errL -= dyL; topL.x += sxL; }
         if (e2L < dyL) { errL += dxL; topL.y += syL; }
+
+        //calculate zL value by interpolating between top.z and left.z
+        if (top.y == left.y)
+            zL = top.z;
+        else
+            zL = top.z + (left.z - top.z) * ((float)(topL.y - left.y) / (float)(top.y - left.y));
     } 
 }
 
@@ -332,21 +320,21 @@ void draw(PixelBuffer pixelBuffer, Entity* camera,
         }
 
 	//Camera translate Matrix	
-		Matrix4 cameraTranslate;
+		Matrix4 cameraInvTranslate;
 		{
 			float tmp[16] = { 1, 0, 0, -camera->position.x,
 						 	  0, 1, 0, -camera->position.y,
 						 	  0, 0, 1, -camera->position.z,
 		 	 				  0, 0, 0, 1        };
-			memcpy((void*) cameraTranslate.values, tmp, 16*sizeof(float));
+			memcpy((void*) cameraInvTranslate.values, tmp, 16*sizeof(float));
 		}
-		Matrix4 cameraInvTranslate;
+		Matrix4 cameraTranslate;
 		{
 			float tmp[16] = { 1, 0, 0, camera->position.x,
 						 	  0, 1, 0, camera->position.y,
 						 	  0, 0, 1, camera->position.z,
 		 	 				  0, 0, 0, 1        };
-			memcpy((void*) cameraInvTranslate.values, tmp, 16*sizeof(float));
+			memcpy((void*) cameraTranslate.values, tmp, 16*sizeof(float));
 		}
 		//Camera translate Matrix	
 		Matrix4 orthoProjection;
@@ -370,7 +358,7 @@ void draw(PixelBuffer pixelBuffer, Entity* camera,
 		{
             int w = pixelBuffer.width;
             int h = pixelBuffer.height;
-            int d = INT_MAX;
+            float d = 10000000.f;//pixelBuffer.width;
 			float tmp[16] = { w/2, 0  ,0  , w/2,
 						 	  0  , h/2,0  , h/2,
 						 	  0  , 0  ,d/2, d/2,
@@ -438,22 +426,14 @@ void draw(PixelBuffer pixelBuffer, Entity* camera,
 
 Mesh loadMeshFromFile(char* fileName)
 {
-	//Replace relative path with realpath for linux
-	char fullFileName[256];
-	#ifdef __linux__
-		realpath(fileName, fullFileName);
-	#else
-		strcpy(fullFileName, fileName);
-	#endif
-
-	FILE* file = fopen(fullFileName, "r");
+	FILE* file = fopen(fileName, "r");
 	Mesh mesh = {0};
 	int lineCount = 0;
 
 	if (file == NULL)
 	{
 		SDL_Log("Could not open mesh file.");
-		SDL_Log(fullFileName);
+		SDL_Log(fileName);
 	}
 
 	//Save the pos beginning of file
@@ -475,7 +455,7 @@ Mesh loadMeshFromFile(char* fileName)
 	char line[256] = {0};
 	int i = 0;
 	int k = 0;
-	fgets(line, 255, file);
+	if(!fgets(line, 255, file)) SDL_Log("fgets error!");
 	while (!feof(file))
 	{
 		float vertices[9] = {0};
@@ -499,7 +479,7 @@ Mesh loadMeshFromFile(char* fileName)
 		mesh.polygons[i].vectors[2].x = vertices[6];
 		mesh.polygons[i].vectors[2].y = vertices[7];
 		mesh.polygons[i].vectors[2].z = vertices[8];
-		fgets(line, 255, file);
+		if(!fgets(line, 255, file)) SDL_Log("fgets error!");
 		i++;
 	}
 	return mesh;
