@@ -18,7 +18,7 @@ static const float FOV_X       = 10000;//1280;//1.5f;
 static const float FOV_Y       = 10000;//960;//1.5f;
 
 //IDEA have pixelBuffer as static variable in gfx_engine, use a function to set it?
-void drawRect (int x, int y, int w, int h, uint32_t color, PixelBuffer pixelBuffer);
+void drawRect (SDL_Rect rect, uint32_t color, PixelBuffer pixelBuffer);
 void drawVector (Vector3 vector, uint32_t color, PixelBuffer pixelBuffer);
 void drawLine (Vector3 start, Vector3 end, uint32_t color, PixelBuffer pixelBuffer);
 void rasterizePolygon (Triangle poly, uint32_t color, PixelBuffer pixelBuffer);
