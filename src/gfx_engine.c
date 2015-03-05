@@ -25,65 +25,65 @@ seoras1@gmail.com
 
 void drawRect(SDL_Rect rect, uint32_t color, PixelBuffer pixelBuffer)
 {
-	for (int yy = rect.y; yy < rect.y + rect.h; ++yy)
-	{
-		for (int xx = rect.x; xx < rect.x + rect.w; ++xx)
-		{
-			pixelBuffer.pixels[yy * pixelBuffer.width + xx] = color;
-		}
-	}
+    for (int yy = rect.y; yy < rect.y + rect.h; ++yy)
+    {
+        for (int xx = rect.x; xx < rect.x + rect.w; ++xx)
+        {
+            pixelBuffer.pixels[yy * pixelBuffer.width + xx] = color;
+        }
+    }
 }
 
 //TODO use floats for depth buffer
 //TODO Get proper per pixel z values for each polygon
 void drawVector(Vector3 vector, uint32_t color, PixelBuffer pixelBuffer)
 {
-	if (vector.z < pixelBuffer.zBuffer[(int)vector.y * pixelBuffer.width + (int)vector.x])
-	{
-		pixelBuffer.pixels[(int)vector.y  * pixelBuffer.width + (int)vector.x] = color;
-		pixelBuffer.zBuffer[(int)vector.y  * pixelBuffer.width + (int)vector.x] = vector.z;
-	}
+    if (vector.z < pixelBuffer.zBuffer[(int)vector.y * pixelBuffer.width + (int)vector.x])
+    {
+        pixelBuffer.pixels[(int)vector.y  * pixelBuffer.width + (int)vector.x] = color;
+        pixelBuffer.zBuffer[(int)vector.y  * pixelBuffer.width + (int)vector.x] = vector.z;
+    }
 }
 
 void drawLine(Vector3 start, Vector3 end, uint32_t color,
               PixelBuffer pixelBuffer)
 {
-	int x0 = (int)start.x;
+    int x0 = (int)start.x;
     int y0 = (int)start.y;
     int x1 = (int)end.x;
     int y1 = (int)end.y;
     
-	//Distance between x0 and x1, y0 and y1
+    //Distance between x0 and x1, y0 and y1
     int dx = abs(x1 - x0);
     int dy = abs(y1 - y0);
-	//Determine whether to step backwards or forwards through the line
-   	int sx = (x0 < x1) ? 1 : -1;
+    //Determine whether to step backwards or forwards through the line
+       int sx = (x0 < x1) ? 1 : -1;
     int sy = (y0 < y1) ? 1 : -1;
 
     int err = dx - dy;
 
     for(;;)
-	{
-		//Draw the current pixel
-		Vector3 tmp = {x0, y0};
+    {
+        //Draw the current pixel
+        Vector3 tmp = {x0, y0};
         drawVector(tmp, color, pixelBuffer);
 
-		//Break if we reach the end of the line.
+        //Break if we reach the end of the line.
         if ((x0 == x1) && (y0 == y1)) break;
 
         int e2 = 2 * err;
-		//Step x
+        //Step x
         if (e2 > -dy)
-		{ 
-			err -= dy;
-			x0 += sx;
-		}
-		//Step y
+        { 
+            err -= dy;
+            x0 += sx;
+        }
+        //Step y
         if (e2 < dx)
-		{
-			err += dx;
-			y0 += sy;
-		}
+        {
+            err += dx;
+            y0 += sy;
+        }
     }
 }
 
@@ -210,33 +210,33 @@ void rasterizePolygon(Triangle poly, uint32_t color,
 
 Matrix4 mulMatrix4(Matrix4 mat1, Matrix4 mat2)
 {
-	Matrix4 result = {{0}};
-	for (int i = 0; i < 16; i++)
+    Matrix4 result = {{0}};
+    for (int i = 0; i < 16; i++)
         for (int j = 0; j < 4; j++)
             result.values[i] += mat1.values[(i/4)*4 + j] * mat2.values[i%4 + j*4];
-	return result;
+    return result;
 }
 
 Vector4 transform(Matrix4 matrix, Vector4 vector) 
 {
     Vector4 result;
-	result.x = matrix.values[0] * vector.x + matrix.values[1] * vector.y +
-			   matrix.values[2] * vector.z + matrix.values[3] * vector.w;
-	result.y = matrix.values[4] * vector.x + matrix.values[5] * vector.y +
-			   matrix.values[6] * vector.z + matrix.values[7] * vector.w;
-	result.z = matrix.values[8] * vector.x + matrix.values[9] * vector.y +
-			   matrix.values[10] * vector.z + matrix.values[11] * vector.w;
-	result.w = matrix.values[12] * vector.x + matrix.values[13] * vector.y +
-			   matrix.values[14] * vector.z + matrix.values[15] * vector.w;
+    result.x = matrix.values[0] * vector.x + matrix.values[1] * vector.y +
+               matrix.values[2] * vector.z + matrix.values[3] * vector.w;
+    result.y = matrix.values[4] * vector.x + matrix.values[5] * vector.y +
+               matrix.values[6] * vector.z + matrix.values[7] * vector.w;
+    result.z = matrix.values[8] * vector.x + matrix.values[9] * vector.y +
+               matrix.values[10] * vector.z + matrix.values[11] * vector.w;
+    result.w = matrix.values[12] * vector.x + matrix.values[13] * vector.y +
+               matrix.values[14] * vector.z + matrix.values[15] * vector.w;
 
-	/*if (result.w != 0.f && result.w != 1.f) {
-		result.x /= result.w;
-		result.y /= result.w;
-		result.z /= result.w;
-		result.w /= result.w;
-	}*/
+    /*if (result.w != 0.f && result.w != 1.f) {
+        result.x /= result.w;
+        result.y /= result.w;
+        result.z /= result.w;
+        result.w /= result.w;
+    }*/
     //SDL_Log("%f, %f, %f, %f", result.x, result.y, result.z, result.w);
-	return result;
+    return result;
 }
 
 //Has some temp debug parameters
@@ -246,83 +246,83 @@ void draw(
     bool shouldDrawWireframe,
     bool shouldDrawSurfaces)
 {
-	for (int k = 0; k < entityCount; k++) 
-	{
-		Entity* entity = &entityList[k];
-		uint32_t lineColor = 0xffffffff;
+    for (int k = 0; k < entityCount; k++) 
+    {
+        Entity* entity = &entityList[k];
+        uint32_t lineColor = 0xffffffff;
         uint32_t fillColor = 0x00555555;
 
-		//Scale Matrix
-		Vector3 s = entity->scale;
-		Matrix4 scaleMat = {{
+        //Scale Matrix
+        Vector3 s = entity->scale;
+        Matrix4 scaleMat = {{
             s.x, 0  , 0  , 0,
-			0  , s.y, 0  , 0,
-			0  , 0  , s.z, 0,
-			0  , 0  , 0  , 1
+            0  , s.y, 0  , 0,
+            0  , 0  , s.z, 0,
+            0  , 0  , 0  , 1
         }};
-		//ZAxis Rotation Matrix
-		float a = entity->rotation.z;
-		Matrix4 zRotMat = {{
+        //ZAxis Rotation Matrix
+        float a = entity->rotation.z;
+        Matrix4 zRotMat = {{
              cosf(a), sinf(a), 0, 0,
-		    -sinf(a), cosf(a), 0, 0,
-			 0      , 0      , 1, 0,
-			 0      , 0      , 0, 1
+            -sinf(a), cosf(a), 0, 0,
+             0      , 0      , 1, 0,
+             0      , 0      , 0, 1
         }};
-		//YAxis Rotation Matrix
+        //YAxis Rotation Matrix
         a = entity->rotation.y;
-		Matrix4 yRotMat ={{
+        Matrix4 yRotMat ={{
              cosf(a), 0, sinf(a), 0,
-			 0      , 1, 0      , 0,
-			-sinf(a), 0, cosf(a), 0,
-			 0      , 0, 0      , 1
+             0      , 1, 0      , 0,
+            -sinf(a), 0, cosf(a), 0,
+             0      , 0, 0      , 1
         }};
-		//XAxis Rotation Matrix
-		a = entity->rotation.x;
-		Matrix4 xRotMat = {{
+        //XAxis Rotation Matrix
+        a = entity->rotation.x;
+        Matrix4 xRotMat = {{
             1,  0      , 0      , 0,
-			0,  cosf(a), sinf(a), 0,
-			0, -sinf(a), cosf(a), 0,
-		 	0,  0      , 0      , 1
+            0,  cosf(a), sinf(a), 0,
+            0, -sinf(a), cosf(a), 0,
+             0,  0      , 0      , 1
         }};
         //World translation matrix
-		Vector3 p = entity->position;
-		Matrix4 worldTranslate = {{
+        Vector3 p = entity->position;
+        Matrix4 worldTranslate = {{
             1, 0, 0, p.x,
-			0, 1, 0, p.y,
-			0, 0, 1, p.z,
-		 	0, 0, 0, 1
+            0, 1, 0, p.y,
+            0, 0, 1, p.z,
+             0, 0, 0, 1
         }};
         //Camera Z Rotation Matrix
         a = camera->rotation.z;
-		Matrix4 cameraZRotation = {{
+        Matrix4 cameraZRotation = {{
              cosf(-a), sinf(-a), 0, 0,
             -sinf(-a), cosf(-a), 0, 0,
              0       , 0       , 1, 0,
              0       , 0       , 0, 1
         }};
-		//Camera Y Rotation Matrix
+        //Camera Y Rotation Matrix
         a = camera->rotation.y;
-		Matrix4 cameraYRotation = {{
+        Matrix4 cameraYRotation = {{
              cosf(-a), 0, sinf(-a), 0,
              0       , 1, 0       , 0,
-        	-sinf(-a), 0, cosf(-a), 0,
-        	 0       , 0, 0       , 1
+            -sinf(-a), 0, cosf(-a), 0,
+             0       , 0, 0       , 1
         }};
         //Camera X Rotation
         a = camera->rotation.x;
-		Matrix4 cameraXRotation = {{
+        Matrix4 cameraXRotation = {{
             1,  0       , 0       , 0,
-			0,  cosf(-a), sinf(-a), 0,
-			0, -sinf(-a), cosf(-a), 0,
-		 	0,  0       , 0       , 1
+            0,  cosf(-a), sinf(-a), 0,
+            0, -sinf(-a), cosf(-a), 0,
+             0,  0       , 0       , 1
         }};
-        //Camera translate Matrix	
-		p = camera->position;
-		Matrix4 cameraTranslate = {{
+        //Camera translate Matrix    
+        p = camera->position;
+        Matrix4 cameraTranslate = {{
             1, 0, 0, p.x,
-			0, 1, 0, p.y,
-			0, 0, 1, p.z,
-		 	0, 0, 0, 1
+            0, 1, 0, p.y,
+            0, 0, 1, p.z,
+             0, 0, 0, 1
         }};
         
         //perspective projection matrix
@@ -330,7 +330,7 @@ void draw(
         float e22 = atanf((FOV_Y/VIEW_HEIGHT)/2);
         float e33 = -(Z_FAR + Z_NEAR) / (Z_FAR - Z_NEAR);
         float e34 = (-2 * (Z_FAR*Z_NEAR))/(Z_FAR - Z_NEAR);
-		Matrix4 perspectiveProjection = {{
+        Matrix4 perspectiveProjection = {{
             e11, 0  , 0  , 0  ,
             0  , e22, 0  , 0  ,
             0  , 0  , e33, e34,
@@ -340,54 +340,54 @@ void draw(
         int w = pixelBuffer.width;
         int h = pixelBuffer.height;
         float d = 10000000.f;
-		Matrix4 correctForScreen = {{
+        Matrix4 correctForScreen = {{
             w/2, 0  ,0  , w/2,
-			0  , h/2,0  , h/2,
-			0  , 0  ,d/2, d/2,
-		 	0  , 0  ,0  , 1
+            0  , h/2,0  , h/2,
+            0  , 0  ,d/2, d/2,
+             0  , 0  ,0  , 1
         }};
-		
-		//Combine matrices into one transformation matrix
-		//Model Space -> World Space
-		Matrix4 finalTransform = mulMatrix4(xRotMat, scaleMat);
-		finalTransform = mulMatrix4(yRotMat, finalTransform);	
-		finalTransform = mulMatrix4(zRotMat, finalTransform);	
-		finalTransform = mulMatrix4(worldTranslate, finalTransform);
-		//World Space -> View Space	
-		finalTransform = mulMatrix4(cameraTranslate, finalTransform);	
-		finalTransform = mulMatrix4(cameraYRotation, finalTransform);	
-		finalTransform = mulMatrix4(cameraXRotation, finalTransform);	
-		//finalTransform = mulMatrix4(cameraZRotation, finalTransform);	
-		//View Space -> Projection Space
-		finalTransform = mulMatrix4(perspectiveProjection, finalTransform);	
+        
+        //Combine matrices into one transformation matrix
+        //Model Space -> World Space
+        Matrix4 finalTransform = mulMatrix4(xRotMat, scaleMat);
+        finalTransform = mulMatrix4(yRotMat, finalTransform);    
+        finalTransform = mulMatrix4(zRotMat, finalTransform);    
+        finalTransform = mulMatrix4(worldTranslate, finalTransform);
+        //World Space -> View Space    
+        finalTransform = mulMatrix4(cameraTranslate, finalTransform);    
+        finalTransform = mulMatrix4(cameraYRotation, finalTransform);    
+        finalTransform = mulMatrix4(cameraXRotation, finalTransform);    
+        //finalTransform = mulMatrix4(cameraZRotation, finalTransform);    
+        //View Space -> Projection Space
+        finalTransform = mulMatrix4(perspectiveProjection, finalTransform);    
 
-		for (int i = 0; i < entity->mesh.polyCount; i++)
-		{	
+        for (int i = 0; i < entity->mesh.polyCount; i++)
+        {    
             Triangle displayPoly;
-			Vector4 displayVertices[5];
+            Vector4 displayVertices[5];
             int displayVerticesLength = 3;
-			bool isVectorCulled[3] = {false, false, false};		
+            bool isVectorCulled[3] = {false, false, false};        
 
-			for (int j = 0; j < 3; j++)
-			{
+            for (int j = 0; j < 3; j++)
+            {
                 //Convert triangular Vector3 polygon to up to five vector4s
                 displayVertices[j].x = entityList[k].mesh.polygons[i].vectors[j].x;
                 displayVertices[j].y = entityList[k].mesh.polygons[i].vectors[j].y;
                 displayVertices[j].z = entityList[k].mesh.polygons[i].vectors[j].z;
                 displayVertices[j].w = 1.f; 
-				//Apply all transformations =====
-				displayVertices[j] = transform(finalTransform, displayVertices[j]);
-				
-				//Cull vertices
-				if (displayVertices[j].x < -displayVertices[j].w ||
+                //Apply all transformations =====
+                displayVertices[j] = transform(finalTransform, displayVertices[j]);
+                
+                //Cull vertices
+                if (displayVertices[j].x < -displayVertices[j].w ||
                     displayVertices[j].x >  displayVertices[j].w ||
-				    displayVertices[j].y < -displayVertices[j].w ||
+                    displayVertices[j].y < -displayVertices[j].w ||
                     displayVertices[j].y >  displayVertices[j].w ||
-				    displayVertices[j].z < -displayVertices[j].w ||
+                    displayVertices[j].z < -displayVertices[j].w ||
                     displayVertices[j].z >  displayVertices[j].w)
-				{
-					isVectorCulled[j] = true;
-				}
+                {
+                    isVectorCulled[j] = true;
+                }
             }
 
             //Clip polygons to screen dimensions
@@ -404,61 +404,61 @@ void draw(
                 displayVertices[j].z /= displayVertices[j].w;
                 displayVertices[j].w = 1.f; 
 
-				//Projection Space -> Screen Friendly
-				displayVertices[j] = transform(correctForScreen, displayVertices[j]);
+                //Projection Space -> Screen Friendly
+                displayVertices[j] = transform(correctForScreen, displayVertices[j]);
 
                 //Convert back to vector 3 polygon
                 displayPoly.vectors[j].x = displayVertices[j].x;
                 displayPoly.vectors[j].y = displayVertices[j].y;
                 displayPoly.vectors[j].z = displayVertices[j].z;
-			}
+            }
 
             if(!(isVectorCulled[0] || isVectorCulled[1] || isVectorCulled[2]) && shouldDrawSurfaces)
             {
-            	rasterizePolygon(displayPoly, fillColor, pixelBuffer);
+                rasterizePolygon(displayPoly, fillColor, pixelBuffer);
             }
             fillColor = ~fillColor;
-			//Only draw lines between vectors that haven't been culled
+            //Only draw lines between vectors that haven't been culled
             if(shouldDrawWireframe)
             {
                 if(!isVectorCulled[0] && !isVectorCulled[1])
                 {
-                    drawLine(displayPoly.vectors[0], displayPoly.vectors[1], lineColor, pixelBuffer);		
-                }		
+                    drawLine(displayPoly.vectors[0], displayPoly.vectors[1], lineColor, pixelBuffer);        
+                }        
                 if(!isVectorCulled[1] && !isVectorCulled[2])
                 {
                     drawLine(displayPoly.vectors[1], displayPoly.vectors[2], lineColor, pixelBuffer);
-                }		
+                }        
                 if(!isVectorCulled[0] && !isVectorCulled[2])
                 {
-                    drawLine(displayPoly.vectors[2], displayPoly.vectors[0], lineColor, pixelBuffer);		
+                    drawLine(displayPoly.vectors[2], displayPoly.vectors[0], lineColor, pixelBuffer);        
                 }
             }
-		}
-	}
+        }
+    }
 }
 
 Mesh loadMeshFromFile(char* fileName)
 {
-	FILE* file = fopen(fileName, "r");
-	Mesh mesh = {0};
-	int lineCount = 0;
+    FILE* file = fopen(fileName, "r");
+    Mesh mesh = {0};
+    int lineCount = 0;
 
-	if (file == NULL)
-	{
-		SDL_Log("Could not open mesh file.");
-		SDL_Log(fileName);
-	}
+    if (file == NULL)
+    {
+        SDL_Log("Could not open mesh file.");
+        SDL_Log(fileName);
+    }
 
-	//Save the pos beginning of file
-	fpos_t filePos;
-	fgetpos(file, &filePos);
-	//Count the number of lines in the file
-	{
-		int ch;
-		while (EOF != (ch=getc(file)))
-	   		if (ch=='\n')
-	        	++lineCount;
+    //Save the pos beginning of file
+    fpos_t filePos;
+    fgetpos(file, &filePos);
+    //Count the number of lines in the file
+    {
+        int ch;
+        while (EOF != (ch=getc(file)))
+               if (ch=='\n')
+                ++lineCount;
     }
 
     mesh.polyCount = lineCount;
@@ -466,36 +466,36 @@ Mesh loadMeshFromFile(char* fileName)
 
     //Go back to beginning of file
     fsetpos(file, &filePos);
-	char line[256] = {0};
-	int i = 0;
-	int k = 0;
-	fgets(line, 255, file);
-	while (!feof(file))
-	{
-		float vertices[9] = {0};
-		//Split line by spaces and store floats
-		k = 0;
-		while (k < 9)
-		{
-			if (k == 0)
-				vertices[k] = atof(strtok(line, " "));
-			else
-				vertices[k] = atof(strtok(NULL, " "));
-			k++;
-		}
-		//Store the loaded vertices into the return polygon
-		mesh.polygons[i].vectors[0].x = vertices[0];
-		mesh.polygons[i].vectors[0].y = vertices[1];
-		mesh.polygons[i].vectors[0].z = vertices[2];
-		mesh.polygons[i].vectors[1].x = vertices[3];
-		mesh.polygons[i].vectors[1].y = vertices[4];
-		mesh.polygons[i].vectors[1].z = vertices[5];
-		mesh.polygons[i].vectors[2].x = vertices[6];
-		mesh.polygons[i].vectors[2].y = vertices[7];
-		mesh.polygons[i].vectors[2].z = vertices[8];
-		fgets(line, 255, file);
-		i++;
-	}
-	return mesh;
+    char line[256] = {0};
+    int i = 0;
+    int k = 0;
+    fgets(line, 255, file);
+    while (!feof(file))
+    {
+        float vertices[9] = {0};
+        //Split line by spaces and store floats
+        k = 0;
+        while (k < 9)
+        {
+            if (k == 0)
+                vertices[k] = atof(strtok(line, " "));
+            else
+                vertices[k] = atof(strtok(NULL, " "));
+            k++;
+        }
+        //Store the loaded vertices into the return polygon
+        mesh.polygons[i].vectors[0].x = vertices[0];
+        mesh.polygons[i].vectors[0].y = vertices[1];
+        mesh.polygons[i].vectors[0].z = vertices[2];
+        mesh.polygons[i].vectors[1].x = vertices[3];
+        mesh.polygons[i].vectors[1].y = vertices[4];
+        mesh.polygons[i].vectors[1].z = vertices[5];
+        mesh.polygons[i].vectors[2].x = vertices[6];
+        mesh.polygons[i].vectors[2].y = vertices[7];
+        mesh.polygons[i].vectors[2].z = vertices[8];
+        fgets(line, 255, file);
+        i++;
+    }
+    return mesh;
 }
 

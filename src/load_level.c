@@ -8,10 +8,10 @@
 #include <stdlib.h>
 
 #ifdef __linux__
-	#include <SDL2/SDL.h>
-	#define M_PI 3.14159265358979323846
+    #include <SDL2/SDL.h>
+    #define M_PI 3.14159265358979323846
 #elif _WIN32
-	#include <SDL.h>
+    #include <SDL.h>
 #endif
 
 #include "load_level.h"
@@ -20,24 +20,24 @@
 Level loadLevel(char* fileName)
 {
     Level level;
-	FILE* file = fopen(fileName, "r");
-	if (file == NULL)
-	{
-		SDL_Log("Could not open level file.");
-		SDL_Log(fileName);
-	}
+    FILE* file = fopen(fileName, "r");
+    if (file == NULL)
+    {
+        SDL_Log("Could not open level file.");
+        SDL_Log(fileName);
+    }
 
-	//Save the pos beginning of file
-	fpos_t filePos;
-	fgetpos(file, &filePos);
-	//Count the number of lines in the file
-	{
-		int ch;
+    //Save the pos beginning of file
+    fpos_t filePos;
+    fgetpos(file, &filePos);
+    //Count the number of lines in the file
+    {
+        int ch;
         int lineCount = 0;
         int charCount = 0;
-		while (EOF != (ch=getc(file)))
+        while (EOF != (ch=getc(file)))
         {
-	        ++charCount;
+            ++charCount;
             if (ch == '\n')
                 ++lineCount;
         }
@@ -48,12 +48,12 @@ Level loadLevel(char* fileName)
 
     //Go back to beginning of file
     fsetpos(file, &filePos);
-	level.data = (char*)malloc(level.width * level.height * sizeof(char));
-	
+    level.data = (char*)malloc(level.width * level.height * sizeof(char));
+    
     {
-		int ch;
+        int ch;
         int i = 0;
-		while (EOF != (ch=getc(file)))
+        while (EOF != (ch=getc(file)))
         {
             if (ch != '\n')
             {
@@ -62,7 +62,7 @@ Level loadLevel(char* fileName)
             }
         }
     }
-	return level;
+    return level;
 }
 
 EntityArray createLevelEntities(Level level)

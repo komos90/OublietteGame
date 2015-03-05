@@ -2,10 +2,10 @@
 
 typedef struct 
 {
-	uint32_t* pixels;
-	int32_t* zBuffer;
-	int width;
-	int height;
+    uint32_t* pixels;
+    int32_t* zBuffer;
+    int width;
+    int height;
 } PixelBuffer;
 
 typedef struct
@@ -17,9 +17,9 @@ typedef struct
 
 typedef struct 
 {
-	float x;
-	float y;
-	float z;
+    float x;
+    float y;
+    float z;
 } Vector3;
 
 typedef struct
@@ -32,27 +32,27 @@ typedef struct
 
 typedef struct
 {
-	Vector3 vectors[3];
+    Vector3 vectors[3];
 } Triangle;
 
 typedef struct
 {
-	float values[16];
+    float values[16];
 } Matrix4;
 
 typedef struct
 {
-	//Vector3 origin;
-	int polyCount;
-	Triangle* polygons;
+    //Vector3 origin;
+    int polyCount;
+    Triangle* polygons;
 } Mesh;
 
 typedef struct
 {
-	Vector3 position;
-	Vector3 rotation; //TODO Quaternion?
-	Vector3 scale;
-	Mesh mesh;
+    Vector3 position;
+    Vector3 rotation; //TODO Quaternion?
+    Vector3 scale;
+    Mesh mesh;
 } Entity;
 
 typedef struct
