@@ -240,124 +240,112 @@ Vector4 transform(Matrix4 matrix, Vector4 vector)
 }
 
 //Has some temp debug parameters
-void draw(PixelBuffer pixelBuffer, Entity* camera,
-          Entity* entityList, int entityCount,
-          bool shouldDrawWireframe,
-          bool shouldDrawSurfaces)
+void draw(
+    PixelBuffer pixelBuffer, Entity* camera,
+    Entity* entityList, int entityCount,
+    bool shouldDrawWireframe,
+    bool shouldDrawSurfaces)
 {
 	for (int k = 0; k < entityCount; k++) 
 	{
 		Entity* entity = &entityList[k];
-		// Rotation angles, y-axis then x-axis
 		uint32_t lineColor = 0xffffffff;
-        uint32_t fillColor = 0x55555555;
-		//SCale Matrix
-		Matrix4 scaleMat;
-		{
-			Vector3 s = entity->scale;
-			float tmp[16] = {  s.x, 0  , 0  , 0,
-						   	   0  , s.y, 0  , 0,
-						       0  , 0  , s.z, 0,
-						       0  , 0  , 0  , 1};
-			memcpy((void*) scaleMat.values, tmp, 16*sizeof(float));
-		}
-		//ZAis Rotation Matrix
-		Matrix4 zRotMat;
-		{
-			float c = entity->rotation.z;
-			float tmp[16] = { cosf(c), sinf(c), 0, 0,
-						   	 -sinf(c), cosf(c), 0, 0,
-						      0      , 0      , 1, 0,
-						      0      , 0      , 0, 1};
-			memcpy((void*) zRotMat.values, tmp, 16*sizeof(float));
-		}
+        uint32_t fillColor = 0x00555555;
+
+		//Scale Matrix
+		Vector3 s = entity->scale;
+		Matrix4 scaleMat = {{
+            s.x, 0  , 0  , 0,
+			0  , s.y, 0  , 0,
+			0  , 0  , s.z, 0,
+			0  , 0  , 0  , 1
+        }};
+		//ZAxis Rotation Matrix
+		float a = entity->rotation.z;
+		Matrix4 zRotMat = {{
+             cosf(a), sinf(a), 0, 0,
+		    -sinf(a), cosf(a), 0, 0,
+			 0      , 0      , 1, 0,
+			 0      , 0      , 0, 1
+        }};
 		//YAxis Rotation Matrix
-		Matrix4 yRotMat;
-		{
-			float a = entity->rotation.y;
-			float tmp[16] = { cosf(a), 0, sinf(a), 0,
-						   	  0      , 1, 0      , 0,
-						     -sinf(a), 0, cosf(a), 0,
-						      0      , 0, 0      , 1};
-			memcpy((void*) yRotMat.values, tmp, 16*sizeof(float));
-		}
+        a = entity->rotation.y;
+		Matrix4 yRotMat ={{
+             cosf(a), 0, sinf(a), 0,
+			 0      , 1, 0      , 0,
+			-sinf(a), 0, cosf(a), 0,
+			 0      , 0, 0      , 1
+        }};
 		//XAxis Rotation Matrix
-		Matrix4 xRotMat;
-		{
-			float b = entity->rotation.x;
-			float tmp[16] = {1,  0      , 0      , 0,
-						 	 0,  cosf(b), sinf(b), 0,
-						 	 0, -sinf(b), cosf(b), 0,
-		 	 				 0,  0      , 0      , 1};
-			memcpy((void*) xRotMat.values, tmp, 16*sizeof(float));
-		}
-		Matrix4 worldTranslate;
-		{
-			Vector3 p = entity->position;
-			float tmp[16] = { 1, 0, 0, p.x,
-						 	  0, 1, 0, p.y,
-						 	  0, 0, 1, p.z,
-		 	 				  0, 0, 0, 1  };
-			memcpy((void*) worldTranslate.values, tmp, 16*sizeof(float));
-		}
-
-		//Camera Rotation Matrix
-		Matrix4 cameraYRotation;
-		{
-			float a = camera->rotation.y;
-			float tmp[16] = { cosf(-a), 0, sinf(-a), 0,
-						   	  0       , 1, 0       , 0,
-						     -sinf(-a), 0, cosf(-a), 0,
-						      0       , 0, 0       , 1};
-			memcpy((void*) cameraYRotation.values, tmp, 16*sizeof(float));
-        }
-
-	//Camera translate Matrix	
-		Matrix4 cameraInvTranslate;
-		{
-			float tmp[16] = { 1, 0, 0, -camera->position.x,
-						 	  0, 1, 0, -camera->position.y,
-						 	  0, 0, 1, -camera->position.z,
-		 	 				  0, 0, 0, 1        };
-			memcpy((void*) cameraInvTranslate.values, tmp, 16*sizeof(float));
-		}
-		Matrix4 cameraTranslate;
-		{
-			float tmp[16] = { 1, 0, 0, camera->position.x,
-						 	  0, 1, 0, camera->position.y,
-						 	  0, 0, 1, camera->position.z,
-		 	 				  0, 0, 0, 1        };
-			memcpy((void*) cameraTranslate.values, tmp, 16*sizeof(float));
-		}
-		//Camera translate Matrix	
-		Matrix4 orthoProjection;
-		{
-			float tmp[16] = { 1.f/VIEW_WIDTH, 0              ,  0                   ,   0                                 ,
-						 	  0             , 1.f/VIEW_HEIGHT,  0                   ,   0                                 ,
-						 	  0             , 0              , -2.f/(Z_FAR - Z_NEAR), -(Z_FAR + Z_NEAR) / (Z_FAR - Z_NEAR),
-		 	 				  0             , 0              ,  0                   ,   1                                 };
-			memcpy((void*) orthoProjection.values, tmp, 16*sizeof(float));
-		}
-		// perspectiveProjection
-		Matrix4 perspectiveProjection;
-		{
-			float tmp[16] = { atanf((FOV_X/VIEW_WIDTH)/2), 0                           ,  0                                  ,   0                                   ,
-						 	  0                          , atanf((FOV_Y/VIEW_HEIGHT)/2),  0                                  ,   0                                   ,
-						 	  0                          , 0                           , -(Z_FAR + Z_NEAR) / (Z_FAR - Z_NEAR), (-2 * (Z_FAR*Z_NEAR))/(Z_FAR - Z_NEAR),
-		 	 				  0                          , 0                           , -1                                  ,   0                                   };
-			memcpy((void*) perspectiveProjection.values, tmp, 16*sizeof(float));
-		}
-		Matrix4 correctForScreen;
-		{
-            int w = pixelBuffer.width;
-            int h = pixelBuffer.height;
-            float d = 10000000.f;//pixelBuffer.width;
-			float tmp[16] = { w/2, 0  ,0  , w/2,
-						 	  0  , h/2,0  , h/2,
-						 	  0  , 0  ,d/2, d/2,
-		 	 				  0  , 0  ,0  , 1  };
-			memcpy((void*) correctForScreen.values, tmp, 16*sizeof(float));
-		}
+		a = entity->rotation.x;
+		Matrix4 xRotMat = {{
+            1,  0      , 0      , 0,
+			0,  cosf(a), sinf(a), 0,
+			0, -sinf(a), cosf(a), 0,
+		 	0,  0      , 0      , 1
+        }};
+        //World translation matrix
+		Vector3 p = entity->position;
+		Matrix4 worldTranslate = {{
+            1, 0, 0, p.x,
+			0, 1, 0, p.y,
+			0, 0, 1, p.z,
+		 	0, 0, 0, 1
+        }};
+        //Camera Z Rotation Matrix
+        a = camera->rotation.z;
+		Matrix4 cameraZRotation = {{
+             cosf(-a), sinf(-a), 0, 0,
+            -sinf(-a), cosf(-a), 0, 0,
+             0       , 0       , 1, 0,
+             0       , 0       , 0, 1
+        }};
+		//Camera Y Rotation Matrix
+        a = camera->rotation.y;
+		Matrix4 cameraYRotation = {{
+             cosf(-a), 0, sinf(-a), 0,
+             0       , 1, 0       , 0,
+        	-sinf(-a), 0, cosf(-a), 0,
+        	 0       , 0, 0       , 1
+        }};
+        //Camera X Rotation
+        a = camera->rotation.x;
+		Matrix4 cameraXRotation = {{
+            1,  0       , 0       , 0,
+			0,  cosf(-a), sinf(-a), 0,
+			0, -sinf(-a), cosf(-a), 0,
+		 	0,  0       , 0       , 1
+        }};
+        //Camera translate Matrix	
+		p = camera->position;
+		Matrix4 cameraTranslate = {{
+            1, 0, 0, p.x,
+			0, 1, 0, p.y,
+			0, 0, 1, p.z,
+		 	0, 0, 0, 1
+        }};
+        
+        //perspective projection matrix
+        float e11 = atanf((FOV_X/VIEW_WIDTH)/2);
+        float e22 = atanf((FOV_Y/VIEW_HEIGHT)/2);
+        float e33 = -(Z_FAR + Z_NEAR) / (Z_FAR - Z_NEAR);
+        float e34 = (-2 * (Z_FAR*Z_NEAR))/(Z_FAR - Z_NEAR);
+		Matrix4 perspectiveProjection = {{
+            e11, 0  , 0  , 0  ,
+            0  , e22, 0  , 0  ,
+            0  , 0  , e33, e34,
+            0  , 0  , -1 , 0
+        }};
+        
+        int w = pixelBuffer.width;
+        int h = pixelBuffer.height;
+        float d = 10000000.f;
+		Matrix4 correctForScreen = {{
+            w/2, 0  ,0  , w/2,
+			0  , h/2,0  , h/2,
+			0  , 0  ,d/2, d/2,
+		 	0  , 0  ,0  , 1
+        }};
 		
 		//Combine matrices into one transformation matrix
 		//Model Space -> World Space
@@ -368,6 +356,8 @@ void draw(PixelBuffer pixelBuffer, Entity* camera,
 		//World Space -> View Space	
 		finalTransform = mulMatrix4(cameraTranslate, finalTransform);	
 		finalTransform = mulMatrix4(cameraYRotation, finalTransform);	
+		finalTransform = mulMatrix4(cameraXRotation, finalTransform);	
+		//finalTransform = mulMatrix4(cameraZRotation, finalTransform);	
 		//View Space -> Projection Space
 		finalTransform = mulMatrix4(perspectiveProjection, finalTransform);	
 

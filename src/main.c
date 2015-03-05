@@ -135,7 +135,7 @@ int main( int argc, char* args[] )
                 break;
             case SDL_MOUSEMOTION:
                 camera.rotation.y -= e.motion.xrel * 0.001;
-                //camera.rotation.z -= e.motion.y * 0.001;
+                camera.rotation.x -= e.motion.yrel * 0.001;
                 break;
 			}
 		}
