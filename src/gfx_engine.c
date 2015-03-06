@@ -57,7 +57,7 @@ void drawLine(Vector3 start, Vector3 end, uint32_t color,
     int dx = abs(x1 - x0);
     int dy = abs(y1 - y0);
     //Determine whether to step backwards or forwards through the line
-       int sx = (x0 < x1) ? 1 : -1;
+    int sx = (x0 < x1) ? 1 : -1;
     int sy = (y0 < y1) ? 1 : -1;
 
     int err = dx - dy;
@@ -217,26 +217,95 @@ Matrix4 mulMatrix4(Matrix4 mat1, Matrix4 mat2)
     return result;
 }
 
-Vector4 transform(Matrix4 matrix, Vector4 vector) 
+Vector3 transform(Matrix4 matrix, Vector3 vector) 
 {
-    Vector4 result;
+    Vector3 result;
+    float w = 1.f;
     result.x = matrix.values[0] * vector.x + matrix.values[1] * vector.y +
-               matrix.values[2] * vector.z + matrix.values[3] * vector.w;
+               matrix.values[2] * vector.z + matrix.values[3] * 1.f;
     result.y = matrix.values[4] * vector.x + matrix.values[5] * vector.y +
-               matrix.values[6] * vector.z + matrix.values[7] * vector.w;
+               matrix.values[6] * vector.z + matrix.values[7] * 1.f;
     result.z = matrix.values[8] * vector.x + matrix.values[9] * vector.y +
-               matrix.values[10] * vector.z + matrix.values[11] * vector.w;
-    result.w = matrix.values[12] * vector.x + matrix.values[13] * vector.y +
-               matrix.values[14] * vector.z + matrix.values[15] * vector.w;
+               matrix.values[10] * vector.z + matrix.values[11] * 1.f;
+           w = matrix.values[12] * vector.x + matrix.values[13] * vector.y +
+               matrix.values[14] * vector.z + matrix.values[15] * 1.f;
 
-    /*if (result.w != 0.f && result.w != 1.f) {
-        result.x /= result.w;
-        result.y /= result.w;
-        result.z /= result.w;
-        result.w /= result.w;
-    }*/
+    if (w != 0.f && w != 1.f) {
+        result.x /= w;
+        result.y /= w;
+        result.z /= w;
+    }
     //SDL_Log("%f, %f, %f, %f", result.x, result.y, result.z, result.w);
     return result;
+}
+
+bool isInsideRect(Vector3 vector, SDL_Rect rect)
+{
+    return vector.x > rect.x && vector.x < rect.x + rect.w &&
+           vector.y > rect.y && vector.y < rect.y + rect.h;
+}
+
+bool isOnRectBorder(Vector3 vector, SDL_Rect rect)
+{
+    return ((vector.x == rect.x || vector.x == rect.x + rect.w) &&
+            vector.y >= rect.y && vector.y <= rect.y + rect.h) ||
+           ((vector.y == rect.y || vector.y == rect.y + rect.h) &&
+            vector.x >= rect.x && vector.x <= rect.x + rect.w);
+}
+
+float get2DMagnitude(Vector3 vector)
+{
+    return sqrt(vector.x * vector.x + vector.y * vector.y);
+}
+
+Vector3 getIntersect(Vector3 start, Vector3 end, SDL_Rect rect)
+{
+    int x0 = (int)start.x;
+    int y0 = (int)start.y;
+    int x1 = (int)end.x;
+    int y1 = (int)end.y;
+    
+    //Distance between x0 and x1, y0 and y1
+    int dx = abs(x1 - x0);
+    int dy = abs(y1 - y0);
+    //Determine whether to step backwards or forwards through the line
+    int sx = (x0 < x1) ? 1 : -1;
+    int sy = (y0 < y1) ? 1 : -1;
+
+    int err = dx - dy;
+
+    for(;;)
+    {
+        //Check for rect boundary
+        Vector3 tmp = {x0, y0, 0};
+        if (isOnRectBorder(tmp, rect))
+        {
+            if (end.z == start.z)
+                tmp.z = start.z;
+            else
+                tmp.z = end.z - start.z * ((get2DMagnitude(tmp) - (get2DMagnitude(start))) / (get2DMagnitude(end) - get2DMagnitude(start)));
+            return tmp;
+        }
+
+        //Break if we reach the end of the line.
+        if ((x0 == x1) && (y0 == y1)) break;
+
+        int e2 = 2 * err;
+        //Step x
+        if (e2 > -dy)
+        { 
+            err -= dy;
+            x0 += sx;
+        }
+        //Step y
+        if (e2 < dx)
+        {
+            err += dx;
+            y0 += sy;
+        }
+    }
+    Vector3 error = {0, 0, 0};
+    return error;
 }
 
 //Has some temp debug parameters
@@ -361,77 +430,95 @@ void draw(
         //View Space -> Projection Space
         finalTransform = mulMatrix4(perspectiveProjection, finalTransform);    
 
+        //For each polygon
         for (int i = 0; i < entity->mesh.polyCount; i++)
         {    
             Triangle displayPoly;
-            Vector4 displayVertices[5];
-            int displayVerticesLength = 3;
-            bool isVectorCulled[3] = {false, false, false};        
 
+            //For each vertex
             for (int j = 0; j < 3; j++)
             {
                 //Convert triangular Vector3 polygon to up to five vector4s
-                displayVertices[j].x = entityList[k].mesh.polygons[i].vectors[j].x;
-                displayVertices[j].y = entityList[k].mesh.polygons[i].vectors[j].y;
-                displayVertices[j].z = entityList[k].mesh.polygons[i].vectors[j].z;
-                displayVertices[j].w = 1.f; 
+                displayPoly.vectors[j].x = entityList[k].mesh.polygons[i].vectors[j].x;
+                displayPoly.vectors[j].y = entityList[k].mesh.polygons[i].vectors[j].y;
+                displayPoly.vectors[j].z = entityList[k].mesh.polygons[i].vectors[j].z;
+
                 //Apply all transformations =====
-                displayVertices[j] = transform(finalTransform, displayVertices[j]);
+                displayPoly.vectors[j] = transform(finalTransform, displayPoly.vectors[j]);
                 
-                //Cull vertices
-                if (displayVertices[j].x < -displayVertices[j].w ||
-                    displayVertices[j].x >  displayVertices[j].w ||
-                    displayVertices[j].y < -displayVertices[j].w ||
-                    displayVertices[j].y >  displayVertices[j].w ||
-                    displayVertices[j].z < -displayVertices[j].w ||
-                    displayVertices[j].z >  displayVertices[j].w)
-                {
-                    isVectorCulled[j] = true;
-                }
-            }
-
-            //Clip polygons to screen dimensions
-            //Using Sutherland - Hodgman algorithm
-            {
-
-            }
-
-            for (int j = 0; j < 3; j++)
-            {
-                //Perform perspective divide
-                displayVertices[j].x /= displayVertices[j].w;
-                displayVertices[j].y /= displayVertices[j].w;
-                displayVertices[j].z /= displayVertices[j].w;
-                displayVertices[j].w = 1.f; 
-
                 //Projection Space -> Screen Friendly
-                displayVertices[j] = transform(correctForScreen, displayVertices[j]);
+                displayPoly.vectors[j] = transform(correctForScreen, displayPoly.vectors[j]);
 
-                //Convert back to vector 3 polygon
-                displayPoly.vectors[j].x = displayVertices[j].x;
-                displayPoly.vectors[j].y = displayVertices[j].y;
-                displayPoly.vectors[j].z = displayVertices[j].z;
             }
 
-            if(!(isVectorCulled[0] || isVectorCulled[1] || isVectorCulled[2]) && shouldDrawSurfaces)
+            //1.clip by screen rectangle
+            //Parameters Vector3 vector, SDL_Rect screenRect
+            //Returns Vector3[5] pentagon, int polygonSize
+            Vector3 clippedPolygon[5];
+            int clippedPolyTriangleCount = 0;
             {
-                rasterizePolygon(displayPoly, fillColor, pixelBuffer);
+                //for each vertex in Triangle
+                //1.Check vertex[i] and vertex[(i+1) % polyLen] is inside
+                //the screenRect and set is1Inside and is2Inside bits occordingly
+                //(use a bitfield)
+                //2.go through the Sutheran-Hodgman cases for the 2 vertices
+                //For finding the intersection use Bresenham line algo.
+                //until line is on the screenRect boundary, then add that point
+                //to outPoly
+                
+                int clippedPolyLen = 0;
+                SDL_Rect screenRect = {0, 0, pixelBuffer.width, pixelBuffer.height};
+                for (int j = 0; j < 3; j++)
+                {
+                    uint8_t insideBitField = 0;
+                    if (isInsideRect(displayPoly.vectors[j], screenRect))
+                        insideBitField |= 0x1;
+                    if (isInsideRect(displayPoly.vectors[(j + 1) % 3], screenRect))
+                        insideBitField |= 0x2;
+
+                    //Switch over the Sutherland-Hodgman cases
+                    switch (insideBitField)
+                    {
+                        case 0:
+                        //Both outside
+                        break;
+                        case 1:
+                        //First vector inside
+                        clippedPolygon[clippedPolyLen++] = displayPoly.vectors[j];
+                        clippedPolygon[clippedPolyLen++] = getIntersect(displayPoly.vectors[j], displayPoly.vectors[(j + 1) % 3], screenRect);
+                        break;
+                        case 2:
+                        //Second vector inside
+                        clippedPolygon[clippedPolyLen++] = getIntersect(displayPoly.vectors[j], displayPoly.vectors[(j + 1) % 3], screenRect);
+                        break;
+                        case 3:
+                        //Both inside
+                        clippedPolygon[clippedPolyLen++] = displayPoly.vectors[j];
+                        break;
+                    }
+                }
+                clippedPolyTriangleCount = clippedPolyLen - 2;
             }
-            fillColor = ~fillColor;
-            //Only draw lines between vectors that haven't been culled
-            if(shouldDrawWireframe)
+
+            Triangle clippedTriangles[3];
+            for (int j = 0; j < clippedPolyTriangleCount; j++)
             {
-                if(!isVectorCulled[0] && !isVectorCulled[1])
+                //2.convert pentagon(at most) to 3 triangles
+                //Returns Triangle[3] clippedPolygons
+                clippedTriangles[j].vectors[0] = clippedPolygon[0];
+                clippedTriangles[j].vectors[1] = clippedPolygon[1 + j];
+                clippedTriangles[j].vectors[2] = clippedPolygon[2 + j];
+
+                if(shouldDrawSurfaces)
                 {
-                    drawLine(displayPoly.vectors[0], displayPoly.vectors[1], lineColor, pixelBuffer);        
-                }        
-                if(!isVectorCulled[1] && !isVectorCulled[2])
+                    rasterizePolygon(clippedTriangles[j], fillColor, pixelBuffer);
+                }
+                fillColor = ~fillColor;
+                //Only draw lines between vectors that haven't been culled
+                if(shouldDrawWireframe)
                 {
-                    drawLine(displayPoly.vectors[1], displayPoly.vectors[2], lineColor, pixelBuffer);
-                }        
-                if(!isVectorCulled[0] && !isVectorCulled[2])
-                {
-                    drawLine(displayPoly.vectors[2], displayPoly.vectors[0], lineColor, pixelBuffer);        
+                    for (int k = 0; k < 3; k++)
+                        drawLine(clippedTriangles[j].vectors[k], clippedTriangles[j].vectors[(k + 1) % 3], lineColor, pixelBuffer);        
                 }
             }
         }
@@ -469,7 +556,7 @@ Mesh loadMeshFromFile(char* fileName)
     char line[256] = {0};
     int i = 0;
     int k = 0;
-    fgets(line, 255, file);
+    if (fgets(line, 255, file) == NULL) SDL_Log("fgets error in loadMeshFromFile()!");
     while (!feof(file))
     {
         float vertices[9] = {0};
@@ -493,7 +580,7 @@ Mesh loadMeshFromFile(char* fileName)
         mesh.polygons[i].vectors[2].x = vertices[6];
         mesh.polygons[i].vectors[2].y = vertices[7];
         mesh.polygons[i].vectors[2].z = vertices[8];
-        fgets(line, 255, file);
+        if (fgets(line, 255, file) == NULL) SDL_Log("fgets error in loadMeshFromFile()!");
         i++;
     }
     return mesh;

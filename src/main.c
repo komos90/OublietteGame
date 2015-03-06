@@ -25,8 +25,8 @@ seoras1@gmail.com
 #include "meshes.h"
 #include "gfx_engine.h"
 
-static const int SCREEN_WIDTH  = 427;//854;//300;//640;
-static const int SCREEN_HEIGHT = 240;//480;//300;//480;
+static const int SCREEN_WIDTH  = 854;//300;//640;
+static const int SCREEN_HEIGHT = 480;//300;//480;
 
 //Temp Globals
 
@@ -70,8 +70,11 @@ int main( int argc, char* args[] )
 
     //Load level from file and add level entities to entity list
     Level level = loadLevel("../res/levels/level2.lvl");
-    EntityArray entities = createLevelEntities(level); 
-    //Entity temp = {.position = {-200, -200, -200}, .mesh=plane, .scale={100, 100, 100}, .rotation={M_PI/2,0,0}};
+    EntityArray entities = createLevelEntities(level);
+    //EntityArray entities;
+    //entities.data = malloc(sizeof(Entity));
+    //entities.length = 1;
+    //Entity temp = {.position = {200, 0, -200}, .mesh=monkey, .scale={100, 100, 100}, .rotation={M_PI/2,0,0}};
     //entities.data[0] = temp;
 
     //Initialise Entities
