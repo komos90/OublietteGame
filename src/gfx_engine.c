@@ -242,7 +242,8 @@ Vector3 transform(Matrix4 matrix, Vector3 vector)
 bool isInsideRect(Vector3 vector, SDL_Rect rect)
 {
     return vector.x > rect.x && vector.x < rect.x + rect.w &&
-           vector.y > rect.y && vector.y < rect.y + rect.h;
+           vector.y > rect.y && vector.y < rect.y + rect.h &&
+           vector.z > 100.f;
 }
 
 bool isOnRectBorder(Vector3 vector, SDL_Rect rect)
@@ -283,7 +284,8 @@ Vector3 getIntersect(Vector3 start, Vector3 end, SDL_Rect rect)
             if (end.z == start.z)
                 tmp.z = start.z;
             else
-                tmp.z = end.z - start.z * ((get2DMagnitude(tmp) - (get2DMagnitude(start))) / (get2DMagnitude(end) - get2DMagnitude(start)));
+                tmp.z = start.z + (end.z - start.z) * ((get2DMagnitude(tmp) - (get2DMagnitude(start))) / (get2DMagnitude(end) - get2DMagnitude(start)));
+                //SDL_Log ("%f, %f, %f", start.z, tmp.z, end.z);
             return tmp;
         }
 
