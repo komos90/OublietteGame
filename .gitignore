@@ -1,6 +1,4 @@
 *.swo
 *.swp
-*.exe
-*.elf
 com.bat
 bin/gmon.out
