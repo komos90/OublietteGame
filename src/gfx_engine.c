@@ -241,9 +241,9 @@ Vector3 transform(Matrix4 matrix, Vector3 vector)
 
 bool isInsideRect(Vector3 vector, SDL_Rect rect)
 {
-    return vector.x > rect.x && vector.x < rect.x + rect.w &&
-           vector.y > rect.y && vector.y < rect.y + rect.h &&
-           vector.z > 100.f;
+    if (vector.z < 1000000.f || vector.z > 10000000.f) return false;
+    return vector.x >= rect.x && vector.x <= rect.x + rect.w &&
+           vector.y >= rect.y && vector.y <= rect.y + rect.h;
 }
 
 bool isOnRectBorder(Vector3 vector, SDL_Rect rect)
@@ -469,36 +469,86 @@ void draw(
                 //to outPoly
                 
                 int clippedPolyLen = 0;
-                SDL_Rect screenRect = {0, 0, pixelBuffer.width, pixelBuffer.height};
-                for (int j = 0; j < 3; j++)
-                {
-                    uint8_t insideBitField = 0;
-                    if (isInsideRect(displayPoly.vectors[j], screenRect))
-                        insideBitField |= 0x1;
-                    if (isInsideRect(displayPoly.vectors[(j + 1) % 3], screenRect))
-                        insideBitField |= 0x2;
+                int inputPolyLen = 3;
+                Vector3 inputPoly[5];
+                inputPoly[0] = displayPoly.vectors[0];
+                inputPoly[1] = displayPoly.vectors[1];
+                inputPoly[2] = displayPoly.vectors[2];
+                SDL_Rect screenRect = {pixelBuffer.width/4, 0, (pixelBuffer.width * 3)/4, pixelBuffer.height};
 
-                    //Switch over the Sutherland-Hodgman cases
-                    switch (insideBitField)
+                for (int k = 0; k < 4; k++)
+                {
+                    
+                    switch (k)
                     {
-                        case 0:
-                        //Both outside
-                        break;
-                        case 1:
-                        //First vector inside
-                        clippedPolygon[clippedPolyLen++] = displayPoly.vectors[j];
-                        clippedPolygon[clippedPolyLen++] = getIntersect(displayPoly.vectors[j], displayPoly.vectors[(j + 1) % 3], screenRect);
-                        break;
-                        case 2:
-                        //Second vector inside
-                        clippedPolygon[clippedPolyLen++] = getIntersect(displayPoly.vectors[j], displayPoly.vectors[(j + 1) % 3], screenRect);
-                        break;
                         case 3:
-                        //Both inside
-                        clippedPolygon[clippedPolyLen++] = displayPoly.vectors[j];
-                        break;
+                            screenRect.x = 0;
+                            screenRect.y = 0;
+                            screenRect.w = (pixelBuffer.width * 3)/4;
+                            screenRect.h = pixelBuffer.height;
+                            break;
+                        case 1:
+                            screenRect.x = 0;
+                            screenRect.y = pixelBuffer.height/4;
+                            screenRect.w = pixelBuffer.width;
+                            screenRect.h = (pixelBuffer.height * 3)/4;
+                            break;
+                        case 2:
+                            screenRect.x = 0;
+                            screenRect.y = 0;
+                            screenRect.w = pixelBuffer.width;
+                            screenRect.h = (pixelBuffer.height * 3)/4;
+                            break;
                     }
+                    
+                    //TEST
+                    screenRect.x *= 2;
+                    screenRect.x -= pixelBuffer.width/2;
+                    screenRect.y *= 2;
+                    screenRect.y -= pixelBuffer.height/2;
+                    screenRect.w *= 2;
+                    screenRect.h *= 2;
+                    
+                    
+                    clippedPolyLen = 0;
+                    for (int j = 0; j < inputPolyLen; j++)
+                    {
+                        uint8_t insideBitField = 0;
+                        if (isInsideRect(inputPoly[j], screenRect))
+                            insideBitField |= 0x1;
+                        if (isInsideRect(inputPoly[(j + 1) % inputPolyLen], screenRect))
+                            insideBitField |= 0x2;
+
+                        //Switch over the Sutherland-Hodgman cases
+                        switch (insideBitField)
+                        {
+                            case 0:
+                            //Both outside
+                            break;
+                            case 1:
+                            //First vector inside
+                            clippedPolygon[clippedPolyLen++] = inputPoly[j];
+                            clippedPolygon[clippedPolyLen++] = getIntersect(inputPoly[j], inputPoly[(j + 1) % inputPolyLen], screenRect);
+                            break;
+                            case 2:
+                            //Second vector inside
+                            clippedPolygon[clippedPolyLen++] = getIntersect(inputPoly[j], inputPoly[(j + 1) % inputPolyLen], screenRect);
+                            break;
+                            case 3:
+                            //Both inside
+                            clippedPolygon[clippedPolyLen++] = inputPoly[j];
+                            break;
+                        }
+                    }
+                    inputPoly[0] = clippedPolygon[0];
+                    inputPoly[1] = clippedPolygon[1];
+                    inputPoly[2] = clippedPolygon[2];
+                    inputPoly[3] = clippedPolygon[3];
+                    inputPoly[4] = clippedPolygon[4];
+                    
+                    inputPolyLen = clippedPolyLen;
                 }
+                if (clippedPolyLen > 5) clippedPolyLen =  5; //THIS STOPS A SEGFAULT
                 clippedPolyTriangleCount = clippedPolyLen - 2;
             }
 

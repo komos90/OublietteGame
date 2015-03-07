@@ -81,7 +81,7 @@ EntityArray createLevelEntities(Level level)
                 entityCount++;
             if (i + 1 > level.width * level.height || level.data[i + 1] == '#')
                 entityCount++;
-            entityCount += 2;
+            //entityCount += 2;
         }
 
     }
@@ -99,10 +99,10 @@ EntityArray createLevelEntities(Level level)
         if (level.data[i] == '.') {
            
 
-            Entity floor   = { .position = {x * 100, -50, z * 100},  .scale = {50, 50, 50},
-                               .rotation = {M_PI/2, 0, 0},            .mesh=plane};
-            Entity ceiling = { .position = {x * 100, 50, z * 100}, .scale = {50, 50, 50},
-                               .rotation = {-M_PI/2, 0, 0},          .mesh=plane};
+            //Entity floor   = { .position = {x * 100, -50, z * 100},  .scale = {50, 50, 50},
+            //                   .rotation = {M_PI/2, 0, 0},            .mesh=plane};
+            //Entity ceiling = { .position = {x * 100, 50, z * 100}, .scale = {50, 50, 50},
+            //                   .rotation = {-M_PI/2, 0, 0},          .mesh=plane};
 
             //Create north plane
             Entity northWall = { .position = {x * 100, 0, z * 100 - 50}, .scale = {50, 50, 50},
@@ -135,8 +135,8 @@ EntityArray createLevelEntities(Level level)
 
 
 
-            entities.data[entityIndex++] = floor;
-            entities.data[entityIndex++] = ceiling;
+            //entities.data[entityIndex++] = floor;
+            //entities.data[entityIndex++] = ceiling;
         }
     }
     return entities;
