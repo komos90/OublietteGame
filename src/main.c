@@ -25,8 +25,8 @@ seoras1@gmail.com
 #include "meshes.h"
 #include "gfx_engine.h"
 
-static const int SCREEN_WIDTH  = 854;//300;//640;
-static const int SCREEN_HEIGHT = 480;//300;//480;
+static const int SCREEN_WIDTH  = 427;//854;//300;//640;
+static const int SCREEN_HEIGHT = 240;//480;//300;//480;
 
 //Temp Globals
 
@@ -58,7 +58,7 @@ int main( int argc, char* args[] )
 
     //Allocate pixel and z-buffer
     uint32_t* pixels = (uint32_t*) malloc(SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32_t));
-    int32_t*  zBuffer = (int32_t*) malloc(SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(int32_t));
+    float*  zBuffer = (float*) malloc(SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(float));
     PixelBuffer pixelBuffer = {pixels, zBuffer, SCREEN_WIDTH, SCREEN_HEIGHT};
 
     //Initialise Meshes and Entities ====

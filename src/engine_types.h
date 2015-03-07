@@ -3,7 +3,7 @@
 typedef struct 
 {
     uint32_t* pixels;
-    int32_t* zBuffer;
+    float* zBuffer;
     int width;
     int height;
 } PixelBuffer;
@@ -42,7 +42,6 @@ typedef struct
 
 typedef struct
 {
-    //Vector3 origin;
     int polyCount;
     Triangle* polygons;
 } Mesh;
@@ -53,6 +52,7 @@ typedef struct
     Vector3 rotation; //TODO Quaternion?
     Vector3 scale;
     Mesh mesh;
+    uint32_t color; //TEMP
 } Entity;
 
 typedef struct

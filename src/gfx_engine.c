@@ -29,12 +29,13 @@ void drawRect(SDL_Rect rect, uint32_t color, PixelBuffer pixelBuffer)
     {
         for (int xx = rect.x; xx < rect.x + rect.w; ++xx)
         {
+            if (yy * pixelBuffer.width + xx >= pixelBuffer.width * pixelBuffer.height)
+                return;
             pixelBuffer.pixels[yy * pixelBuffer.width + xx] = color;
         }
     }
 }
 
-//TODO use floats for depth buffer
 //TODO Get proper per pixel z values for each polygon
 void drawVector(Vector3 vector, uint32_t color, PixelBuffer pixelBuffer)
 {
@@ -93,6 +94,7 @@ void rasterizePolygon(Triangle poly, uint32_t color,
     int topIndex = 0;
     int leftIndex = 0;
     int rightIndex = 0;
+
     //Find top vertex
     for (int i = 1; i < 3; i++)
     {
@@ -109,6 +111,7 @@ void rasterizePolygon(Triangle poly, uint32_t color,
             }
         }
     }
+
     //Find left and right vertices
     leftIndex  = (topIndex + 2) % 3;
     rightIndex  = (topIndex + 1) % 3;
@@ -235,13 +238,12 @@ Vector3 transform(Matrix4 matrix, Vector3 vector)
         result.y /= w;
         result.z /= w;
     }
-    //SDL_Log("%f, %f, %f, %f", result.x, result.y, result.z, result.w);
     return result;
 }
 
 bool isInsideRect(Vector3 vector, SDL_Rect rect)
 {
-    if (vector.z < 1000000.f || vector.z > 10000000.f) return false;
+    //SDL_Log("vx %f vy %f vz %f rx %d ry %d rw %d rh %d", vector.x, vector.y, vector.z, rect.x, rect.y, rect.w, rect.h);
     return vector.x >= rect.x && vector.x <= rect.x + rect.w &&
            vector.y >= rect.y && vector.y <= rect.y + rect.h;
 }
@@ -284,8 +286,9 @@ Vector3 getIntersect(Vector3 start, Vector3 end, SDL_Rect rect)
             if (end.z == start.z)
                 tmp.z = start.z;
             else
-                tmp.z = start.z + (end.z - start.z) * ((get2DMagnitude(tmp) - (get2DMagnitude(start))) / (get2DMagnitude(end) - get2DMagnitude(start)));
-                //SDL_Log ("%f, %f, %f", start.z, tmp.z, end.z);
+                tmp.z = start.z + (end.z - start.z) * ((get2DMagnitude(tmp) -
+                    (get2DMagnitude(start))) / (get2DMagnitude(end) -
+                    get2DMagnitude(start)));
             return tmp;
         }
 
@@ -306,8 +309,13 @@ Vector3 getIntersect(Vector3 start, Vector3 end, SDL_Rect rect)
             y0 += sy;
         }
     }
-    Vector3 error = {0, 0, 0};
-    return error;
+    //SDL_Log("Intersect Error!: x0 %f, y0 %f x1 %f y1 %f rectx %d recty %d rectw %d recth %d", start.x, start.y, end.x, end.y, rect.x, rect.y, rect.w, rect.h);
+    return getIntersect(end, start, rect);
+}
+
+bool vectorZOutOfRange(Vector3 vector) {
+    //TODO set these as constants
+    return !(vector.z >= 1000000.f && vector.z <= 10000000.f);
 }
 
 //Has some temp debug parameters
@@ -318,13 +326,12 @@ void draw(
     bool shouldDrawSurfaces)
 {
 
-    SDL_Rect rect = {0, (pixelBuffer.height / 2) * (sin(camera->rotation.x * 2) + 1), pixelBuffer.width, pixelBuffer.height - (pixelBuffer.height / 2) * (sin(camera->rotation.x * 2) + 1) };
+    SDL_Rect rect = {0, (pixelBuffer.height / 2) * (sin(camera->rotation.x * 2) + 1), pixelBuffer.width, pixelBuffer.height};
     drawRect(rect, 0x33333333, pixelBuffer);
     for (int k = 0; k < entityCount; k++) 
     {
         Entity* entity = &entityList[k];
         uint32_t lineColor = 0xffffffff;
-        uint32_t fillColor = 0x00555555;
 
         //Scale Matrix
         Vector3 s = entity->scale;
@@ -365,14 +372,6 @@ void draw(
             0, 1, 0, p.y,
             0, 0, 1, p.z,
              0, 0, 0, 1
-        }};
-        //Camera Z Rotation Matrix
-        a = camera->rotation.z;
-        Matrix4 cameraZRotation = {{
-             cosf(-a), sinf(-a), 0, 0,
-            -sinf(-a), cosf(-a), 0, 0,
-             0       , 0       , 1, 0,
-             0       , 0       , 0, 1
         }};
         //Camera Y Rotation Matrix
         a = camera->rotation.y;
@@ -431,7 +430,6 @@ void draw(
         finalTransform = mulMatrix4(cameraTranslate, finalTransform);    
         finalTransform = mulMatrix4(cameraYRotation, finalTransform);    
         finalTransform = mulMatrix4(cameraXRotation, finalTransform);    
-        //finalTransform = mulMatrix4(cameraZRotation, finalTransform);    
         //View Space -> Projection Space
         finalTransform = mulMatrix4(perspectiveProjection, finalTransform);    
 
@@ -521,7 +519,10 @@ void draw(
                             insideBitField |= 0x1;
                         if (isInsideRect(inputPoly[(j + 1) % inputPolyLen], screenRect))
                             insideBitField |= 0x2;
-
+                        if (vectorZOutOfRange(inputPoly[j]) ||
+                            vectorZOutOfRange(inputPoly[(j + 1) % inputPolyLen]))
+                            continue;
+                             
                         //Switch over the Sutherland-Hodgman cases
                         switch (insideBitField)
                         {
@@ -566,9 +567,8 @@ void draw(
 
                 if(shouldDrawSurfaces)
                 {
-                    rasterizePolygon(clippedTriangles[j], fillColor, pixelBuffer);
+                    rasterizePolygon(clippedTriangles[j], entity->color, pixelBuffer);
                 }
-                fillColor = ~fillColor;
                 //Only draw lines between vectors that haven't been culled
                 if(shouldDrawWireframe)
                 {
