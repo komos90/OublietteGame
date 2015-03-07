@@ -25,8 +25,8 @@ seoras1@gmail.com
 #include "meshes.h"
 #include "gfx_engine.h"
 
-static const int SCREEN_WIDTH  = 427;//854;//300;//640;
-static const int SCREEN_HEIGHT = 240;//480;//300;//480;
+static const int SCREEN_WIDTH  = 854;//300;//640;
+static const int SCREEN_HEIGHT = 480;//300;//480;
 
 //Temp Globals
 
@@ -66,13 +66,17 @@ int main( int argc, char* args[] )
     cubeMesh = loadMeshFromFile("../res/meshes/cube.raw");
     plane = loadMeshFromFile("../res/meshes/plane.raw");
     monkey = loadMeshFromFile("../res/meshes/monkey.raw");
+    monkeyHd = loadMeshFromFile("../res/meshes/monkeyhd.raw");
     monkeySuperHd = loadMeshFromFile("../res/meshes/monkeysuperhd.raw");
 
     //Load level from file and add level entities to entity list
     Level level = loadLevel("../res/levels/level2.lvl");
     EntityArray entities = createLevelEntities(level); 
-    //Entity temp = {.position = {-200, -200, -200}, .mesh=plane, .scale={100, 100, 100}, .rotation={M_PI/2,0,0}};
+    //EntityArray entities;
+    //entities.data = (Entity*)malloc(sizeof(Entity));
+    //Entity temp = {.position = {400, 0, 200}, .mesh=monkeyHd, .scale={100, 100, 100}, .rotation={M_PI/2,0,0}};
     //entities.data[0] = temp;
+    //entities.length = 1;
 
     //Initialise Entities
     Entity camera = {{-100, 0, -100}, .rotation={0, -M_PI/2}};
@@ -225,7 +229,7 @@ int main( int argc, char* args[] )
         SDL_RenderPresent(renderer);
 
         //Clear the pixel buffer
-        memset((void*)pixelBuffer.pixels, 0, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32_t));
+        memset((void*)pixelBuffer.pixels, 200, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32_t));
         //Clear the z-buffer
         for (int i = 0; i < pixelBuffer.width * pixelBuffer.height; i++)
         {

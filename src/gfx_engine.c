@@ -246,6 +246,9 @@ void draw(
     bool shouldDrawWireframe,
     bool shouldDrawSurfaces)
 {
+
+    SDL_Rect rect = {0, (pixelBuffer.height / 2) * (sin(camera->rotation.x * 2) + 1), pixelBuffer.width, pixelBuffer.height - (pixelBuffer.height / 2) * (sin(camera->rotation.x * 2) + 1) };
+    drawRect(rect, 0x33333333, pixelBuffer);
     for (int k = 0; k < entityCount; k++) 
     {
         Entity* entity = &entityList[k];
@@ -361,6 +364,8 @@ void draw(
         //View Space -> Projection Space
         finalTransform = mulMatrix4(perspectiveProjection, finalTransform);    
 
+
+
         for (int i = 0; i < entity->mesh.polyCount; i++)
         {    
             Triangle displayPoly;
@@ -377,61 +382,114 @@ void draw(
                 displayVertices[j].w = 1.f; 
                 //Apply all transformations =====
                 displayVertices[j] = transform(finalTransform, displayVertices[j]);
-                
+               
+
                 //Cull vertices
-                if (displayVertices[j].x < -displayVertices[j].w ||
-                    displayVertices[j].x >  displayVertices[j].w ||
-                    displayVertices[j].y < -displayVertices[j].w ||
-                    displayVertices[j].y >  displayVertices[j].w ||
-                    displayVertices[j].z < -displayVertices[j].w ||
-                    displayVertices[j].z >  displayVertices[j].w)
+                /*if (displayvertices[j].x < -displayvertices[j].w ||
+                    displayvertices[j].x >  displayvertices[j].w ||
+                    displayvertices[j].y < -displayvertices[j].w ||
+                    displayvertices[j].y >  displayvertices[j].w ||
+                    displayvertices[j].z < -displayvertices[j].w ||
+                    displayvertices[j].z >  displayvertices[j].w)
                 {
                     isVectorCulled[j] = true;
-                }
+                }*/
+                
             }
 
             //Clip polygons to screen dimensions
             //Using Sutherland - Hodgman algorithm
-            {
-
-            }
-
-            for (int j = 0; j < 3; j++)
-            {
-                //Perform perspective divide
-                displayVertices[j].x /= displayVertices[j].w;
-                displayVertices[j].y /= displayVertices[j].w;
-                displayVertices[j].z /= displayVertices[j].w;
-                displayVertices[j].w = 1.f; 
-
-                //Projection Space -> Screen Friendly
-                displayVertices[j] = transform(correctForScreen, displayVertices[j]);
-
-                //Convert back to vector 3 polygon
-                displayPoly.vectors[j].x = displayVertices[j].x;
-                displayPoly.vectors[j].y = displayVertices[j].y;
-                displayPoly.vectors[j].z = displayVertices[j].z;
-            }
-
-            if(!(isVectorCulled[0] || isVectorCulled[1] || isVectorCulled[2]) && shouldDrawSurfaces)
-            {
-                rasterizePolygon(displayPoly, fillColor, pixelBuffer);
-            }
-            fillColor = ~fillColor;
-            //Only draw lines between vectors that haven't been culled
-            if(shouldDrawWireframe)
-            {
-                if(!isVectorCulled[0] && !isVectorCulled[1])
+            Vector4 outPoly[5];
+            int outPolyLen = 0;
+            /*{   
+                for (int j = 0; j < displayVerticesLength; j++)
                 {
-                    drawLine(displayPoly.vectors[0], displayPoly.vectors[1], lineColor, pixelBuffer);        
-                }        
-                if(!isVectorCulled[1] && !isVectorCulled[2])
+                    int nextJ = (j + 1) % displayVerticesLength;
+                    float intersectW = 1.f;
+                    //Clip Left ====
+                    //Clip both inside
+                    if (displayVertices[j].x >= -displayVertices[j].w && 
+                        displayVertices[nextJ].x >= -displayVertices[nextJ].w)
+                    {
+                        outPoly[outPolyLen++] = displayVertices[j];
+                    }
+                    //Clip first in second out
+                    else if (displayVertices[j].x >= -displayVertices[j].w && 
+                        displayVertices[nextJ].x <= -displayVertices[nextJ].w)
+                    {
+                        //SDL_Log("%f, %f, %f, %f", displayVertices[j].x, displayVertices[j].w, displayVertices[nextJ].x, displayVertices[nextJ].w);
+                        outPoly[outPolyLen++] = displayVertices[j];
+                        outPoly[outPolyLen] = displayVertices[nextJ];
+                        outPoly[outPolyLen].x = -displayVertices[j].w;
+                        outPolyLen++;
+                    }
+                    //Clip first out second in
+                    else if (displayVertices[j].x <= -displayVertices[j].w && 
+                        displayVertices[nextJ].x >= -displayVertices[nextJ].w)
+                    { 
+                        //SDL_Log("%f, %f, %f, %f", displayVertices[j].x, displayVertices[j].w, displayVertices[nextJ].x, displayVertices[nextJ].w);
+                        outPoly[outPolyLen] = displayVertices[nextJ]; 
+                        outPoly[outPolyLen].x = -displayVertices[nextJ].w; 
+                        outPolyLen++;
+                    }
+                    else
+                    {
+                        //SDL_Log("%f, %f, %f, %f", displayVertices[j].x, displayVertices[j].w, displayVertices[nextJ].x, displayVertices[nextJ].w);
+                    }
+                }
+                displayVerticesLength = outPolyLen;
+            }*/
+            int outPolySize = 1;//outPolyLen - 2;
+            for (int k = 0; k < outPolySize; k++)
+            {
+                //displayVertices[0] = outPoly[0];
+                //displayVertices[1] = outPoly[(k + 1) % outPolyLen]; 
+                //displayVertices[2] = outPoly[(k + 2) % outPolyLen];
+
+                for (int j = 0; j < 3; j++)
+                {   
+                    if (displayVertices[j].x < -displayVertices[j].w) displayVertices[j].x = -displayVertices[j].w;
+                    if (displayVertices[j].x >  displayVertices[j].w) displayVertices[j].x = displayVertices[j].w;
+                    if (displayVertices[j].y < -displayVertices[j].w) displayVertices[j].y = -displayVertices[j].w;
+                    if (displayVertices[j].y >  displayVertices[j].w) displayVertices[j].y = displayVertices[j].w;
+                    if (displayVertices[j].z < -displayVertices[j].w) isVectorCulled[j] = true;
+                    if (displayVertices[j].z >  displayVertices[j].w) isVectorCulled[j] = true;
+
+                    //Perform perspective divide
+                    displayVertices[j].x /= displayVertices[j].w;
+                    displayVertices[j].y /= displayVertices[j].w;
+                    displayVertices[j].z /= displayVertices[j].w;
+                    displayVertices[j].w = 1.f; 
+
+                    //Projection Space -> Screen Friendly
+                    displayVertices[j] = transform(correctForScreen, displayVertices[j]);
+
+                    //Convert back to vector 3 polygon
+                    displayPoly.vectors[j].x = displayVertices[j].x;
+                    displayPoly.vectors[j].y = displayVertices[j].y;
+                    displayPoly.vectors[j].z = displayVertices[j].z;
+                }
+
+                if(!(isVectorCulled[0] || isVectorCulled[1] || isVectorCulled[2]) && shouldDrawSurfaces)
                 {
-                    drawLine(displayPoly.vectors[1], displayPoly.vectors[2], lineColor, pixelBuffer);
-                }        
-                if(!isVectorCulled[0] && !isVectorCulled[2])
+                    rasterizePolygon(displayPoly, fillColor, pixelBuffer);
+                }
+                fillColor = ~fillColor;
+                //Only draw lines between vectors that haven't been culled
+                if(shouldDrawWireframe)
                 {
-                    drawLine(displayPoly.vectors[2], displayPoly.vectors[0], lineColor, pixelBuffer);        
+                    if(!isVectorCulled[0] && !isVectorCulled[1])
+                    {
+                        drawLine(displayPoly.vectors[0], displayPoly.vectors[1], lineColor, pixelBuffer);        
+                    }        
+                    if(!isVectorCulled[1] && !isVectorCulled[2])
+                    {
+                        drawLine(displayPoly.vectors[1], displayPoly.vectors[2], lineColor, pixelBuffer);
+                    }        
+                    if(!isVectorCulled[0] && !isVectorCulled[2])
+                    {
+                        drawLine(displayPoly.vectors[2], displayPoly.vectors[0], lineColor, pixelBuffer);        
+                    }
                 }
             }
         }
