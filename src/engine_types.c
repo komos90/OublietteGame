@@ -1,6 +1,30 @@
 #include "engine_types.h"
 #include "SDL2/SDL.h"
 
+Vector3 vector3Add(Vector3 vec1, Vector3 vec2)
+{
+    Vector3 tmp;
+    tmp.x = vec1.x + vec2.x;
+    tmp.y = vec1.y + vec2.y;
+    tmp.z = vec1.z + vec2.z;
+    return tmp;
+}
+
+Vector3 vector3ScalarAdd(Vector3 vec1, float scalar)
+{
+    Vector3 tmp;
+    tmp.x = vec1.x + scalar;
+    tmp.y = vec1.y + scalar;
+    tmp.z = vec1.z + scalar;
+    return tmp;
+}
+
+Vector3 vector3Floor(Vector3 vec)
+{
+    Vector3 tmp = {floor(vec.x), floor(vec.y), floor(vec.z)};
+    return tmp;
+}
+
 bool doBoxesCollide(Box box1, Box box2)
 {
 

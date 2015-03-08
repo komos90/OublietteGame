@@ -319,7 +319,7 @@ Vector3 getIntersect(Vector3 start, Vector3 end, SDL_Rect rect)
 
 bool vectorZOutOfRange(Vector3 vector) {
     //TODO set these as constants
-    return vector.z <= 10000000.f || vector.z <= 1000000;
+    return vector.z <= 10000000.f || vector.z >= 14000000;
 }
 
 //Has some temp debug parameters

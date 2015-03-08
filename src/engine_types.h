@@ -75,4 +75,7 @@ typedef struct
     Entity* data;
 } EntityArray;
 
+Vector3 vector3Add(Vector3 vec1, Vector3 vec2);
+Vector3 vector3ScalarAdd(Vector3 vec1, float scalar);
+Vector3 vector3Floor(Vector3 vec);
 bool doBoxesCollide(Box box1, Box box2);
