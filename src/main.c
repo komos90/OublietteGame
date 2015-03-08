@@ -30,6 +30,38 @@ static const int SCREEN_HEIGHT = 240;//480;//300;//480;
 
 //Temp Globals
 
+bool collidedWithSomething(Entity entity, EntityArray otherEntities)
+{
+    for (int i = 0; i < otherEntities.length; i++)
+    {
+        Entity otherEntity = otherEntities.data[i];
+
+        Box box1;
+        box1.x = entity.collisionBox.x + entity.position.x;
+        box1.y = entity.collisionBox.y + entity.position.y;
+        box1.z = entity.collisionBox.z + entity.position.z;
+        box1.w = entity.collisionBox.w;
+        box1.h = entity.collisionBox.h;
+        box1.d = entity.collisionBox.d;
+
+        Box box2;
+        box2.x = otherEntity.collisionBox.x + otherEntity.position.x;
+        box2.y = otherEntity.collisionBox.y + otherEntity.position.y;
+        box2.z = otherEntity.collisionBox.z + otherEntity.position.z;
+        box2.w = otherEntity.collisionBox.w;
+        box2.h = otherEntity.collisionBox.h;
+        box2.d = otherEntity.collisionBox.d;
+
+        //SDL_Log("%f, %f, %f, %f, %f, %f", box1.w, box1.h, box1.d, box2.w, box2.h, box2.d);
+
+        if (doBoxesCollide(box1, box2))
+        {
+            //SDL_Log("Collide.");
+            return true;
+        }
+    }
+    return false;
+}
 
 int main( int argc, char* args[] )
 {
@@ -74,12 +106,14 @@ int main( int argc, char* args[] )
     EntityArray entities = createLevelEntities(level); 
     //EntityArray entities;
     //entities.data = (Entity*)malloc(sizeof(Entity));
-    //Entity temp = {.position = {400, 0, 200}, .mesh=monkeyHd, .scale={100, 100, 100}, .rotation={M_PI/2,0,0}};
+    //Entity temp = {.position = {400, 0, 200}, .mesh=monkeyHd, .scale={100, 100, 100}, .rotation={M_PI/2,0,0},
+    //               .collisionBox={-100, -100, -100, 200, 200, 200}};
     //entities.data[0] = temp;
     //entities.length = 1;
 
     //Initialise Entities
-    Entity camera = {{-100, 0, -100}, .rotation={0, -M_PI/2}};
+    Entity camera = {.position={100, 0, 100}, .rotation={0, M_PI/2},
+                     .collisionBox={-10,-1000,-10,20,2000,20}};
 
     //Get input devices' states
     SDL_Joystick* gamePad = SDL_JoystickOpen(0);
@@ -139,11 +173,16 @@ int main( int argc, char* args[] )
                 break;
             case SDL_MOUSEMOTION:
                 camera.rotation.y -= e.motion.xrel * 0.001;
-                camera.rotation.x -= e.motion.yrel * 0.001;
+               
+                //Keep look up and down bounded 
+                float newCamRotX = camera.rotation.x - e.motion.yrel * 0.001;
+                if (newCamRotX > -M_PI/2 && newCamRotX < M_PI/2)
+                    camera.rotation.x = newCamRotX;
                 break;
             }
         }
         //Joystick input
+        //HACK Should decouple Input and Game Logic
         {
             const int JOYSTICK_DEAD_ZONE = 8000;
             int moveVel = 3;
@@ -183,6 +222,7 @@ int main( int argc, char* args[] )
         }
         //Keyboard Input
         { 
+            Vector3 oldCameraPos = camera.position;
             int moveVel = 3; 
             if (keyState[SDL_SCANCODE_A])
             {
@@ -212,7 +252,15 @@ int main( int argc, char* args[] )
             {
                 camera.rotation.y -= 0.02;
             }
+            //For each other entity do collision detection. Only update newPos if
+            //player does not collide with anything.
+            if (collidedWithSomething(camera, entities))
+            {
+                camera.position = oldCameraPos;
+            }
         }
+
+        
         
         if(!paused)
         {
@@ -221,7 +269,7 @@ int main( int argc, char* args[] )
         }    
        
         //Send game entities to gfx engine to be rendered 
-        draw(pixelBuffer, &camera, entities.data, entities.length, shouldDrawWireframe, shouldDrawSurfaces);
+        draw(pixelBuffer, camera, entities.data, entities.length, shouldDrawWireframe, shouldDrawSurfaces);
 
         //Render the pixel buffer to the screen
         SDL_UpdateTexture(screenTexture, NULL, pixelBuffer.pixels, SCREEN_WIDTH * sizeof(uint32_t));        
@@ -233,7 +281,7 @@ int main( int argc, char* args[] )
         //Clear the z-buffer
         for (int i = 0; i < pixelBuffer.width * pixelBuffer.height; i++)
         {
-            pixelBuffer.zBuffer[i] = INT_MAX;
+            pixelBuffer.zBuffer[i] = INT_MIN;
         }
 
         //Lock to 60 fps

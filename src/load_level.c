@@ -98,7 +98,7 @@ EntityArray createLevelEntities(Level level)
         int z = i / level.width;
         
         if (level.data[i] == '.') {
-            
+            //TODO this can be done a lot easier by just cloning standard walls and multiplying the position. 
             //Create entities  
             Entity northWall = { .position = {x * 100, 0, z * 100 - 50},    .scale = {50, 50, 50},
                                  .rotation = {0, 0, 0},       .mesh=plane,  .color=0x00FF0000};
@@ -108,7 +108,35 @@ EntityArray createLevelEntities(Level level)
                                  .rotation = {0, M_PI/2, 0},  .mesh=plane,  .color=0x000000FF};
             Entity westWall  = { .position = {x * 100 + 50, 0, z * 100},    .scale = {50, 50, 50},
                                  .rotation = {0, -M_PI/2, 0}, .mesh=plane,  .color=0x00FF00FF};
-            
+
+            northWall.collisionBox.x = -50;
+            northWall.collisionBox.y = -50;
+            northWall.collisionBox.z = -25;
+            northWall.collisionBox.w = 100;
+            northWall.collisionBox.h = 100;
+            northWall.collisionBox.d = 50;
+
+            southWall.collisionBox.x = -50;
+            southWall.collisionBox.y = -50;
+            southWall.collisionBox.z = -25;
+            southWall.collisionBox.w = 100;
+            southWall.collisionBox.h = 100;
+            southWall.collisionBox.d = 50;
+
+            eastWall.collisionBox.x = -25;
+            eastWall.collisionBox.y = -50;
+            eastWall.collisionBox.z = -50;
+            eastWall.collisionBox.w = 50;
+            eastWall.collisionBox.h = 100;
+            eastWall.collisionBox.d = 100;
+
+            westWall.collisionBox.x = -25;
+            westWall.collisionBox.y = -50;
+            westWall.collisionBox.z = -50;
+            westWall.collisionBox.w = 50;
+            westWall.collisionBox.h = 100;
+            westWall.collisionBox.d = 100;
+
             //Add entities needed for this tile
             if (i + 1 > level.width * level.height || level.data[i + 1] == '#')
                 entities.data[entityIndex++] = westWall;

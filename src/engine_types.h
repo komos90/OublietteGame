@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+
 typedef struct 
 {
     uint32_t* pixels;
@@ -32,6 +35,16 @@ typedef struct
 
 typedef struct
 {
+    float x;
+    float y;
+    float z;
+    float w;
+    float h;
+    float d;
+} Box;
+
+typedef struct
+{
     Vector3 vectors[3];
 } Triangle;
 
@@ -52,6 +65,7 @@ typedef struct
     Vector3 rotation; //TODO Quaternion?
     Vector3 scale;
     Mesh mesh;
+    Box collisionBox;
     uint32_t color; //TEMP
 } Entity;
 
@@ -60,3 +74,5 @@ typedef struct
     int length;
     Entity* data;
 } EntityArray;
+
+bool doBoxesCollide(Box box1, Box box2);

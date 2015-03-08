@@ -22,7 +22,7 @@ void drawRect (SDL_Rect rect, uint32_t color, PixelBuffer pixelBuffer);
 void drawVector (Vector3 vector, uint32_t color, PixelBuffer pixelBuffer);
 void drawLine (Vector3 start, Vector3 end, uint32_t color, PixelBuffer pixelBuffer);
 void rasterizePolygon (Triangle poly, uint32_t color, PixelBuffer pixelBuffer);
-void draw (PixelBuffer pixelBuffer, Entity* camera, Entity* entityList, int entityCount,
+void draw (PixelBuffer pixelBuffer, Entity camera, Entity* entityList, int entityCount,
            bool shouldDrawWireframe, bool shouldDrawSurfaces);
 Matrix4 mulMatrix4 (Matrix4 mat1, Matrix4 mat2);
 Vector3 transform (Matrix4 matrix, Vector3 vector);

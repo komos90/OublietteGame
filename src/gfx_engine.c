@@ -16,6 +16,7 @@ seoras1@gmail.com
 
 #ifdef __linux__
     #include <SDL2/SDL.h>
+    #define M_PI 3.14159265358979323846
 #elif __Win32
     #include <SDL.h>
 #endif
@@ -25,6 +26,8 @@ seoras1@gmail.com
 
 void drawRect(SDL_Rect rect, uint32_t color, PixelBuffer pixelBuffer)
 {
+    if (rect.y < 0) rect.y = 0;
+    if (rect.x < 0) rect.x = 0;
     for (int yy = rect.y; yy < rect.y + rect.h; ++yy)
     {
         for (int xx = rect.x; xx < rect.x + rect.w; ++xx)
@@ -39,7 +42,7 @@ void drawRect(SDL_Rect rect, uint32_t color, PixelBuffer pixelBuffer)
 //TODO Get proper per pixel z values for each polygon
 void drawVector(Vector3 vector, uint32_t color, PixelBuffer pixelBuffer)
 {
-    if (vector.z < pixelBuffer.zBuffer[(int)vector.y * pixelBuffer.width + (int)vector.x])
+    if (vector.z > pixelBuffer.zBuffer[(int)vector.y * pixelBuffer.width + (int)vector.x])
     {
         pixelBuffer.pixels[(int)vector.y  * pixelBuffer.width + (int)vector.x] = color;
         pixelBuffer.zBuffer[(int)vector.y  * pixelBuffer.width + (int)vector.x] = vector.z;
@@ -113,8 +116,8 @@ void rasterizePolygon(Triangle poly, uint32_t color,
     }
 
     //Find left and right vertices
-    leftIndex  = (topIndex + 2) % 3;
-    rightIndex  = (topIndex + 1) % 3;
+    leftIndex  = (topIndex + 1) % 3;
+    rightIndex  = (topIndex + 2) % 3;
     
     //Initilise vertices for triangle drawing
     Vector3Int topLO = {(int)poly.vectors[topIndex].x,
@@ -309,25 +312,29 @@ Vector3 getIntersect(Vector3 start, Vector3 end, SDL_Rect rect)
             y0 += sy;
         }
     }
+    //HACK Watch out
     //SDL_Log("Intersect Error!: x0 %f, y0 %f x1 %f y1 %f rectx %d recty %d rectw %d recth %d", start.x, start.y, end.x, end.y, rect.x, rect.y, rect.w, rect.h);
     return getIntersect(end, start, rect);
 }
 
 bool vectorZOutOfRange(Vector3 vector) {
     //TODO set these as constants
-    return !(vector.z >= 1000000.f && vector.z <= 10000000.f);
+    return vector.z <= 10000000.f || vector.z <= 1000000;
 }
 
 //Has some temp debug parameters
 void draw(
-    PixelBuffer pixelBuffer, Entity* camera,
+    PixelBuffer pixelBuffer, Entity camera,
     Entity* entityList, int entityCount,
     bool shouldDrawWireframe,
     bool shouldDrawSurfaces)
 {
+    //Draw "floor" using the camera x rotation angle
+    int floorYStart = (pixelBuffer.height / 2) * (tan(camera.rotation.x * 1.337) + 1);
 
-    SDL_Rect rect = {0, (pixelBuffer.height / 2) * (sin(camera->rotation.x * 2) + 1), pixelBuffer.width, pixelBuffer.height};
+    SDL_Rect rect = {0, floorYStart, pixelBuffer.width, pixelBuffer.height};
     drawRect(rect, 0x33333333, pixelBuffer);
+
     for (int k = 0; k < entityCount; k++) 
     {
         Entity* entity = &entityList[k];
@@ -374,7 +381,7 @@ void draw(
              0, 0, 0, 1
         }};
         //Camera Y Rotation Matrix
-        a = camera->rotation.y;
+        a = camera.rotation.y;
         Matrix4 cameraYRotation = {{
              cosf(-a), 0, sinf(-a), 0,
              0       , 1, 0       , 0,
@@ -382,7 +389,7 @@ void draw(
              0       , 0, 0       , 1
         }};
         //Camera X Rotation
-        a = camera->rotation.x;
+        a = camera.rotation.x;
         Matrix4 cameraXRotation = {{
             1,  0       , 0       , 0,
             0,  cosf(-a), sinf(-a), 0,
@@ -390,11 +397,11 @@ void draw(
              0,  0       , 0       , 1
         }};
         //Camera translate Matrix    
-        p = camera->position;
+        p = camera.position;
         Matrix4 cameraTranslate = {{
-            1, 0, 0, p.x,
-            0, 1, 0, p.y,
-            0, 0, 1, p.z,
+            1, 0, 0, -p.x,
+            0, 1, 0, -p.y,
+            0, 0, 1, -p.z,
              0, 0, 0, 1
         }};
         
@@ -561,6 +568,7 @@ void draw(
             {
                 //2.convert pentagon(at most) to 3 triangles
                 //Returns Triangle[3] clippedPolygons
+                //TODO I think some of these are being wound the wrong way
                 clippedTriangles[j].vectors[0] = clippedPolygon[0];
                 clippedTriangles[j].vectors[1] = clippedPolygon[1 + j];
                 clippedTriangles[j].vectors[2] = clippedPolygon[2 + j];
