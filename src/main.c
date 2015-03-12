@@ -158,7 +158,7 @@ int main( int argc, char* args[] )
         }
         //Keyboard Input
         { 
-            //Vector2 oldplayerPos = player.pos;
+            Vector2 oldPlayerPos = player.pos;
             int moveVel = 3; 
             if (keyState[SDL_SCANCODE_A])
             {
@@ -187,6 +187,9 @@ int main( int argc, char* args[] )
             if (keyState[SDL_SCANCODE_RIGHT])
             {
                 player.rotation -= 0.02;
+            }
+            if (level.data[posToTileIndex(player.pos.x, player.pos.y, level)] == '#') {
+                player.pos = oldPlayerPos;
             }
         }
 

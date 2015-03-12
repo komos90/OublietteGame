@@ -18,8 +18,7 @@ seoras1@gmail.com
 #include "load_level.h"
 
 //Projection Constants
-static const int TILE_DIMS     = 64;
-static const float H_FOV       = M_PI/2;
+static const float H_FOV       = M_PI/3;
 static const float V_FOV       = M_PI/3;
 
 //IDEA have pixelBuffer as static variable in gfx_engine, use a function to set it?

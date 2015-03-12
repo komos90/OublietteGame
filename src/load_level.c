@@ -16,6 +16,13 @@
 
 #include "load_level.h"
 
+
+int posToTileIndex(int x, int y, Level level)
+{
+    int index = (int)((y / TILE_DIMS) * level.width + (x / TILE_DIMS));
+    return index;
+}
+
 Level loadLevel(char* fileName)
 {
     Level level;

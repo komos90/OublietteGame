@@ -46,12 +46,6 @@ void drawPoint(int x, int y, uint32_t color, PixelBuffer pixelBuffer)
     pixelBuffer.pixels[(int)y  * pixelBuffer.width + (int)x] = color;
 }
 
-int posToTileIndex(int x, int y, Level level)
-{
-    int index = (int)((y / TILE_DIMS) * level.width + (x / TILE_DIMS));
-    return index;
-}
-
 bool isTileIndexValid(int i, Level level) {
     return i >= 0 && i < level.width * level.height;
 }
@@ -134,8 +128,9 @@ void draw(Entity player, Level level, PixelBuffer pixelBuffer)
         {
             if (y >= pixelBuffer.height) break;
             if (y < 0) y = 0;
-
-            drawPoint(screenColumn, y, 0xFFFF0000, pixelBuffer);
+            uint32_t color = 0x000000FF - distance / 4;
+            if (color > 0x000000FF) color = 0;
+            drawPoint(screenColumn, y, color, pixelBuffer);
         }
 
         angle += (H_FOV / pixelBuffer.width);

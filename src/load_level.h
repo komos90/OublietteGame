@@ -8,6 +8,8 @@
 
 #include "engine_types.h"
 
+ static const int TILE_DIMS     = 64;
+
 typedef struct
 {
     int width;
@@ -16,3 +18,4 @@ typedef struct
 } Level;
 
 Level loadLevel(char* fileName);
+int posToTileIndex(int x, int y, Level level);
