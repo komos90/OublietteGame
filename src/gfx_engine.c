@@ -56,7 +56,35 @@ bool isTileIndexValid(int i, Level level) {
     return i >= 0 && i < level.width * level.height;
 }
 
-float getTileIntersectionDistance(Vector2 pos, float angle, Level level, PixelBuffer pixelBuffer)
+float getTileHorzIntersectionDistance(Vector2 pos, float angle, Level level, PixelBuffer pixelBuffer)
+{
+    bool xPositive = angle >= -M_PI / 2 && angle <= M_PI / 2;
+    bool yPositive = angle <= 0;
+
+    float yInter = (float)(((int)pos.y / TILE_DIMS) * TILE_DIMS);
+    if (!yPositive) yInter += TILE_DIMS;
+
+    float xAngle = angle;
+    if (xPositive && yPositive) xAngle = -M_PI/2 + angle;
+    else if (!xPositive && yPositive) xAngle = angle - M_PI/2;
+    else if (xPositive && !yPositive) xAngle = M_PI/2 - angle;
+    else if (!xPositive && !yPositive) xAngle = -angle + M_PI/2;
+
+    float xInter = (abs(yInter - pos.y) * tanf(xAngle)) + pos.x;
+    float xInc = TILE_DIMS * tanf(xAngle);
+
+    int xDir = xPositive ? -1 : 1;
+    int yDir = yPositive ? -1 : 1;
+    while (isTileIndexValid(posToTileIndex(xInter + xDir, yInter + yDir, level), level) &&
+           level.data[posToTileIndex(xInter + xDir, yInter + yDir, level)] != '#')
+    {   
+        yInter += (!yPositive) ? TILE_DIMS : -TILE_DIMS;
+        xInter += xInc;
+    }
+    return sqrt(pow(xInter - pos.x, 2) + pow(yInter - pos.y, 2));
+}
+
+float getTileVertIntersectionDistance(Vector2 pos, float angle, Level level, PixelBuffer pixelBuffer)
 {
     bool xPositive = angle >= -M_PI / 2 && angle <= M_PI / 2;
     bool yPositive = angle <= 0;
@@ -67,8 +95,10 @@ float getTileIntersectionDistance(Vector2 pos, float angle, Level level, PixelBu
     float yInter = (abs(xInter - pos.x) * tanf(xPositive ? angle : M_PI - angle)) + pos.y;
     float yInc = TILE_DIMS * tanf(xPositive ? angle : M_PI - angle);
 
-    while (isTileIndexValid(posToTileIndex(xInter, yInter, level), level) &&
-           level.data[posToTileIndex(xInter, yInter, level)] != '#')
+    int xDir = xPositive ? 1 : -1;
+    int yDir = yPositive ? 1 : -1;
+    while (isTileIndexValid(posToTileIndex(xInter + xDir, yInter + yDir, level), level) &&
+           level.data[posToTileIndex(xInter + xDir, yInter + yDir, level)] != '#')
     {   
         xInter += (xPositive) ? TILE_DIMS : -TILE_DIMS;
         yInter += yInc;
@@ -95,7 +125,9 @@ void draw(Entity player, Level level, PixelBuffer pixelBuffer)
     float angle = -H_FOV/2 + player.rotation;
     for (int screenColumn = 0; screenColumn < pixelBuffer.width; screenColumn++)
     {
-        float distance = getTileIntersectionDistance(player.pos, angle, level, pixelBuffer);
+        float hDistance = getTileHorzIntersectionDistance(player.pos, angle, level, pixelBuffer);
+        float vDistance = getTileVertIntersectionDistance(player.pos, angle, level, pixelBuffer);
+        float distance = hDistance <= vDistance ? hDistance : vDistance;
         float height = wallDistanceToHeight(distance, pixelBuffer);
 
         for (int y = (pixelBuffer.height - height) / 2; y < (pixelBuffer.height + height) / 2; y++)

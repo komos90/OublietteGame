@@ -24,8 +24,8 @@ seoras1@gmail.com
 #include "load_level.h"
 #include "gfx_engine.h"
 
-static const int SCREEN_WIDTH  = 214;//854;//300;//640;
-static const int SCREEN_HEIGHT = 120;//480;//300;//480;
+static const int SCREEN_WIDTH  = 213;//854;
+static const int SCREEN_HEIGHT = 120;//480;
 
 //Temp Globals
 
@@ -55,18 +55,15 @@ int main( int argc, char* args[] )
     //grab cursor
     SDL_SetRelativeMouseMode(true);
 
-    //Allocate pixel and z-buffer
+    //Allocate pixel buffer
     uint32_t* pixels = (uint32_t*) malloc(SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32_t));
-    //float*  zBuffer = (float*) malloc(SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(float));
     PixelBuffer pixelBuffer = {pixels, SCREEN_WIDTH, SCREEN_HEIGHT};
-
-    //Initialise Meshes and Entities ====
 
     //Load level from file and add level entities to entity list
     Level level = loadLevel("../res/levels/level2.lvl");
 
-    //Initialise Entities
-    Entity camera = {.pos={896, 256}};
+    //Create player
+    Entity player = {.pos={896, 256}};
 
     //Get input devices' states
     SDL_Joystick* gamePad = SDL_JoystickOpen(0);
@@ -79,7 +76,7 @@ int main( int argc, char* args[] )
     int framerateDisplayDelayCounter = 0;
 
     //Main Loop ====
-    while(running)    
+    while(running) 
     {
         int frameStartTime = SDL_GetTicks();
         
@@ -117,7 +114,7 @@ int main( int argc, char* args[] )
                 }
                 break;
             case SDL_MOUSEMOTION:
-                camera.rotation += e.motion.xrel * 0.001;
+                player.rotation += e.motion.xrel * 0.001;
             }
         }
         //Joystick input
@@ -127,85 +124,84 @@ int main( int argc, char* args[] )
             int moveVel = 3;
             if( SDL_JoystickGetAxis(gamePad, 0) < -JOYSTICK_DEAD_ZONE )
             {
-                camera.pos.y += moveVel * cosf(camera.rotation + M_PI/2);
-                camera.pos.x += moveVel * sinf(camera.rotation + M_PI/2);
+                player.pos.y += moveVel * cosf(player.rotation + M_PI/2);
+                player.pos.x += moveVel * sinf(player.rotation + M_PI/2);
             }
             //Right of dead zone
             else if( SDL_JoystickGetAxis(gamePad, 0) > JOYSTICK_DEAD_ZONE )
             {
-                camera.pos.y += moveVel * cosf(camera.rotation - M_PI/2);
-                camera.pos.x += moveVel * sinf(camera.rotation - M_PI/2);
+                player.pos.y += moveVel * cosf(player.rotation - M_PI/2);
+                player.pos.x += moveVel * sinf(player.rotation - M_PI/2);
             }
             //Left of dead zone
             if( SDL_JoystickGetAxis(gamePad, 1) < -JOYSTICK_DEAD_ZONE )
             {
-                camera.pos.y += moveVel * cosf(camera.rotation);
-                camera.pos.x += moveVel * sinf(camera.rotation);
+                player.pos.y += moveVel * cosf(player.rotation);
+                player.pos.x += moveVel * sinf(player.rotation);
             }
             //Right of dead zone
             else if( SDL_JoystickGetAxis(gamePad, 1) > JOYSTICK_DEAD_ZONE )
             {
-                camera.pos.y += moveVel * cosf(camera.rotation + M_PI);
-                camera.pos.x += moveVel * sinf(camera.rotation + M_PI);
+                player.pos.y += moveVel * cosf(player.rotation + M_PI);
+                player.pos.x += moveVel * sinf(player.rotation + M_PI);
             }
             //Left of dead zone
             if( SDL_JoystickGetAxis(gamePad, 2) < -JOYSTICK_DEAD_ZONE )
             {
-                camera.rotation += 0.04 * -SDL_JoystickGetAxis(gamePad, 2) / 32767.f;
+                player.rotation += 0.04 * -SDL_JoystickGetAxis(gamePad, 2) / 32767.f;
             }
             //Right of dead zone
             else if( SDL_JoystickGetAxis(gamePad, 2) > JOYSTICK_DEAD_ZONE )
             {
-                camera.rotation -= 0.04 * SDL_JoystickGetAxis(gamePad, 2) / 32767.f;
+                player.rotation -= 0.04 * SDL_JoystickGetAxis(gamePad, 2) / 32767.f;
             }
         }
         //Keyboard Input
         { 
-            //Vector2 oldCameraPos = camera.pos;
+            //Vector2 oldplayerPos = player.pos;
             int moveVel = 3; 
             if (keyState[SDL_SCANCODE_A])
             {
-                camera.pos.x += moveVel * cosf(camera.rotation - M_PI/2);
-                camera.pos.y += moveVel * sinf(camera.rotation - M_PI/2);
+                player.pos.x += moveVel * cosf(player.rotation - M_PI/2);
+                player.pos.y += moveVel * sinf(player.rotation - M_PI/2);
             }
             if (keyState[SDL_SCANCODE_D])
             {
-                camera.pos.x += moveVel * cosf(camera.rotation + M_PI/2);
-                camera.pos.y += moveVel * sinf(camera.rotation + M_PI/2);
+                player.pos.x += moveVel * cosf(player.rotation + M_PI/2);
+                player.pos.y += moveVel * sinf(player.rotation + M_PI/2);
             }
             if (keyState[SDL_SCANCODE_S])
             {
-                camera.pos.x += moveVel * cosf(camera.rotation + M_PI);
-                camera.pos.y += moveVel * sinf(camera.rotation + M_PI);
+                player.pos.x += moveVel * cosf(player.rotation + M_PI);
+                player.pos.y += moveVel * sinf(player.rotation + M_PI);
             }
             if (keyState[SDL_SCANCODE_W])
             {
-                camera.pos.x += moveVel * cosf(camera.rotation);
-                camera.pos.y += moveVel * sinf(camera.rotation);
+                player.pos.x += moveVel * cosf(player.rotation);
+                player.pos.y += moveVel * sinf(player.rotation);
             }
             if (keyState[SDL_SCANCODE_LEFT])
             {
-                camera.rotation += 0.02;
+                player.rotation += 0.02;
             }
             if (keyState[SDL_SCANCODE_RIGHT])
             {
-                camera.rotation -= 0.02;
+                player.rotation -= 0.02;
             }
         }
 
         //fix angle
-        while (camera.rotation > M_PI) camera.rotation -= 2 * M_PI;
-        while (camera.rotation < -M_PI) camera.rotation += 2 * M_PI;
+        while (player.rotation > M_PI) player.rotation -= 2 * M_PI;
+        while (player.rotation < -M_PI) player.rotation += 2 * M_PI;
 
         //Game Logic
         if(!paused)
         {
-            //entities.data[0].rotation.x += 0.01;
-            //entities.data[0].rotation.y += 0.01;
+            
         }    
        
         //Send game entities to gfx engine to be rendered 
-        draw(camera, level, pixelBuffer);
+        draw(player, level, pixelBuffer);
 
         //Render the pixel buffer to the screen
         SDL_UpdateTexture(screenTexture, NULL, pixelBuffer.pixels, SCREEN_WIDTH * sizeof(uint32_t));        
@@ -214,11 +210,6 @@ int main( int argc, char* args[] )
 
         //Clear the pixel buffer
         memset((void*)pixelBuffer.pixels, 200, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32_t));
-        //Clear the z-buffer
-        //for (int i = 0; i < pixelBuffer.width * pixelBuffer.height; i++)
-        //{
-        //    pixelBuffer.zBuffer[i] = INT_MIN;
-        //}
 
         //Lock to 60 fps
         int delta = SDL_GetTicks() - frameStartTime;

@@ -6,7 +6,6 @@
 typedef struct 
 {
     uint32_t* pixels;
-    //float* zBuffer;
     int width;
     int height;
 } PixelBuffer;
@@ -23,15 +22,10 @@ typedef struct
     float y;
 } Vector2;
 
-/*typedef struct
-{
-    float values[16];
-} Matrix4;*/
-
 typedef struct
 {
     Vector2 pos;
-    float rotation; //TODO Quaternion?
+    float rotation;
 } Entity;
 
 typedef struct
