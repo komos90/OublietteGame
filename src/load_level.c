@@ -15,7 +15,6 @@
 #endif
 
 #include "load_level.h"
-#include "meshes.h"
 
 Level loadLevel(char* fileName)
 {
@@ -64,89 +63,4 @@ Level loadLevel(char* fileName)
         }
     }
     return level;
-}
-
-EntityArray createLevelEntities(Level level)
-{
-    //Count the numberof entitieswe need to store 
-    int entityCount = 0;
-    for (int i = 0; i < level.width * level.height; i++)
-    {
-        if (level.data[i] == '.')
-        {
-            if (i - level.width < 0 || level.data[i - level.width] == '#')
-                entityCount++;
-            if (i + level.width > level.width * level.height || level.data[i + level.width] == '#')
-                entityCount++;
-            if (i - 1 < 0 || level.data[i - 1] == '#')
-                entityCount++;
-            if (i + 1 > level.width * level.height || level.data[i + 1] == '#')
-                entityCount++;
-        }
-
-    }
-
-    EntityArray entities = {.length = entityCount};
-    //MALLOC should be freed when a new level is created
-    entities.data = (Entity*)malloc(entityCount * sizeof(Entity));
-    
-    //Create the actual entities and store int the entitiyArray
-    int entityIndex = 0;
-    for (int i = 0; i < level.width * level.height; i++)
-    {
-        int x = i % level.width;
-        int z = i / level.width;
-        
-        if (level.data[i] == '.') {
-            //TODO this can be done a lot easier by just cloning standard walls and multiplying the position. 
-            //Create entities  
-            Entity northWall = { .position = {x * 100, 0, z * 100 - 50},    .scale = {50, 50, 50},
-                                 .rotation = {0, 0, 0},       .mesh=plane,  .color=0x00FF0000};
-            Entity southWall = { .position = {x * 100, 0, z * 100 + 50},    .scale = {50, 50, 50},
-                                 .rotation = {M_PI, 0, 0},    .mesh=plane,  .color=0x0000FF00};
-            Entity eastWall  = { .position = {x * 100 - 50, 0, z * 100},    .scale = {50, 50, 50},
-                                 .rotation = {0, M_PI/2, 0},  .mesh=plane,  .color=0x000000FF};
-            Entity westWall  = { .position = {x * 100 + 50, 0, z * 100},    .scale = {50, 50, 50},
-                                 .rotation = {0, -M_PI/2, 0}, .mesh=plane,  .color=0x00FF00FF};
-
-            northWall.collisionBox.x = -50;
-            northWall.collisionBox.y = -50;
-            northWall.collisionBox.z = -25;
-            northWall.collisionBox.w = 100;
-            northWall.collisionBox.h = 100;
-            northWall.collisionBox.d = 50;
-
-            southWall.collisionBox.x = -50;
-            southWall.collisionBox.y = -50;
-            southWall.collisionBox.z = -25;
-            southWall.collisionBox.w = 100;
-            southWall.collisionBox.h = 100;
-            southWall.collisionBox.d = 50;
-
-            eastWall.collisionBox.x = -25;
-            eastWall.collisionBox.y = -50;
-            eastWall.collisionBox.z = -50;
-            eastWall.collisionBox.w = 50;
-            eastWall.collisionBox.h = 100;
-            eastWall.collisionBox.d = 100;
-
-            westWall.collisionBox.x = -25;
-            westWall.collisionBox.y = -50;
-            westWall.collisionBox.z = -50;
-            westWall.collisionBox.w = 50;
-            westWall.collisionBox.h = 100;
-            westWall.collisionBox.d = 100;
-
-            //Add entities needed for this tile
-            if (i + 1 > level.width * level.height || level.data[i + 1] == '#')
-                entities.data[entityIndex++] = westWall;
-            if (i - level.width < 0 || level.data[i - level.width] == '#')
-                entities.data[entityIndex++] = northWall;
-            if (i + level.width > level.width * level.height || level.data[i + level.width] == '#')
-                entities.data[entityIndex++] = southWall;
-            if (i - 1 < 0 || level.data[i - 1] == '#')
-                entities.data[entityIndex++] = eastWall;
-        }
-    }
-    return entities;
 }

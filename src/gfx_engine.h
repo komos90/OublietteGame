@@ -7,23 +7,22 @@ seoras1@gmail.com
 */
 #pragma once
 
+#ifdef __linux__
+    #include "SDL2/SDL.h"
+    #define M_PI 3.14159265358979323846
+#elif _WIN32
+    #include "SDL.h"
+#endif 
+
 #include "engine_types.h"
+#include "load_level.h"
 
 //Projection Constants
-static const int VIEW_WIDTH    = 1366;
-static const int VIEW_HEIGHT   = 768;
-static const int Z_FAR         = 500;
-static const int Z_NEAR        = 10;
-static const float FOV_X       = 10000;//1280;//1.5f;
-static const float FOV_Y       = 10000;//960;//1.5f;
+static const int TILE_DIMS     = 64;
+static const float H_FOV       = M_PI/2;
+static const float V_FOV       = M_PI/3;
 
 //IDEA have pixelBuffer as static variable in gfx_engine, use a function to set it?
 void drawRect (SDL_Rect rect, uint32_t color, PixelBuffer pixelBuffer);
-void drawVector (Vector3 vector, uint32_t color, PixelBuffer pixelBuffer);
-void drawLine (Vector3 start, Vector3 end, uint32_t color, PixelBuffer pixelBuffer);
-void rasterizePolygon (Triangle poly, uint32_t color, PixelBuffer pixelBuffer);
-void draw (PixelBuffer pixelBuffer, Entity camera, Entity* entityList, int entityCount,
-           bool shouldDrawWireframe, bool shouldDrawSurfaces);
-Matrix4 mulMatrix4 (Matrix4 mat1, Matrix4 mat2);
-Vector3 transform (Matrix4 matrix, Vector3 vector);
-Mesh loadMeshFromFile (char* fileName);
+void drawPoint (int x, int y, uint32_t color, PixelBuffer pixelBuffer);
+void draw (Entity player, Level level, PixelBuffer pixelBuffer);

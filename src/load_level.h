@@ -16,4 +16,3 @@ typedef struct
 } Level;
 
 Level loadLevel(char* fileName);
-EntityArray createLevelEntities(Level level);
