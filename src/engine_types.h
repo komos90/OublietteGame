@@ -33,3 +33,5 @@ typedef struct
     int length;
     Entity* data;
 } EntityArray;
+
+Vector2 vec2Unit(Vector2 vector);

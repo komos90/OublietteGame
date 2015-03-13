@@ -23,6 +23,7 @@ int posToTileIndex(int x, int y, Level level)
     return index;
 }
 
+//TODO Fix levels breaking if they don't end on a blank line
 Level loadLevel(char* fileName)
 {
     Level level;

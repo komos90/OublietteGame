@@ -16,9 +16,11 @@ seoras1@gmail.com
 
 #ifdef __linux__
     #include <SDL2/SDL.h>
+    #include <SDL2/SDL_image.h>
     #define M_PI 3.14159265358979323846
 #elif __Win32
     #include <SDL.h>
+    #include <SDL_image.h>
 #endif
 
 #include "gfx_engine.h"
@@ -50,7 +52,7 @@ bool isTileIndexValid(int i, Level level) {
     return i >= 0 && i < level.width * level.height;
 }
 
-float getTileHorzIntersectionDistance(Vector2 pos, float angle, Level level, PixelBuffer pixelBuffer)
+Vector2Int getTileHorzIntersection(Vector2 pos, float angle, Level level, PixelBuffer pixelBuffer)
 {
     bool xPositive = angle >= -M_PI / 2 && angle <= M_PI / 2;
     bool yPositive = angle <= 0;
@@ -75,10 +77,11 @@ float getTileHorzIntersectionDistance(Vector2 pos, float angle, Level level, Pix
         yInter += (!yPositive) ? TILE_DIMS : -TILE_DIMS;
         xInter += xInc;
     }
-    return sqrt(pow(xInter - pos.x, 2) + pow(yInter - pos.y, 2));
+    Vector2Int intersectVector = { .x=xInter, .y=yInter };
+    return intersectVector;//sqrt(pow(xInter - pos.x, 2) + pow(yInter - pos.y, 2));
 }
 
-float getTileVertIntersectionDistance(Vector2 pos, float angle, Level level, PixelBuffer pixelBuffer)
+Vector2Int getTileVertIntersection(Vector2 pos, float angle, Level level, PixelBuffer pixelBuffer)
 {
     bool xPositive = angle >= -M_PI / 2 && angle <= M_PI / 2;
     bool yPositive = angle <= 0;
@@ -97,7 +100,8 @@ float getTileVertIntersectionDistance(Vector2 pos, float angle, Level level, Pix
         xInter += (xPositive) ? TILE_DIMS : -TILE_DIMS;
         yInter += yInc;
     }
-    return sqrt(pow(xInter - pos.x, 2) + pow(yInter - pos.y, 2));
+    Vector2Int intersectVector = { .x=xInter, .y=yInter };
+    return intersectVector;//sqrt(pow(xInter - pos.x, 2) + pow(yInter - pos.y, 2));
 }
 
 float wallDistanceToHeight(float distance, PixelBuffer pixelBuffer)
@@ -108,29 +112,65 @@ float wallDistanceToHeight(float distance, PixelBuffer pixelBuffer)
 }
 
 //Has some temp debug parameters
-void draw(Entity player, Level level, PixelBuffer pixelBuffer)
+void draw(Entity player, Level level, SDL_Surface* caveTexture, PixelBuffer pixelBuffer)
 {
     //Draw floor
     {
         SDL_Rect floorRect = {0, pixelBuffer.height / 2, pixelBuffer.width, pixelBuffer.height};
-        drawRect(floorRect, 0x55555555, pixelBuffer);
+        drawRect(floorRect, 0x000E0904, pixelBuffer);
     }
 
     float angle = -H_FOV/2 + player.rotation;
     for (int screenColumn = 0; screenColumn < pixelBuffer.width; screenColumn++)
     {
-        float hDistance = getTileHorzIntersectionDistance(player.pos, angle, level, pixelBuffer);
-        float vDistance = getTileVertIntersectionDistance(player.pos, angle, level, pixelBuffer);
-        float distance = hDistance <= vDistance ? hDistance : vDistance;
+        //Get distance and intersect pos
+        float distance;
+        Vector2Int intersectPos;
+        {
+            Vector2Int hIntersect = getTileHorzIntersection(player.pos, angle, level, pixelBuffer);
+            float hDistance = sqrt(pow(hIntersect.x - player.pos.x, 2) + pow(hIntersect.y - player.pos.y, 2)) * cos(angle - player.rotation);
+
+            Vector2Int vIntersect = getTileVertIntersection(player.pos, angle, level, pixelBuffer);
+            float vDistance = sqrt(pow(vIntersect.x - player.pos.x, 2) + pow(vIntersect.y - player.pos.y, 2)) * cos(angle - player.rotation);
+
+            intersectPos = hDistance <= vDistance ? hIntersect : vIntersect;
+            distance = hDistance <= vDistance ? hDistance : vDistance;
+        }
         float height = wallDistanceToHeight(distance, pixelBuffer);
 
         for (int y = (pixelBuffer.height - height) / 2; y < (pixelBuffer.height + height) / 2; y++)
         {
             if (y >= pixelBuffer.height) break;
             if (y < 0) y = 0;
-            uint32_t color = 0x000000FF - distance / 4;
-            if (color > 0x000000FF) color = 0;
-            drawPoint(screenColumn, y, color, pixelBuffer);
+            uint32_t color32 = 0;
+            uint8_t color[3]; //0x000000FF - distance / 4;
+            //if (color > 0x000000FF) color = 0;
+            uint8_t depthColor[3];
+            depthColor[0] = 0x01 * (distance / 20);
+            depthColor[1] = 0x01 * (distance / 20);
+            depthColor[2] = 0x01 * (distance / 20);
+            //Texture Mapping
+            {
+                int yTexCoord = ((TILE_DIMS / (height)) * (y - (pixelBuffer.height - height) / 2));
+                int xTexCoord = intersectPos.x % TILE_DIMS + intersectPos.y % TILE_DIMS;
+                if (yTexCoord < 0) yTexCoord = 0;
+                else if (yTexCoord >= TILE_DIMS) yTexCoord = TILE_DIMS - 1;
+
+                uint8_t* texPixels = (uint8_t*)caveTexture->pixels;
+                memcpy(&color32, &texPixels[yTexCoord * caveTexture->pitch + xTexCoord * caveTexture->format->BytesPerPixel], caveTexture->format->BytesPerPixel);
+                //SDL_Log("%d", caveTexture->format->BytesPerPixel);
+            }
+
+            uint8_t finalColor[3];
+            for (int i = 0; i < 3; i++)
+            {
+                color[i] = (color32 >> i * 8);
+                finalColor[i] = color[i] - depthColor[i];
+                if (finalColor[i] > color[i]) finalColor[i] = 0;
+            }
+            uint32_t finalColor32 = (finalColor[0] << 16) | (finalColor[1] << 8) | finalColor[2];
+
+            drawPoint(screenColumn, y, (uint32_t)finalColor32, pixelBuffer);
         }
 
         angle += (H_FOV / pixelBuffer.width);

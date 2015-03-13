@@ -15,9 +15,11 @@ seoras1@gmail.com
 
 #ifdef __linux__
     #include <SDL2/SDL.h>
+    #include <SDL2/SDL_image.h>
     #define M_PI 3.14159265358979323846
 #elif _WIN32
     #include <SDL.h>
+    #include <SDL_image.h> 
 #endif
 
 #include "engine_types.h"
@@ -62,8 +64,11 @@ int main( int argc, char* args[] )
     //Load level from file and add level entities to entity list
     Level level = loadLevel("../res/levels/level2.lvl");
 
+    //Load texture
+    SDL_Surface* caveTexture = IMG_Load("../res/textures/cave.png");
+
     //Create player
-    Entity player = {.pos={896, 256}};
+    Entity player = {.pos={96, 96}};
 
     //Get input devices' states
     SDL_Joystick* gamePad = SDL_JoystickOpen(0);
@@ -121,7 +126,7 @@ int main( int argc, char* args[] )
         //HACK Should decouple Input and Game Logic
         {
             const int JOYSTICK_DEAD_ZONE = 8000;
-            int moveVel = 3;
+            int moveVel = 6;
             if( SDL_JoystickGetAxis(gamePad, 0) < -JOYSTICK_DEAD_ZONE )
             {
                 player.pos.y += moveVel * cosf(player.rotation + M_PI/2);
@@ -159,26 +164,27 @@ int main( int argc, char* args[] )
         //Keyboard Input
         { 
             Vector2 oldPlayerPos = player.pos;
-            int moveVel = 3; 
+            Vector2 moveVector = {0};
+            int moveVel = 4;
             if (keyState[SDL_SCANCODE_A])
             {
-                player.pos.x += moveVel * cosf(player.rotation - M_PI/2);
-                player.pos.y += moveVel * sinf(player.rotation - M_PI/2);
+                moveVector.x += moveVel * cosf(player.rotation - M_PI/2);
+                moveVector.y += moveVel * sinf(player.rotation - M_PI/2);
             }
             if (keyState[SDL_SCANCODE_D])
             {
-                player.pos.x += moveVel * cosf(player.rotation + M_PI/2);
-                player.pos.y += moveVel * sinf(player.rotation + M_PI/2);
+                moveVector.x += moveVel * cosf(player.rotation + M_PI/2);
+                moveVector.y += moveVel * sinf(player.rotation + M_PI/2);
             }
             if (keyState[SDL_SCANCODE_S])
             {
-                player.pos.x += moveVel * cosf(player.rotation + M_PI);
-                player.pos.y += moveVel * sinf(player.rotation + M_PI);
+                moveVector.x += moveVel * cosf(player.rotation + M_PI);
+                moveVector.y += moveVel * sinf(player.rotation + M_PI);
             }
             if (keyState[SDL_SCANCODE_W])
             {
-                player.pos.x += moveVel * cosf(player.rotation);
-                player.pos.y += moveVel * sinf(player.rotation);
+                moveVector.x += moveVel * cosf(player.rotation);
+                moveVector.y += moveVel * sinf(player.rotation);
             }
             if (keyState[SDL_SCANCODE_LEFT])
             {
@@ -188,6 +194,9 @@ int main( int argc, char* args[] )
             {
                 player.rotation -= 0.02;
             }
+            Vector2 unitMoveVec = vec2Unit(moveVector);
+            player.pos.x += unitMoveVec.x * moveVel;
+            player.pos.y += unitMoveVec.y * moveVel;
             if (level.data[posToTileIndex(player.pos.x, player.pos.y, level)] == '#') {
                 player.pos = oldPlayerPos;
             }
@@ -204,7 +213,7 @@ int main( int argc, char* args[] )
         }    
        
         //Send game entities to gfx engine to be rendered 
-        draw(player, level, pixelBuffer);
+        draw(player, level, caveTexture, pixelBuffer);
 
         //Render the pixel buffer to the screen
         SDL_UpdateTexture(screenTexture, NULL, pixelBuffer.pixels, SCREEN_WIDTH * sizeof(uint32_t));        
@@ -212,7 +221,7 @@ int main( int argc, char* args[] )
         SDL_RenderPresent(renderer);
 
         //Clear the pixel buffer
-        memset((void*)pixelBuffer.pixels, 200, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32_t));
+        memset((void*)pixelBuffer.pixels, 0x5, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint32_t));
 
         //Lock to 60 fps
         int delta = SDL_GetTicks() - frameStartTime;
