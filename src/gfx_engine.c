@@ -145,10 +145,10 @@ void draw(Entity player, Level level, SDL_Surface* caveTexture, PixelBuffer pixe
             uint32_t color32 = 0;
             uint8_t color[3]; //0x000000FF - distance / 4;
             //if (color > 0x000000FF) color = 0;
-            uint8_t depthColor[3];
-            depthColor[0] = 0x01 * (distance / 20);
-            depthColor[1] = 0x01 * (distance / 20);
-            depthColor[2] = 0x01 * (distance / 20);
+            float depthColor[3];
+            depthColor[0] = (0.5 / distance) * 100;
+            depthColor[1] = (0.5 / distance) * 100;
+            depthColor[2] = (0.5 / distance) * 100;
             //Texture Mapping
             {
                 int yTexCoord = ((TILE_DIMS / (height)) * (y - (pixelBuffer.height - height) / 2));
@@ -165,8 +165,8 @@ void draw(Entity player, Level level, SDL_Surface* caveTexture, PixelBuffer pixe
             for (int i = 0; i < 3; i++)
             {
                 color[i] = (color32 >> i * 8);
-                finalColor[i] = color[i] - depthColor[i];
-                if (finalColor[i] > color[i]) finalColor[i] = 0;
+                finalColor[i] = color[i] * depthColor[i];
+                if (depthColor[i] >= 1.0) finalColor[i] = color[i];
             }
             uint32_t finalColor32 = (finalColor[0] << 16) | (finalColor[1] << 8) | finalColor[2];
 

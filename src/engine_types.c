@@ -10,6 +10,6 @@ Vector2 vec2Unit(Vector2 vector)
         Vector2 retVec = {0};
         return retVec;
     };
-    Vector2 retVec = { .x=vector.x/magnitude, .y=vector.y/magnitude, .y=vector.y/magnitude };
+    Vector2 retVec = { .x=(vector.x/magnitude), .y=(vector.y/magnitude), .y=(vector.y/magnitude) };
     return retVec;
 }
