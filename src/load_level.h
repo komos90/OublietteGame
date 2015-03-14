@@ -8,7 +8,7 @@
 
 #include "engine_types.h"
 
- static const int TILE_DIMS     = 64;
+static const int TILE_DIMS = 64;
 
 typedef struct
 {

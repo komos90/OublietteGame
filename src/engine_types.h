@@ -1,7 +1,10 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdbool.h>
+
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846
+#endif
 
 typedef struct 
 {
@@ -35,3 +38,4 @@ typedef struct
 } EntityArray;
 
 Vector2 vec2Unit(Vector2 vector);
+float constrainAngle(float angle);

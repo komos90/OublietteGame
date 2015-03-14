@@ -9,7 +9,6 @@
 
 #ifdef __linux__
     #include <SDL2/SDL.h>
-    #define M_PI 3.14159265358979323846
 #elif _WIN32
     #include <SDL.h>
 #endif

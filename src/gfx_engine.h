@@ -1,6 +1,5 @@
 /*
-Hand coded 3d software renderer project.
-Graphics engine code.
+Raycaster wolfenstein 3d style game.
 Seoras Macdonald
 seoras1@gmail.com
 2015
@@ -10,7 +9,6 @@ seoras1@gmail.com
 #ifdef __linux__
     #include "SDL2/SDL.h"
     #include "SDL2/SDL_image.h"
-    #define M_PI 3.14159265358979323846
 #elif _WIN32
     #include "SDL.h"
     #include "SDL_image.h"
@@ -19,11 +17,12 @@ seoras1@gmail.com
 #include "engine_types.h"
 #include "load_level.h"
 
-//Projection Constants
+
 static const float H_FOV       = M_PI/3;
 static const float V_FOV       = M_PI/3;
 
-//IDEA have pixelBuffer as static variable in gfx_engine, use a function to set it?
-void drawRect (SDL_Rect rect, uint32_t color, PixelBuffer pixelBuffer);
-void drawPoint (int x, int y, uint32_t color, PixelBuffer pixelBuffer);
-void draw (Entity player, Level level, SDL_Surface* caveTexture, PixelBuffer pixelBuffer);
+
+void drawRect (SDL_Rect rect, uint32_t color);
+void drawPoint (int x, int y, uint32_t color);
+PixelBuffer* createPixelBuffer(int width, int height);
+void draw (Entity player, Level level, SDL_Surface* caveTexture);
