@@ -63,7 +63,22 @@ int main( int argc, char* args[] )
     Level level = loadLevel("../res/levels/level1.lvl");
 
     //Load texture
+    // TODO Generalise
     SDL_Surface* caveTexture = IMG_Load("../res/textures/cave.png");
+    caveTexture = SDL_ConvertSurfaceFormat(caveTexture, SDL_PIXELFORMAT_ARGB8888, 0);
+    SDL_Surface* rubySprite = IMG_Load("../res/sprites/ruby.png");
+    rubySprite = SDL_ConvertSurfaceFormat(rubySprite, SDL_PIXELFORMAT_ARGB8888, 0);
+
+    //Create ruby entity
+    Drawable ruby0 = { .pos={256, 96}, .sprite=rubySprite };
+    Drawable ruby1 = { .pos={320, 96}, .sprite=rubySprite };
+    Drawable ruby2 = { .pos={700, 192}, .sprite=rubySprite };
+    DrawablesArray drawables;
+    drawables.size = 3;
+    drawables.data = (Drawable*)malloc(drawables.size * sizeof(Drawable));
+    drawables.data[0] = ruby0;
+    drawables.data[1] = ruby1;
+    drawables.data[2] = ruby2;
 
     //Create player
     Entity player = {.pos={96, 96}};
@@ -201,16 +216,12 @@ int main( int argc, char* args[] )
 
        
         //Send game entities to gfx engine to be rendered 
-        draw(player, level, caveTexture);
+        draw(player, level, caveTexture, drawables);
 
         //Render the pixel buffer to the screen
         SDL_UpdateTexture(screenTexture, NULL, pixelBuffer->pixels, SCREEN_WIDTH * sizeof(uint32_t));        
         SDL_RenderCopy(renderer, screenTexture, NULL, NULL);
         SDL_RenderPresent(renderer);
-
-        //Clear the pixel buffer
-        //SHOULD BE IN GFX ENGINE
-        
 
         //Lock to 60 fps
         int delta = SDL_GetTicks() - frameStartTime;

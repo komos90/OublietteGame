@@ -16,7 +16,7 @@ seoras1@gmail.com
 #ifdef __linux__
     #include <SDL2/SDL.h>
     #include <SDL2/SDL_image.h>
-#elif __Win32
+#elif __WIN32
     #include <SDL.h>
     #include <SDL_image.h>
 #endif
@@ -27,7 +27,7 @@ seoras1@gmail.com
 
 
 static PixelBuffer pixelBuffer = {0};
-
+static float* zBuffer = NULL;
 
 void drawRect(SDL_Rect rect, uint32_t color)
 {
@@ -52,6 +52,7 @@ void drawPoint(int x, int y, uint32_t color)
 PixelBuffer* createPixelBuffer(int width, int height)
 {
     uint32_t* pixels = (uint32_t*)malloc(width * height * sizeof(uint32_t));
+    zBuffer = (float*)malloc(width * sizeof(float));
     pixelBuffer.pixels = pixels;
     pixelBuffer.width = width;
     pixelBuffer.height = height;
@@ -75,7 +76,7 @@ Vector2Int getTileHorzIntersection(Vector2 pos, float angle, Level level)
     float xInter = (abs(yInter - pos.y) * tanf(xAngle)) + pos.x;
     float xInc = TILE_DIMS * tanf(xAngle);
 
-    int xDir = xPositive ? -1 : 1;
+    int xDir = xPositive ? 1 : -1;
     int yDir = yPositive ? -1 : 1;
     while (isTileIndexValid(posToTileIndex(xInter + xDir, yInter + yDir, level), level) &&
            level.data[posToTileIndex(xInter + xDir, yInter + yDir, level)] != '#')
@@ -101,7 +102,7 @@ Vector2Int getTileVertIntersection(Vector2 pos, float angle, Level level)
     float yInc = TILE_DIMS * tanf(yAngle);
 
     int xDir = xPositive ? 1 : -1;
-    int yDir = yPositive ? 1 : -1;
+    int yDir = yPositive ? -1 : 1;
     while (isTileIndexValid(posToTileIndex(xInter + xDir, yInter + yDir, level), level) &&
            level.data[posToTileIndex(xInter + xDir, yInter + yDir, level)] != '#')
     {   
@@ -119,7 +120,7 @@ float wallDistanceToHeight(float distance)
     return displayHeight;
 }
 
-void draw(Entity player, Level level, SDL_Surface* caveTexture)
+void draw(Entity player, Level level, SDL_Surface* caveTexture, DrawablesArray drawables)
 {
     //Clear pixel buffer & draw ceiling
     {
@@ -149,6 +150,9 @@ void draw(Entity player, Level level, SDL_Surface* caveTexture)
             distance = hDistance <= vDistance ? hDistance : vDistance;
         }
 
+        //Save column distance in zBuffer
+        zBuffer[screenColumn] = distance;
+
         float height = wallDistanceToHeight(distance);
         for (int y = (pixelBuffer.height - height) / 2; y < (pixelBuffer.height + height) / 2; y++)
         {
@@ -164,15 +168,9 @@ void draw(Entity player, Level level, SDL_Surface* caveTexture)
                 if (yTexCoord < 0) yTexCoord = 0;
                 else if (yTexCoord >= TILE_DIMS) yTexCoord = TILE_DIMS - 1;
 
-                uint8_t* texPixels = (uint8_t*)caveTexture->pixels;
-                int bytesPerPixel = caveTexture->format->BytesPerPixel;
-                int index = yTexCoord * caveTexture->pitch + xTexCoord * bytesPerPixel;
-                memcpy(&color32, &texPixels[index], bytesPerPixel);
-
-                //HACK swap the R bits with the G bits
-                uint8_t tmp = ((uint8_t*)&color32)[2];
-                ((uint8_t*)&color32)[2] = ((uint8_t*)&color32)[0];
-                ((uint8_t*)&color32)[0] = tmp;
+                uint32_t* texPixels = (uint32_t*)caveTexture->pixels;
+                int index = yTexCoord * caveTexture->w + xTexCoord;
+                color32 = texPixels[index];
             }
 
             //Shade pixels for depth effect
@@ -196,5 +194,70 @@ void draw(Entity player, Level level, SDL_Surface* caveTexture)
             drawPoint(screenColumn, y, (uint32_t)finalColor32);
         }
         angle += (H_FOV / pixelBuffer.width);
+    }
+
+    //Sprite drawing ====
+    //Sort sprites by distatnce
+    for (int i = drawables.size - 1; i >= 0; i--)
+    {
+        for (int j = 0; j < i; j++)
+        {
+            if (distanceFormula(drawables.data[j].pos, player.pos) < 
+                distanceFormula(drawables.data[j + 1].pos, player.pos))
+            {
+                //Swap
+                Drawable tmp = drawables.data[j];
+                drawables.data[j] = drawables.data[j + 1];
+                drawables.data[j + 1] = tmp;
+            }
+        }
+    }
+
+    for ( int drawableIndex = 0; drawableIndex < drawables.size; drawableIndex++)
+    {
+        Drawable drawable = drawables.data[drawableIndex];
+        Vector2 drawablePos = {drawable.pos.x - player.pos.x, drawable.pos.y - player.pos.y};
+        
+        //TODO Write matrix transform function and matrix struct etc.
+        {
+            Vector2 rotatedPos;
+            rotatedPos.x = drawablePos.x * cosf(player.rotation) + drawablePos.y * sinf(player.rotation);
+            rotatedPos.y = drawablePos.x * -sinf(player.rotation) + drawablePos.y * cosf(player.rotation);
+            drawablePos = rotatedPos;
+        }
+
+        float projW = 2 * (drawablePos.x * tan(H_FOV/2));
+        float projH = 2 * (drawablePos.x * tan(V_FOV/2));
+        float projWRatio = projW == 0 ? 1 : (pixelBuffer.width / projW);
+        float projHRatio = projH == 0 ? 1 : (pixelBuffer.height / projH);
+
+        float scaledSpriteW = projWRatio * drawable.sprite->w;
+        float scaledSpriteH = projHRatio * drawable.sprite->h;
+        int scaledSpriteX = projWRatio * drawablePos.y + pixelBuffer.width / 2 - scaledSpriteW/2;
+        int scaledSpriteY = pixelBuffer.height / 2 - scaledSpriteH/2;
+        SDL_Log("Scaled SpriteX/Y: %d, %d", scaledSpriteX, scaledSpriteY);
+        SDL_Log("Scaled SpriteW/H: %f, %f", scaledSpriteW, scaledSpriteH);
+
+        for (int x = scaledSpriteX; x < scaledSpriteX + scaledSpriteW; x++) 
+        {
+            if (x >= pixelBuffer.width) break;
+            if (x < 0 || zBuffer[x] < drawablePos.x) continue;
+
+            for (int y = scaledSpriteY; y < scaledSpriteY + scaledSpriteH; y++)
+            {    
+                if (y < 0) y = 0;
+                if (y >= pixelBuffer.height) break;
+
+                int spriteIndexX = ((float)(x - scaledSpriteX) / scaledSpriteW) * drawable.sprite->w;
+                int spriteIndexY = ((float)(y - scaledSpriteY) / scaledSpriteH) * drawable.sprite->h;
+
+                //Super basic alpha transparency
+                uint32_t pixelColor = ((uint32_t*)drawable.sprite->pixels)[spriteIndexY * drawable.sprite->w + spriteIndexX];
+                if (pixelColor & 0xFF000000)
+                {
+                    pixelBuffer.pixels[y * pixelBuffer.width + x] = ((uint32_t*)drawable.sprite->pixels)[spriteIndexY * drawable.sprite->w + spriteIndexX];
+                }
+            }
+        }
     }
 }

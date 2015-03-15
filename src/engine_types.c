@@ -22,3 +22,8 @@ float constrainAngle(float angle)
         angle += M_PI * 2;
     return angle - M_PI;
 }
+
+float distanceFormula(Vector2 vec0, Vector2 vec1)
+{
+    return sqrt((vec0.x - vec1.x) * (vec0.x - vec1.x) + (vec0.y - vec1.y) * (vec0.y - vec1.y));
+}
