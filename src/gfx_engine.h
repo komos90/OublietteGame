@@ -24,5 +24,6 @@ static const float V_FOV       = M_PI/3;
 
 void drawRect (SDL_Rect rect, uint32_t color);
 void drawPoint (int x, int y, uint32_t color);
+void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont);
 PixelBuffer* createPixelBuffer(int width, int height);
 void draw (Entity player, Level level, SDL_Surface* caveTexture, DrawablesArray drawables);

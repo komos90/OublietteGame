@@ -33,6 +33,13 @@ typedef struct
 
 typedef struct
 {
+    SDL_Surface* sprite;
+    int charW;
+    int charH;
+} SpriteFont;
+
+typedef struct
+{
     Vector2 pos;
     float rotation;
 } Entity;

@@ -49,6 +49,30 @@ void drawPoint(int x, int y, uint32_t color)
     pixelBuffer.pixels[(int)y  * pixelBuffer.width + (int)x] = color;
 }
 
+void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont)
+{
+    //get text length
+    int textLength = 0;
+    for (int i = 0; text[i] != '\0'; i++)
+        textLength++;
+
+    for (int i = 0; i < textLength; i++)
+    {
+        int spriteX = (text[i] - 32) * spriteFont.charW;
+
+        for (int y = 0; y < spriteFont.charH; y++)
+        {
+            for (int x = spriteX; x < spriteX + spriteFont.charW; x++)
+            {
+                uint32_t pixelColor = ((uint32_t*)spriteFont.sprite->pixels)[y * spriteFont.sprite->w + x] & color;
+                if (pixelColor & 0xFF000000) {
+                    pixelBuffer.pixels[(rect.y + y) * pixelBuffer.width + (rect.x + i * spriteFont.charW + x - spriteX)] = pixelColor;
+                }
+            }
+        }
+    }
+}
+
 PixelBuffer* createPixelBuffer(int width, int height)
 {
     uint32_t* pixels = (uint32_t*)malloc(width * height * sizeof(uint32_t));

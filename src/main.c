@@ -69,6 +69,11 @@ int main( int argc, char* args[] )
     SDL_Surface* rubySprite = IMG_Load("../res/sprites/ruby.png");
     rubySprite = SDL_ConvertSurfaceFormat(rubySprite, SDL_PIXELFORMAT_ARGB8888, 0);
 
+    //Load sprite font
+    SpriteFont spriteFont = { .charW=8, .charH=8 };
+    spriteFont.sprite = IMG_Load("../res/fonts/atari_font.png");
+    spriteFont.sprite = SDL_ConvertSurfaceFormat(spriteFont.sprite, SDL_PIXELFORMAT_ARGB8888, 0);
+
     //Create ruby entity
     Drawable ruby0 = { .pos={256, 96}, .sprite=rubySprite };
     Drawable ruby1 = { .pos={320, 96}, .sprite=rubySprite };
@@ -88,7 +93,7 @@ int main( int argc, char* args[] )
     const uint8_t* keyState = SDL_GetKeyboardState(NULL);    
     
     bool running = true;
-
+    int currentFps = 0;
     //Main Loop ====
     while(running) 
     {
@@ -217,6 +222,17 @@ int main( int argc, char* args[] )
        
         //Send game entities to gfx engine to be rendered 
         draw(player, level, caveTexture, drawables);
+        //Draw test text
+        {
+            SDL_Rect textRect = {0, 0, 64, 6};
+            drawText("Hello There 123!", textRect, 0xFF0099CC, spriteFont);
+        }
+        {
+            char fpsDisplayStr[32];
+            sprintf(fpsDisplayStr, "Fps: %d", currentFps);
+            SDL_Rect textRect = {0, 8, 64, 6};
+            drawText(fpsDisplayStr, textRect, 0xFFFF0000, spriteFont);
+        }
 
         //Render the pixel buffer to the screen
         SDL_UpdateTexture(screenTexture, NULL, pixelBuffer->pixels, SCREEN_WIDTH * sizeof(uint32_t));        
@@ -229,6 +245,7 @@ int main( int argc, char* args[] )
         {
             SDL_Delay(1000/60 - delta);
         }
+        currentFps = 1000/(SDL_GetTicks() - frameStartTime);
     }
     return 0;
 }
