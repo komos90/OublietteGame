@@ -29,6 +29,7 @@ seoras1@gmail.com
 static PixelBuffer pixelBuffer = {0};
 static float* zBuffer = NULL;
 
+
 void drawRect(SDL_Rect rect, uint32_t color)
 {
     if (rect.y < 0) rect.y = 0;
@@ -75,6 +76,7 @@ void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont)
 
 PixelBuffer* createPixelBuffer(int width, int height)
 {
+    //MALLOC no need to free, kept until program end.
     uint32_t* pixels = (uint32_t*)malloc(width * height * sizeof(uint32_t));
     zBuffer = (float*)malloc(width * sizeof(float));
     pixelBuffer.pixels = pixels;
@@ -144,8 +146,9 @@ float wallDistanceToHeight(float distance)
     return displayHeight;
 }
 
-void draw(Entity player, Level level, SDL_Surface* caveTexture, DrawablesArray drawables)
+void draw(Player player, Level level, SDL_Surface* caveTexture, EntityArray entities)
 {
+
     //Clear pixel buffer & draw ceiling
     {
         uint8_t ceilColor = 0x5;
@@ -222,64 +225,62 @@ void draw(Entity player, Level level, SDL_Surface* caveTexture, DrawablesArray d
 
     //Sprite drawing ====
     //Sort sprites by distatnce
-    for (int i = drawables.size - 1; i >= 0; i--)
+    for (int i = entities.size - 1; i >= 0; i--)
     {
         for (int j = 0; j < i; j++)
         {
-            if (distanceFormula(drawables.data[j].pos, player.pos) < 
-                distanceFormula(drawables.data[j + 1].pos, player.pos))
+            if (distanceFormula(entities.data[j].pos, player.pos) < 
+                distanceFormula(entities.data[j + 1].pos, player.pos))
             {
                 //Swap
-                Drawable tmp = drawables.data[j];
-                drawables.data[j] = drawables.data[j + 1];
-                drawables.data[j + 1] = tmp;
+                Entity tmp = entities.data[j];
+                entities.data[j] = entities.data[j + 1];
+                entities.data[j + 1] = tmp;
             }
         }
     }
 
-    for ( int drawableIndex = 0; drawableIndex < drawables.size; drawableIndex++)
+    for ( int entityIndex = 0; entityIndex < entities.size; entityIndex++)
     {
-        Drawable drawable = drawables.data[drawableIndex];
-        Vector2 drawablePos = {drawable.pos.x - player.pos.x, drawable.pos.y - player.pos.y};
+        Entity entity = entities.data[entityIndex];
+        Vector2 entityPos = {entity.pos.x - player.pos.x, entity.pos.y - player.pos.y};
         
         //TODO Write matrix transform function and matrix struct etc.
         {
             Vector2 rotatedPos;
-            rotatedPos.x = drawablePos.x * cosf(player.rotation) + drawablePos.y * sinf(player.rotation);
-            rotatedPos.y = drawablePos.x * -sinf(player.rotation) + drawablePos.y * cosf(player.rotation);
-            drawablePos = rotatedPos;
+            rotatedPos.x = entityPos.x * cosf(player.rotation) + entityPos.y * sinf(player.rotation);
+            rotatedPos.y = entityPos.x * -sinf(player.rotation) + entityPos.y * cosf(player.rotation);
+            entityPos = rotatedPos;
         }
 
-        float projW = 2 * (drawablePos.x * tan(H_FOV/2));
-        float projH = 2 * (drawablePos.x * tan(V_FOV/2));
+        float projW = 2 * (entityPos.x * tan(H_FOV/2));
+        float projH = 2 * (entityPos.x * tan(V_FOV/2));
         float projWRatio = projW == 0 ? 1 : (pixelBuffer.width / projW);
         float projHRatio = projH == 0 ? 1 : (pixelBuffer.height / projH);
 
-        float scaledSpriteW = projWRatio * drawable.sprite->w;
-        float scaledSpriteH = projHRatio * drawable.sprite->h;
-        int scaledSpriteX = projWRatio * drawablePos.y + pixelBuffer.width / 2 - scaledSpriteW/2;
+        float scaledSpriteW = projWRatio * entity.base->sprite->w;
+        float scaledSpriteH = projHRatio * entity.base->sprite->h;
+        int scaledSpriteX = projWRatio * entityPos.y + pixelBuffer.width / 2 - scaledSpriteW/2;
         int scaledSpriteY = pixelBuffer.height / 2 - scaledSpriteH/2;
-        SDL_Log("Scaled SpriteX/Y: %d, %d", scaledSpriteX, scaledSpriteY);
-        SDL_Log("Scaled SpriteW/H: %f, %f", scaledSpriteW, scaledSpriteH);
 
         for (int x = scaledSpriteX; x < scaledSpriteX + scaledSpriteW; x++) 
         {
             if (x >= pixelBuffer.width) break;
-            if (x < 0 || zBuffer[x] < drawablePos.x) continue;
+            if (x < 0 || zBuffer[x] < entityPos.x) continue;
 
             for (int y = scaledSpriteY; y < scaledSpriteY + scaledSpriteH; y++)
             {    
                 if (y < 0) y = 0;
                 if (y >= pixelBuffer.height) break;
 
-                int spriteIndexX = ((float)(x - scaledSpriteX) / scaledSpriteW) * drawable.sprite->w;
-                int spriteIndexY = ((float)(y - scaledSpriteY) / scaledSpriteH) * drawable.sprite->h;
+                int spriteIndexX = ((float)(x - scaledSpriteX) / scaledSpriteW) * entity.base->sprite->w;
+                int spriteIndexY = ((float)(y - scaledSpriteY) / scaledSpriteH) * entity.base->sprite->h;
 
                 //Super basic alpha transparency
-                uint32_t pixelColor = ((uint32_t*)drawable.sprite->pixels)[spriteIndexY * drawable.sprite->w + spriteIndexX];
+                uint32_t pixelColor = ((uint32_t*)entity.base->sprite->pixels)[spriteIndexY * entity.base->sprite->w + spriteIndexX];
                 if (pixelColor & 0xFF000000)
                 {
-                    pixelBuffer.pixels[y * pixelBuffer.width + x] = ((uint32_t*)drawable.sprite->pixels)[spriteIndexY * drawable.sprite->w + spriteIndexX];
+                    pixelBuffer.pixels[y * pixelBuffer.width + x] = ((uint32_t*)entity.base->sprite->pixels)[spriteIndexY * entity.base->sprite->w + spriteIndexX];
                 }
             }
         }

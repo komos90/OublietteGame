@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdbool.h>
 
 #include "engine_types.h"
 
@@ -26,4 +27,10 @@ float constrainAngle(float angle)
 float distanceFormula(Vector2 vec0, Vector2 vec1)
 {
     return sqrt((vec0.x - vec1.x) * (vec0.x - vec1.x) + (vec0.y - vec1.y) * (vec0.y - vec1.y));
+}
+
+bool rectsIntersect(SDL_Rect rect0, SDL_Rect rect1)
+{
+    return rect0.x + rect0.w > rect1.x && rect0.x < rect1.x + rect1.w &&
+           rect0.y + rect0.h > rect1.y && rect0.y < rect1.y + rect1.h;
 }

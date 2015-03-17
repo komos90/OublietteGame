@@ -60,7 +60,7 @@ int main( int argc, char* args[] )
     PixelBuffer* pixelBuffer = createPixelBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     //Load level from file and add level entities to entity list
-    Level level = loadLevel("../res/levels/level1.lvl");
+    Level level = loadLevel("../res/levels/level0.lvl");
 
     //Load texture
     // TODO Generalise
@@ -74,19 +74,12 @@ int main( int argc, char* args[] )
     spriteFont.sprite = IMG_Load("../res/fonts/atari_font.png");
     spriteFont.sprite = SDL_ConvertSurfaceFormat(spriteFont.sprite, SDL_PIXELFORMAT_ARGB8888, 0);
 
-    //Create ruby entity
-    Drawable ruby0 = { .pos={256, 96}, .sprite=rubySprite };
-    Drawable ruby1 = { .pos={320, 96}, .sprite=rubySprite };
-    Drawable ruby2 = { .pos={700, 192}, .sprite=rubySprite };
-    DrawablesArray drawables;
-    drawables.size = 3;
-    drawables.data = (Drawable*)malloc(drawables.size * sizeof(Drawable));
-    drawables.data[0] = ruby0;
-    drawables.data[1] = ruby1;
-    drawables.data[2] = ruby2;
-
     //Create player
-    Entity player = {.pos={96, 96}};
+    Player player = { .width=32, .height=32, .pos=getPlayerStartPos(level) };
+    PlayerData playerData = { .levelNumber=0 };
+
+    EntityTemplate rubyTemplate = { .sprite = rubySprite, .width=32, .height=32 };
+    EntityArray entities = getLevelRubies(level, &rubyTemplate);
 
     //Get input devices' states
     SDL_Joystick* gamePad = SDL_JoystickOpen(0);
@@ -212,25 +205,44 @@ int main( int argc, char* args[] )
             player.pos.y += moveVector.y * moveVel;
 
             //Collision
-            if (level.data[posToTileIndex(player.pos.x, player.pos.y, level)] == '#') {
+            if (isTileSolid(posToTileIndex(player.pos.x, player.pos.y, level), level))
+            {
                 player.pos = oldPlayerPos;
             }
         }
 
-        //Game Logic
+        //Game Logic ====
+        //Check ruby collision
+        for (int i = 0; i < entities.size; i++)
+        {
+            SDL_Rect playerRect = { player.pos.x, player.pos.y, player.width, player.height };
+            Entity ruby = entities.data[i];
+            SDL_Rect rubyRect = { ruby.pos.x, ruby.pos.y, ruby.base->width, ruby.base->height };
+            if (rectsIntersect(playerRect, rubyRect))
+            {
+                playerData.rubiesCollected++;
+                //Remove ruby
+                entities.data[i] = entities.data[entities.size - 1];
+                entities.size--;
+            }
+        }
 
-       
+        //Check for level end tile
+
+        //Draw ====
         //Send game entities to gfx engine to be rendered 
-        draw(player, level, caveTexture, drawables);
+        draw(player, level, caveTexture, entities);
         //Draw test text
         {
-            SDL_Rect textRect = {0, 0, 64, 6};
-            drawText("Hello There 123!", textRect, 0xFF0099CC, spriteFont);
+            char rubyCountStr[32];
+            sprintf(rubyCountStr, "%d/%d", playerData.rubiesCollected, level.rubyCount);
+            SDL_Rect textRect = { SCREEN_WIDTH/8, SCREEN_HEIGHT/16, 0, 0 };
+            drawText(rubyCountStr, textRect, 0xFF7A0927, spriteFont);
         }
         {
             char fpsDisplayStr[32];
             sprintf(fpsDisplayStr, "Fps: %d", currentFps);
-            SDL_Rect textRect = {0, 8, 64, 6};
+            SDL_Rect textRect = {0, SCREEN_HEIGHT - 16, 0, 0 };
             drawText(fpsDisplayStr, textRect, 0xFFFF0000, spriteFont);
         }
 

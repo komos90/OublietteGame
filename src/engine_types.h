@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __linux__
     #include <SDL2/SDL.h>
@@ -11,6 +12,11 @@
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
 #endif
+
+typedef enum
+{
+    ENTITY_TYPE_RUBY,
+} EntityType;
 
 typedef struct 
 {
@@ -41,27 +47,37 @@ typedef struct
 typedef struct
 {
     Vector2 pos;
+    int width;
+    int height;
     float rotation;
-} Entity;
+} Player;
+
+typedef struct
+{
+    SDL_Surface* sprite;
+    int width;
+    int height;
+} EntityTemplate;
 
 typedef struct
 {
     Vector2 pos;
-    SDL_Surface* sprite;
-} Drawable;
+    EntityTemplate* base;
+} Entity;
 
 typedef struct
 {
     int size;
-    Drawable* data;
-} DrawablesArray;
+    Entity* data;
+} EntityArray;
 
 typedef struct
 {
-    int length;
-    Entity* data;
-} EntityArray;
+    int levelNumber;
+    int rubiesCollected;
+} PlayerData;
 
 Vector2 vec2Unit(Vector2 vector);
 float constrainAngle(float angle);
 float distanceFormula(Vector2 vec0, Vector2 vec1);
+bool rectsIntersect(SDL_Rect rect0, SDL_Rect rect1);
