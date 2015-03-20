@@ -16,6 +16,7 @@
 typedef enum
 {
     ENTITY_TYPE_RUBY,
+    ENTITY_TYPE_KEY,
 } EntityType;
 
 typedef struct 
@@ -55,6 +56,7 @@ typedef struct
 typedef struct
 {
     SDL_Surface* sprite;
+    EntityType type;
     int width;
     int height;
 } EntityTemplate;

@@ -26,4 +26,4 @@ void drawRect (SDL_Rect rect, uint32_t color);
 void drawPoint (int x, int y, uint32_t color);
 void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont);
 PixelBuffer* createPixelBuffer(int width, int height);
-void draw (Player player, Level level, SDL_Surface* caveTexture, EntityArray entities);
+void draw (Player player, SDL_Surface* caveTexture, EntityArray entities);

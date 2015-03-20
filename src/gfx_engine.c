@@ -85,11 +85,7 @@ PixelBuffer* createPixelBuffer(int width, int height)
     return &pixelBuffer;
 }
 
-bool isTileIndexValid(int i, Level level) {
-    return i >= 0 && i < level.width * level.height;
-}
-
-Vector2Int getTileHorzIntersection(Vector2 pos, float angle, Level level)
+Vector2Int getTileHorzIntersection(Vector2 pos, float angle)
 {
     angle = constrainAngle(angle);
     bool xPositive = angle >= -M_PI / 2 && angle <= M_PI / 2;
@@ -104,8 +100,8 @@ Vector2Int getTileHorzIntersection(Vector2 pos, float angle, Level level)
 
     int xDir = xPositive ? 1 : -1;
     int yDir = yPositive ? -1 : 1;
-    while (isTileIndexValid(posToTileIndex(xInter + xDir, yInter + yDir, level), level) &&
-           level.data[posToTileIndex(xInter + xDir, yInter + yDir, level)] != '#')
+    while (isTileIndexValid(posToTileIndex(xInter + xDir, yInter + yDir)) &&
+           !isTileSolid(posToTileIndex(xInter + xDir, yInter + yDir)))
     {   
         yInter += yPositive ? -TILE_DIMS : TILE_DIMS;
         xInter += xInc;
@@ -114,7 +110,7 @@ Vector2Int getTileHorzIntersection(Vector2 pos, float angle, Level level)
     return intersectVector;
 }
 
-Vector2Int getTileVertIntersection(Vector2 pos, float angle, Level level)
+Vector2Int getTileVertIntersection(Vector2 pos, float angle)
 {
     angle = constrainAngle(angle);
     bool xPositive = angle >= -M_PI / 2 && angle <= M_PI / 2;
@@ -129,8 +125,8 @@ Vector2Int getTileVertIntersection(Vector2 pos, float angle, Level level)
 
     int xDir = xPositive ? 1 : -1;
     int yDir = yPositive ? -1 : 1;
-    while (isTileIndexValid(posToTileIndex(xInter + xDir, yInter + yDir, level), level) &&
-           level.data[posToTileIndex(xInter + xDir, yInter + yDir, level)] != '#')
+    while (isTileIndexValid(posToTileIndex(xInter + xDir, yInter + yDir)) &&
+           !isTileSolid(posToTileIndex(xInter + xDir, yInter + yDir)))
     {   
         xInter += xPositive ? TILE_DIMS : -TILE_DIMS;
         yInter += yInc;
@@ -146,7 +142,7 @@ float wallDistanceToHeight(float distance)
     return displayHeight;
 }
 
-void draw(Player player, Level level, SDL_Surface* caveTexture, EntityArray entities)
+void draw(Player player, SDL_Surface* caveTexture, EntityArray entities)
 {
 
     //Clear pixel buffer & draw ceiling
@@ -167,10 +163,10 @@ void draw(Player player, Level level, SDL_Surface* caveTexture, EntityArray enti
         float distance;
         Vector2Int intersectPos;
         {
-            Vector2Int hIntersect = getTileHorzIntersection(player.pos, angle, level);
+            Vector2Int hIntersect = getTileHorzIntersection(player.pos, angle);
             float hDistance = sqrt(pow(hIntersect.x - player.pos.x, 2) + pow(hIntersect.y - player.pos.y, 2)) * cos(angle - player.rotation);
 
-            Vector2Int vIntersect = getTileVertIntersection(player.pos, angle, level);
+            Vector2Int vIntersect = getTileVertIntersection(player.pos, angle);
             float vDistance = sqrt(pow(vIntersect.x - player.pos.x, 2) + pow(vIntersect.y - player.pos.y, 2)) * cos(angle - player.rotation);
 
             intersectPos = hDistance <= vDistance ? hIntersect : vIntersect;

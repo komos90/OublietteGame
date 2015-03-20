@@ -13,6 +13,7 @@
 static const int TILE_DIMS = 64;
 
 static const char PLAYER_START  = 'p';
+static const char FLOOR         = '.';
 static const char RUBY          = '*';
 static const char MONSTER       = '!';
 static const char LEVEL_END     = 'e';
@@ -30,8 +31,16 @@ typedef struct
     int rubyCount;
 } Level;
 
-Level loadLevel(char* fileName);
-int posToTileIndex(int x, int y, Level level);
-Vector2 getPlayerStartPos(Level level);
-EntityArray getLevelRubies(Level level, EntityTemplate* rubyTemplate);
-bool isTileSolid(int index, Level level);
+bool isTileIndexValid(int i);
+void loadLevel(char* fileName);
+int posVecToTileIndex(Vector2 pos);
+int posVecToIndex(Vector2 pos);
+int posToTileIndex(int x, int y);
+Vector2 posToTileCoord(Vector2 pos);
+Vector2 getPlayerStartPos();
+EntityArray getLevelRubies(EntityTemplate* rubyTemplate);
+EntityArray getLevelKeys(EntityTemplate* keyTemplate);
+bool isTileSolid(int index);
+void setTileTo(int index, char tile);
+int getTotalLevelRubies();
+char getLevelTile();

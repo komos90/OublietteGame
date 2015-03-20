@@ -60,7 +60,7 @@ int main( int argc, char* args[] )
     PixelBuffer* pixelBuffer = createPixelBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     //Load level from file and add level entities to entity list
-    Level level = loadLevel("../res/levels/level0.lvl");
+    loadLevel("../res/levels/level0.lvl");
 
     //Load texture
     // TODO Generalise
@@ -68,6 +68,8 @@ int main( int argc, char* args[] )
     caveTexture = SDL_ConvertSurfaceFormat(caveTexture, SDL_PIXELFORMAT_ARGB8888, 0);
     SDL_Surface* rubySprite = IMG_Load("../res/sprites/ruby.png");
     rubySprite = SDL_ConvertSurfaceFormat(rubySprite, SDL_PIXELFORMAT_ARGB8888, 0);
+    SDL_Surface* keySprite = IMG_Load("../res/sprites/key.png");
+    keySprite = SDL_ConvertSurfaceFormat(keySprite, SDL_PIXELFORMAT_ARGB8888, 0);
 
     //Load sprite font
     SpriteFont spriteFont = { .charW=8, .charH=8 };
@@ -75,11 +77,20 @@ int main( int argc, char* args[] )
     spriteFont.sprite = SDL_ConvertSurfaceFormat(spriteFont.sprite, SDL_PIXELFORMAT_ARGB8888, 0);
 
     //Create player
-    Player player = { .width=32, .height=32, .pos=getPlayerStartPos(level) };
+    Player player = { .width=32, .height=32, .pos=getPlayerStartPos() };
     PlayerData playerData = { .levelNumber=0 };
 
-    EntityTemplate rubyTemplate = { .sprite = rubySprite, .width=32, .height=32 };
-    EntityArray entities = getLevelRubies(level, &rubyTemplate);
+    EntityTemplate rubyTemplate = { .sprite=rubySprite, .width=32, .height=32, .type=ENTITY_TYPE_RUBY };
+    EntityArray rubies = getLevelRubies(&rubyTemplate);
+    
+    EntityTemplate keyTemplate = { .sprite=keySprite, .width=32, .width=32, .type=ENTITY_TYPE_KEY};
+    EntityArray keys = getLevelKeys(&keyTemplate);
+
+    EntityArray entities;
+    entities.size = rubies.size + keys.size;
+    entities.data = (Entity*)malloc(entities.size * sizeof(Entity));
+    memcpy((void*)entities.data, (void*)rubies.data, rubies.size * sizeof(Entity));
+    memcpy((void*)(entities.data + rubies.size), (void*)keys.data, keys.size * sizeof(Entity));
 
     //Get input devices' states
     SDL_Joystick* gamePad = SDL_JoystickOpen(0);
@@ -199,13 +210,24 @@ int main( int argc, char* args[] )
             {
                 player.rotation -= 0.02;
             }
+            if (keyState[SDL_SCANCODE_SPACE])
+            {
+                Vector2 actionTile = posToTileCoord(player.pos);
+                actionTile.x += cosf(player.rotation);
+                actionTile.y += sinf(player.rotation);
+
+                if (getLevelTile(posVecToIndex(actionTile)) == SECRET_DOOR)
+                {
+                    setTileTo(posVecToIndex(actionTile), FLOOR);
+                }
+            }
             //Normalise moveVector
             moveVector = vec2Unit(moveVector);
             player.pos.x += moveVector.x * moveVel;
             player.pos.y += moveVector.y * moveVel;
 
             //Collision
-            if (isTileSolid(posToTileIndex(player.pos.x, player.pos.y, level), level))
+            if (isTileSolid(posVecToTileIndex(player.pos)))
             {
                 player.pos = oldPlayerPos;
             }
@@ -216,14 +238,21 @@ int main( int argc, char* args[] )
         for (int i = 0; i < entities.size; i++)
         {
             SDL_Rect playerRect = { player.pos.x, player.pos.y, player.width, player.height };
-            Entity ruby = entities.data[i];
-            SDL_Rect rubyRect = { ruby.pos.x, ruby.pos.y, ruby.base->width, ruby.base->height };
-            if (rectsIntersect(playerRect, rubyRect))
+            Entity entity = entities.data[i];
+            SDL_Rect entityRect = { entity.pos.x, entity.pos.y, entity.base->width, entity.base->height };
+            if (rectsIntersect(playerRect, entityRect))
             {
-                playerData.rubiesCollected++;
-                //Remove ruby
-                entities.data[i] = entities.data[entities.size - 1];
-                entities.size--;
+                switch(entity.base->type)
+                {
+                case ENTITY_TYPE_RUBY:
+                    {
+                        playerData.rubiesCollected++;
+                        //Remove entity
+                        entities.data[i] = entities.data[entities.size - 1];
+                        entities.size--;
+                        break;
+                    }
+                }
             }
         }
 
@@ -231,11 +260,11 @@ int main( int argc, char* args[] )
 
         //Draw ====
         //Send game entities to gfx engine to be rendered 
-        draw(player, level, caveTexture, entities);
+        draw(player, caveTexture, entities);
         //Draw test text
         {
             char rubyCountStr[32];
-            sprintf(rubyCountStr, "%d/%d", playerData.rubiesCollected, level.rubyCount);
+            sprintf(rubyCountStr, "%d/%d", playerData.rubiesCollected, getTotalLevelRubies());
             SDL_Rect textRect = { SCREEN_WIDTH/8, SCREEN_HEIGHT/16, 0, 0 };
             drawText(rubyCountStr, textRect, 0xFF7A0927, spriteFont);
         }

@@ -15,14 +15,36 @@
 
 #include "load_level.h"
 
+static Level level = {0};
 
-int posToTileIndex(int x, int y, Level level)
+bool isTileIndexValid(int i)
+{
+    return i >= 0 && i < level.width * level.height;
+}
+
+int posToTileIndex(int x, int y)
 {
     int index = (int)((y / TILE_DIMS) * level.width + (x / TILE_DIMS));
     return index;
 }
 
-Vector2 getPlayerStartPos(Level level)
+int posVecToTileIndex(Vector2 pos)
+{
+    return (int)(pos.y / TILE_DIMS) * level.width + (int)(pos.x / TILE_DIMS);
+}
+
+int posVecToIndex(Vector2 pos)
+{
+    return (int)(pos.y * level.width + pos.x);
+}
+
+Vector2 posToTileCoord(Vector2 pos)
+{
+    Vector2 coordVec = { (int)pos.x / TILE_DIMS, (int)pos.y / TILE_DIMS };
+    return coordVec;
+}
+
+Vector2 getPlayerStartPos()
 {
     for (int y = 0; y < level.height; y++)
     {
@@ -39,12 +61,27 @@ Vector2 getPlayerStartPos(Level level)
     return errorVector;
 }
 
-bool isTileSolid(int index, Level level)
+bool isTileSolid(int index)
 {
-    return level.data[index] == WALL;
+    return level.data[index] == WALL || level.data[index] == SECRET_DOOR;
 }
 
-EntityArray getLevelRubies(Level level, EntityTemplate* rubyTemplate)
+void setTileTo(int index, char tile)
+{
+    level.data[index] = tile;
+}
+
+int getTotalLevelRubies()
+{
+    return level.rubyCount;
+}
+
+char getLevelTile(int index)
+{
+    return level.data[index];
+}
+
+EntityArray getLevelRubies(EntityTemplate* rubyTemplate)
 {
     //Create EntityArray of correct size
     EntityArray rubyArray = {0};
@@ -77,10 +114,42 @@ EntityArray getLevelRubies(Level level, EntityTemplate* rubyTemplate)
     return rubyArray;
 }
 
-//TODO Fix levels breaking if they don't end on a blank line
-Level loadLevel(char* fileName)
+EntityArray getLevelKeys(EntityTemplate* keyTemplate)
 {
-    Level level;
+    //Create EntityArray of correct size
+    EntityArray keyArray = {0};
+    {
+        int keyCount = 0;
+        for (int i = 0; i < level.width * level.height; i++)
+            if (level.data[i] == KEY1)
+                keyCount++;
+
+        //MALLOC should free when loading a new level
+        keyArray.size = keyCount;
+        keyArray.data = (Entity*)malloc(keyCount * sizeof(Entity));
+    }
+
+    //Populate array with ruby coords
+    int keyIndex = 0;
+    for (int y = 0; y < level.height; y++)
+    {
+        for (int x = 0; x < level.width; x++)
+        {
+            if (level.data[y * level.width + x] == KEY1)
+            {
+                Vector2 tmp = { x * TILE_DIMS + TILE_DIMS/2, y * TILE_DIMS + TILE_DIMS/2 };
+                keyArray.data[keyIndex].pos = tmp;
+                keyArray.data[keyIndex].base = keyTemplate;
+                keyIndex++;
+            }
+        }
+    }
+    return keyArray;
+}
+
+//TODO Fix levels breaking if they don't end on a blank line
+void loadLevel(char* fileName)
+{
     FILE* file = fopen(fileName, "r");
     if (file == NULL)
     {
@@ -126,5 +195,4 @@ Level loadLevel(char* fileName)
             }
         }
     }
-    return level;
 }
