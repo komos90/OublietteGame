@@ -24,6 +24,7 @@ seoras1@gmail.com
 #include "engine_types.h"
 #include "load_level.h"
 #include "gfx_engine.h"
+#include "images.h"
 
 static const int SCREEN_WIDTH  = 213;//854;
 static const int SCREEN_HEIGHT = 120;//480;
@@ -61,15 +62,7 @@ int main( int argc, char* args[] )
 
     //Load level from file and add level entities to entity list
     loadLevel("../res/levels/level0.lvl");
-
-    //Load texture
-    // TODO Generalise
-    SDL_Surface* caveTexture = IMG_Load("../res/textures/cave.png");
-    caveTexture = SDL_ConvertSurfaceFormat(caveTexture, SDL_PIXELFORMAT_ARGB8888, 0);
-    SDL_Surface* rubySprite = IMG_Load("../res/sprites/ruby.png");
-    rubySprite = SDL_ConvertSurfaceFormat(rubySprite, SDL_PIXELFORMAT_ARGB8888, 0);
-    SDL_Surface* keySprite = IMG_Load("../res/sprites/key.png");
-    keySprite = SDL_ConvertSurfaceFormat(keySprite, SDL_PIXELFORMAT_ARGB8888, 0);
+    loadImages();
 
     //Load sprite font
     SpriteFont spriteFont = { .charW=8, .charH=8 };
@@ -80,10 +73,10 @@ int main( int argc, char* args[] )
     Player player = { .width=32, .height=32, .pos=getPlayerStartPos() };
     PlayerData playerData = { .levelNumber=0 };
 
-    EntityTemplate rubyTemplate = { .sprite=rubySprite, .width=32, .height=32, .type=ENTITY_TYPE_RUBY };
+    EntityTemplate rubyTemplate = { .sprite=images.rubySprite, .width=32, .height=32, .type=ENTITY_TYPE_RUBY };
     EntityArray rubies = getLevelRubies(&rubyTemplate);
     
-    EntityTemplate keyTemplate = { .sprite=keySprite, .width=32, .width=32, .type=ENTITY_TYPE_KEY};
+    EntityTemplate keyTemplate = { .sprite=images.keySprite, .width=32, .width=32, .type=ENTITY_TYPE_KEY};
     EntityArray keys = getLevelKeys(&keyTemplate);
 
     EntityArray entities;
@@ -212,13 +205,14 @@ int main( int argc, char* args[] )
             }
             if (keyState[SDL_SCANCODE_SPACE])
             {
-                Vector2 actionTile = posToTileCoord(player.pos);
-                actionTile.x += cosf(player.rotation);
-                actionTile.y += sinf(player.rotation);
+                Vector2 actionTile = player.pos;
+                actionTile.x += cosf(player.rotation) * TILE_DIMS;
+                actionTile.y += sinf(player.rotation) * TILE_DIMS;
+                actionTile = posToTileCoord(actionTile);
 
-                if (getLevelTile(posVecToIndex(actionTile)) == SECRET_DOOR)
+                if (getLevelTile(posVecToIndex(actionTile)) == TILE_SECRET_DOOR)
                 {
-                    setTileTo(posVecToIndex(actionTile), FLOOR);
+                    setTileTo(posVecToIndex(actionTile), TILE_FLOOR);
                 }
             }
             //Normalise moveVector
@@ -227,8 +221,20 @@ int main( int argc, char* args[] )
             player.pos.y += moveVector.y * moveVel;
 
             //Collision
-            if (isTileSolid(posVecToTileIndex(player.pos)))
+            int tileIndex = posVecToTileIndex(player.pos);
+            if (isTileSolid(tileIndex))
             {
+                //Check for special conditions such as locked door
+
+                char tile = getLevelTile(tileIndex);
+                if ((tile == TILE_DOOR0 && playerData.keysCollected[0] == true) ||
+                    (tile == TILE_DOOR1 && playerData.keysCollected[1] == true) ||
+                    (tile == TILE_DOOR2 && playerData.keysCollected[2] == true) ||
+                    (tile == TILE_DOOR3 && playerData.keysCollected[3] == true))
+                {
+                    setTileTo(tileIndex, TILE_FLOOR);
+                }
+
                 player.pos = oldPlayerPos;
             }
         }
@@ -252,15 +258,24 @@ int main( int argc, char* args[] )
                         entities.size--;
                         break;
                     }
+                case ENTITY_TYPE_KEY:
+                    {
+                        //TEMPORARY!
+                        playerData.keysCollected[((Key*)entities.data[i].sub)->id] = true;
+                        //Remove entity
+                        entities.data[i] = entities.data[entities.size - 1];
+                        entities.size--;
+                        break;
+                    }
                 }
             }
         }
 
         //Check for level end tile
-
+        
         //Draw ====
         //Send game entities to gfx engine to be rendered 
-        draw(player, caveTexture, entities);
+        draw(player, entities);
         //Draw test text
         {
             char rubyCountStr[32];
@@ -273,6 +288,19 @@ int main( int argc, char* args[] )
             sprintf(fpsDisplayStr, "Fps: %d", currentFps);
             SDL_Rect textRect = {0, SCREEN_HEIGHT - 16, 0, 0 };
             drawText(fpsDisplayStr, textRect, 0xFFFF0000, spriteFont);
+        }
+        //Draw keys collected
+        {
+            for (int i = 0; i < MAX_KEYS; i++)
+            {
+                if (playerData.keysCollected[i] == true)
+                {
+                    //VERY TEMPORARY!
+                    //SHOULD DRAW WEE KEY ICON
+                    SDL_Rect textRect = { SCREEN_WIDTH/3 + i * 16, SCREEN_HEIGHT/16, 0, 0 };
+                    drawText("K", textRect, 0xFFFF00FF, spriteFont);
+                }
+            }
         }
 
         //Render the pixel buffer to the screen

@@ -24,7 +24,7 @@ seoras1@gmail.com
 #include "gfx_engine.h"
 #include "engine_types.h"
 #include "load_level.h"
-
+#include "images.h"
 
 static PixelBuffer pixelBuffer = {0};
 static float* zBuffer = NULL;
@@ -85,7 +85,7 @@ PixelBuffer* createPixelBuffer(int width, int height)
     return &pixelBuffer;
 }
 
-Vector2Int getTileHorzIntersection(Vector2 pos, float angle)
+Vector2Int getTileHorzIntersection(Vector2 pos, float angle, int* tileIndex)
 {
     angle = constrainAngle(angle);
     bool xPositive = angle >= -M_PI / 2 && angle <= M_PI / 2;
@@ -106,11 +106,12 @@ Vector2Int getTileHorzIntersection(Vector2 pos, float angle)
         yInter += yPositive ? -TILE_DIMS : TILE_DIMS;
         xInter += xInc;
     }
+    *tileIndex = posToTileIndex(xInter + xDir, yInter + yDir);
     Vector2Int intersectVector = { .x=xInter, .y=yInter };
     return intersectVector;
 }
 
-Vector2Int getTileVertIntersection(Vector2 pos, float angle)
+Vector2Int getTileVertIntersection(Vector2 pos, float angle, int* tileIndex)
 {
     angle = constrainAngle(angle);
     bool xPositive = angle >= -M_PI / 2 && angle <= M_PI / 2;
@@ -131,6 +132,7 @@ Vector2Int getTileVertIntersection(Vector2 pos, float angle)
         xInter += xPositive ? TILE_DIMS : -TILE_DIMS;
         yInter += yInc;
     }
+    *tileIndex = posToTileIndex(xInter + xDir, yInter + yDir);
     Vector2Int intersectVector = { .x=xInter, .y=yInter };
     return intersectVector;
 }
@@ -142,7 +144,7 @@ float wallDistanceToHeight(float distance)
     return displayHeight;
 }
 
-void draw(Player player, SDL_Surface* caveTexture, EntityArray entities)
+void draw(Player player, EntityArray entities)
 {
 
     //Clear pixel buffer & draw ceiling
@@ -162,14 +164,18 @@ void draw(Player player, SDL_Surface* caveTexture, EntityArray entities)
         //Get distance and intersect pos
         float distance;
         Vector2Int intersectPos;
+        int intersectTileIndex;
         {
-            Vector2Int hIntersect = getTileHorzIntersection(player.pos, angle);
+            int hTileIndex;
+            int vTileIndex;
+            Vector2Int hIntersect = getTileHorzIntersection(player.pos, angle, &hTileIndex);
             float hDistance = sqrt(pow(hIntersect.x - player.pos.x, 2) + pow(hIntersect.y - player.pos.y, 2)) * cos(angle - player.rotation);
 
-            Vector2Int vIntersect = getTileVertIntersection(player.pos, angle);
+            Vector2Int vIntersect = getTileVertIntersection(player.pos, angle, &vTileIndex);
             float vDistance = sqrt(pow(vIntersect.x - player.pos.x, 2) + pow(vIntersect.y - player.pos.y, 2)) * cos(angle - player.rotation);
 
             intersectPos = hDistance <= vDistance ? hIntersect : vIntersect;
+            intersectTileIndex = hDistance <= vDistance ? hTileIndex : vTileIndex;
             distance = hDistance <= vDistance ? hDistance : vDistance;
         }
 
@@ -190,9 +196,11 @@ void draw(Player player, SDL_Surface* caveTexture, EntityArray entities)
                 int xTexCoord = intersectPos.x % TILE_DIMS + intersectPos.y % TILE_DIMS;
                 if (yTexCoord < 0) yTexCoord = 0;
                 else if (yTexCoord >= TILE_DIMS) yTexCoord = TILE_DIMS - 1;
+                
+                SDL_Surface* tileTexture = getTileTexture(intersectTileIndex);
 
-                uint32_t* texPixels = (uint32_t*)caveTexture->pixels;
-                int index = yTexCoord * caveTexture->w + xTexCoord;
+                uint32_t* texPixels = (uint32_t*)(tileTexture->pixels);
+                int index = yTexCoord * tileTexture->w + xTexCoord;
                 color32 = texPixels[index];
             }
 

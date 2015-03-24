@@ -12,15 +12,21 @@
 
 static const int TILE_DIMS = 64;
 
-static const char PLAYER_START  = 'p';
-static const char FLOOR         = '.';
-static const char RUBY          = '*';
-static const char MONSTER       = '!';
-static const char LEVEL_END     = 'e';
-static const char WALL          = '#';
-static const char KEY1          = '1';
-static const char DOOR1         = 'q';
-static const char SECRET_DOOR   = '?'; 
+static const char TILE_PLAYER_START = 'p';
+static const char TILE_FLOOR        = '.';
+static const char TILE_RUBY         = '*';
+static const char TILE_MONSTER      = '!';
+static const char TILE_LEVEL_END    = 'g';
+static const char TILE_WALL         = '#';
+static const char TILE_KEY0         = '1';
+static const char TILE_KEY1         = '2';
+static const char TILE_KEY2         = '3';
+static const char TILE_KEY3         = '4';
+static const char TILE_DOOR0        = 'q';
+static const char TILE_DOOR1        = 'w';
+static const char TILE_DOOR2        = 'e';
+static const char TILE_DOOR3        = 'r';
+static const char TILE_SECRET_DOOR  = '?';
 
 typedef struct
 {
@@ -44,3 +50,4 @@ bool isTileSolid(int index);
 void setTileTo(int index, char tile);
 int getTotalLevelRubies();
 char getLevelTile();
+SDL_Surface* getTileTexture(int index);

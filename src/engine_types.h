@@ -13,6 +13,10 @@
     #define M_PI 3.14159265358979323846
 #endif
 
+
+#define MAX_KEYS 4
+
+
 typedef enum
 {
     ENTITY_TYPE_RUBY,
@@ -65,6 +69,7 @@ typedef struct
 {
     Vector2 pos;
     EntityTemplate* base;
+    void* sub;
 } Entity;
 
 typedef struct
@@ -75,9 +80,18 @@ typedef struct
 
 typedef struct
 {
+    int id;
+} Key;
+
+//TODO Should this be in this file?
+typedef struct
+{
     int levelNumber;
     int rubiesCollected;
+    bool keysCollected[MAX_KEYS];
 } PlayerData;
+
+//TODO should have tile type with properties such as isSolid, keyId
 
 Vector2 vec2Unit(Vector2 vector);
 float constrainAngle(float angle);

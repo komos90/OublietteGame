@@ -6,6 +6,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #ifdef __linux__
     #include <SDL2/SDL.h>
@@ -14,6 +15,7 @@
 #endif
 
 #include "load_level.h"
+#include "images.h"
 
 static Level level = {0};
 
@@ -22,6 +24,7 @@ bool isTileIndexValid(int i)
     return i >= 0 && i < level.width * level.height;
 }
 
+//TODO get rid of some of these by chaining together some of them.
 int posToTileIndex(int x, int y)
 {
     int index = (int)((y / TILE_DIMS) * level.width + (x / TILE_DIMS));
@@ -50,7 +53,7 @@ Vector2 getPlayerStartPos()
     {
         for (int x = 0; x < level.width; x++)
         {
-            if (level.data[y * level.width + x] == PLAYER_START)
+            if (level.data[y * level.width + x] == TILE_PLAYER_START)
             {
                 Vector2 playerPos = { x * TILE_DIMS + TILE_DIMS/2, y * TILE_DIMS + TILE_DIMS/2 };
                 return playerPos;
@@ -61,9 +64,15 @@ Vector2 getPlayerStartPos()
     return errorVector;
 }
 
+//Should be a more elegant way to do this. Time to overhall tile representation?
 bool isTileSolid(int index)
 {
-    return level.data[index] == WALL || level.data[index] == SECRET_DOOR;
+    return level.data[index] == TILE_WALL ||
+           level.data[index] == TILE_SECRET_DOOR ||
+           level.data[index] == TILE_DOOR0 ||
+           level.data[index] == TILE_DOOR1 ||
+           level.data[index] == TILE_DOOR2 ||
+           level.data[index] == TILE_DOOR3;
 }
 
 void setTileTo(int index, char tile)
@@ -88,9 +97,11 @@ EntityArray getLevelRubies(EntityTemplate* rubyTemplate)
     {
         int rubyCount = 0;
         for (int i = 0; i < level.width * level.height; i++)
-            if (level.data[i] == RUBY)
+            if (level.data[i] == TILE_RUBY)
                 rubyCount++;
 
+        //Set correct ruby total
+        level.rubyCount = rubyCount;
         //MALLOC should free when loading a new level
         rubyArray.size = rubyCount;
         rubyArray.data = (Entity*)malloc(rubyCount * sizeof(Entity));
@@ -102,7 +113,7 @@ EntityArray getLevelRubies(EntityTemplate* rubyTemplate)
     {
         for (int x = 0; x < level.width; x++)
         {
-            if (level.data[y * level.width + x] == RUBY)
+            if (level.data[y * level.width + x] == TILE_RUBY)
             {
                 Vector2 tmp = { x * TILE_DIMS + TILE_DIMS/2, y * TILE_DIMS + TILE_DIMS/2 };
                 rubyArray.data[rubyIndex].pos = tmp;
@@ -121,30 +132,78 @@ EntityArray getLevelKeys(EntityTemplate* keyTemplate)
     {
         int keyCount = 0;
         for (int i = 0; i < level.width * level.height; i++)
-            if (level.data[i] == KEY1)
+            if (level.data[i] == TILE_KEY0 ||
+                level.data[i] == TILE_KEY1 ||
+                level.data[i] == TILE_KEY2 ||
+                level.data[i] == TILE_KEY3)
+            {
                 keyCount++;
+            }
 
         //MALLOC should free when loading a new level
         keyArray.size = keyCount;
         keyArray.data = (Entity*)malloc(keyCount * sizeof(Entity));
     }
 
-    //Populate array with ruby coords
+    //Populate array with key coords
     int keyIndex = 0;
     for (int y = 0; y < level.height; y++)
     {
         for (int x = 0; x < level.width; x++)
         {
-            if (level.data[y * level.width + x] == KEY1)
+            if (level.data[y * level.width + x] == TILE_KEY0 ||
+                level.data[y * level.width + x] == TILE_KEY1 ||
+                level.data[y * level.width + x] == TILE_KEY2 ||
+                level.data[y * level.width + x] == TILE_KEY3)
             {
                 Vector2 tmp = { x * TILE_DIMS + TILE_DIMS/2, y * TILE_DIMS + TILE_DIMS/2 };
                 keyArray.data[keyIndex].pos = tmp;
                 keyArray.data[keyIndex].base = keyTemplate;
+                //MALLOC should free on new level
+                keyArray.data[keyIndex].sub = malloc(sizeof(Key));
+
+                //Determine id of key, i.e. it's colour
+                if (level.data[y * level.width + x] == TILE_KEY0)
+                {
+                    ((Key*)(keyArray.data[keyIndex].sub))->id = 0;
+                }
+                else if (level.data[y * level.width + x] == TILE_KEY1)
+                {
+                    ((Key*)(keyArray.data[keyIndex].sub))->id = 1;
+                }
+                else if (level.data[y * level.width + x] == TILE_KEY2)
+                {
+                    ((Key*)(keyArray.data[keyIndex].sub))->id = 2;
+                }
+                else
+                {
+                    ((Key*)(keyArray.data[keyIndex].sub))->id = 3;
+                }
+                
                 keyIndex++;
             }
         }
     }
     return keyArray;
+}
+
+SDL_Surface* getTileTexture(int index) {
+    assert(index >=0 && index < level.width * level.height);
+    if(level.data[index] == TILE_WALL)
+    {
+        return images.caveTexture;
+    }
+    else if (level.data[index] == TILE_DOOR0 ||
+             level.data[index] == TILE_DOOR1 ||
+             level.data[index] == TILE_DOOR2 ||
+             level.data[index] == TILE_DOOR3)
+    {
+        return images.doorTexture;
+    }
+    else if (level.data[index] == TILE_SECRET_DOOR)
+    {
+        return images.secretDoorTexture;
+    }
 }
 
 //TODO Fix levels breaking if they don't end on a blank line
@@ -176,7 +235,6 @@ void loadLevel(char* fileName)
         level.width = (charCount / lineCount) - 1;
     }
     
-    level.rubyCount = 0;
     //Go back to beginning of file
     fsetpos(file, &filePos);
     //MALLOC should free when loading a new level
@@ -189,7 +247,6 @@ void loadLevel(char* fileName)
         {
             if (ch != '\n')
             {
-                if (ch == RUBY) level.rubyCount++;
                 level.data[i] = ch;
                 i++;
             }

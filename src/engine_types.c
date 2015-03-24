@@ -1,3 +1,9 @@
+/*
+Raycaster wolfenstein 3d style game.
+Seoras Macdonald
+seoras1@gmail.com
+2015
+*/
 #include <math.h>
 #include <stdbool.h>
 
@@ -6,13 +12,13 @@
 
 Vector2 vec2Unit(Vector2 vector)
 {
+    Vector2 retVec = {0};
     float magnitude = sqrt(vector.x * vector.x + vector.y * vector.y);
-    if (magnitude == 0)
+    if (magnitude != 0)
     {
-        Vector2 retVec = {0};
-        return retVec;
+        retVec.x = vector.x / magnitude;
+        retVec.y = vector.y / magnitude;
     }
-    Vector2 retVec = { .x=(vector.x/magnitude), .y=(vector.y/magnitude), .y=(vector.y/magnitude) };
     return retVec;
 }
 

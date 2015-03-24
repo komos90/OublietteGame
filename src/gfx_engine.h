@@ -15,7 +15,6 @@ seoras1@gmail.com
 #endif 
 
 #include "engine_types.h"
-#include "load_level.h"
 
 
 static const float H_FOV = M_PI/3;
@@ -26,4 +25,4 @@ void drawRect (SDL_Rect rect, uint32_t color);
 void drawPoint (int x, int y, uint32_t color);
 void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont);
 PixelBuffer* createPixelBuffer(int width, int height);
-void draw (Player player, SDL_Surface* caveTexture, EntityArray entities);
+void draw (Player player, EntityArray entities);
