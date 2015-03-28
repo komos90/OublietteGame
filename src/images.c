@@ -41,4 +41,8 @@ void loadImages() {
     images.keySprite   = IMG_Load("../res/sprites/key.png");
     images.keySprite   = SDL_ConvertSurfaceFormat(images.keySprite, SDL_PIXELFORMAT_ARGB8888, 0);
     assert(images.keySprite != NULL);
+
+    images.monsterSprite   = IMG_Load("../res/sprites/monster.png");
+    images.monsterSprite   = SDL_ConvertSurfaceFormat(images.monsterSprite, SDL_PIXELFORMAT_ARGB8888, 0);
+    assert(images.monsterSprite != NULL);
 }

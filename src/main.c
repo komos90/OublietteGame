@@ -30,6 +30,38 @@ static const int SCREEN_WIDTH  = 213;//854;
 static const int SCREEN_HEIGHT = 120;//480;
 
 //Temp Globals
+static uint32_t keyColorsTemp[MAX_KEYS] = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFF00AA88};
+
+EntityArray initLevel(
+    Player* player, PlayerData* playerData, EntityTemplate* rubyTemplate,
+    EntityTemplate* keyTemplate, EntityTemplate* monsterTemplate)
+{
+    player->pos = getPlayerStartPos();
+    player->rotation = 0;
+    playerData->rubiesCollected = 0;
+    for (int i = 0; i < MAX_KEYS; i++)
+    {
+        playerData->keysCollected[i] = false;
+    }
+
+    EntityArray rubies = getLevelRubies(rubyTemplate);
+    EntityArray keys = getLevelKeys(keyTemplate);
+    EntityArray monsters = getLevelMonsters(monsterTemplate);
+    
+    EntityArray entities;
+    entities.size = rubies.size + keys.size + monsters.size;
+    entities.data = (Entity*)malloc(entities.size * sizeof(Entity));
+    memcpy((void*)entities.data, (void*)rubies.data, rubies.size * sizeof(Entity));
+    memcpy((void*)(entities.data + rubies.size), (void*)keys.data, keys.size * sizeof(Entity));
+    memcpy((void*)(entities.data + rubies.size + keys.size), (void*)monsters.data, monsters.size * sizeof(Entity));
+
+    //Free memory
+    free(rubies.data);
+    free(keys.data);
+    free(monsters.data);
+
+    return entities;
+}
 
 int main( int argc, char* args[] )
 {
@@ -70,20 +102,14 @@ int main( int argc, char* args[] )
     spriteFont.sprite = SDL_ConvertSurfaceFormat(spriteFont.sprite, SDL_PIXELFORMAT_ARGB8888, 0);
 
     //Create player
-    Player player = { .width=32, .height=32, .pos=getPlayerStartPos() };
+    Player player = { .width=32, .height=32 };
     PlayerData playerData = { .levelNumber=0 };
-
     EntityTemplate rubyTemplate = { .sprite=images.rubySprite, .width=32, .height=32, .type=ENTITY_TYPE_RUBY };
-    EntityArray rubies = getLevelRubies(&rubyTemplate);
-    
     EntityTemplate keyTemplate = { .sprite=images.keySprite, .width=32, .width=32, .type=ENTITY_TYPE_KEY};
-    EntityArray keys = getLevelKeys(&keyTemplate);
+    EntityTemplate monsterTemplate = { .sprite=images.monsterSprite, .width=64, .width=64, .type=ENTITY_TYPE_KEY};
 
-    EntityArray entities;
-    entities.size = rubies.size + keys.size;
-    entities.data = (Entity*)malloc(entities.size * sizeof(Entity));
-    memcpy((void*)entities.data, (void*)rubies.data, rubies.size * sizeof(Entity));
-    memcpy((void*)(entities.data + rubies.size), (void*)keys.data, keys.size * sizeof(Entity));
+    //Init level
+    EntityArray entities = initLevel(&player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
 
     //Get input devices' states
     SDL_Joystick* gamePad = SDL_JoystickOpen(0);
@@ -210,7 +236,15 @@ int main( int argc, char* args[] )
                 actionTile.y += sinf(player.rotation) * TILE_DIMS;
                 actionTile = posToTileCoord(actionTile);
 
-                if (getLevelTile(posVecToIndex(actionTile)) == TILE_SECRET_DOOR)
+                char tile = getLevelTile(posVecToIndex(actionTile));
+                if (tile == TILE_SECRET_DOOR)
+                {
+                    setTileTo(posVecToIndex(actionTile), TILE_FLOOR);
+                }
+                else if ((tile == TILE_DOOR0 && playerData.keysCollected[0] == true) ||
+                    (tile == TILE_DOOR1 && playerData.keysCollected[1] == true) ||
+                    (tile == TILE_DOOR2 && playerData.keysCollected[2] == true) ||
+                    (tile == TILE_DOOR3 && playerData.keysCollected[3] == true))
                 {
                     setTileTo(posVecToIndex(actionTile), TILE_FLOOR);
                 }
@@ -222,20 +256,33 @@ int main( int argc, char* args[] )
 
             //Collision
             int tileIndex = posVecToTileIndex(player.pos);
+            char tile = getLevelTile(tileIndex);
             if (isTileSolid(tileIndex))
             {
-                //Check for special conditions such as locked door
-
-                char tile = getLevelTile(tileIndex);
-                if ((tile == TILE_DOOR0 && playerData.keysCollected[0] == true) ||
-                    (tile == TILE_DOOR1 && playerData.keysCollected[1] == true) ||
-                    (tile == TILE_DOOR2 && playerData.keysCollected[2] == true) ||
-                    (tile == TILE_DOOR3 && playerData.keysCollected[3] == true))
-                {
-                    setTileTo(tileIndex, TILE_FLOOR);
-                }
-
                 player.pos = oldPlayerPos;
+            }
+            else if (tile == TILE_LEVEL_END)
+            {
+                //Load next level
+                playerData.levelNumber++;
+                //Create file path for next level
+                char nextLevelFilePath[LEVEL_FILE_PATH_MAX_LEN];
+                sprintf(nextLevelFilePath, "../res/levels/level%d.lvl", playerData.levelNumber);
+                if(fileExists(nextLevelFilePath))
+                {
+                    loadLevel(nextLevelFilePath);
+                    for (int i = 0; i < entities.size; i++)
+                    {
+                        free(entities.data[i].sub);
+                    }
+                    free(entities.data);
+                    entities = initLevel(&player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
+                }  
+                else
+                {
+                    //Game End
+                    exit(0);
+                }
             }
         }
 
@@ -270,8 +317,6 @@ int main( int argc, char* args[] )
                 }
             }
         }
-
-        //Check for level end tile
         
         //Draw ====
         //Send game entities to gfx engine to be rendered 
@@ -298,7 +343,7 @@ int main( int argc, char* args[] )
                     //VERY TEMPORARY!
                     //SHOULD DRAW WEE KEY ICON
                     SDL_Rect textRect = { SCREEN_WIDTH/3 + i * 16, SCREEN_HEIGHT/16, 0, 0 };
-                    drawText("K", textRect, 0xFFFF00FF, spriteFont);
+                    drawText("K", textRect, keyColorsTemp[i], spriteFont);
                 }
             }
         }

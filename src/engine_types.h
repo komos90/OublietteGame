@@ -21,6 +21,7 @@ typedef enum
 {
     ENTITY_TYPE_RUBY,
     ENTITY_TYPE_KEY,
+    ENTITY_TYPE_MONSTER
 } EntityType;
 
 typedef struct 
@@ -90,6 +91,8 @@ typedef struct
     int rubiesCollected;
     bool keysCollected[MAX_KEYS];
 } PlayerData;
+
+typedef SDL_Rect Rectangle;
 
 //TODO should have tile type with properties such as isSolid, keyId
 

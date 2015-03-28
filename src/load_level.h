@@ -28,6 +28,8 @@ static const char TILE_DOOR2        = 'e';
 static const char TILE_DOOR3        = 'r';
 static const char TILE_SECRET_DOOR  = '?';
 
+static const int LEVEL_FILE_PATH_MAX_LEN = 32;
+
 typedef struct
 {
     int width;
@@ -46,8 +48,10 @@ Vector2 posToTileCoord(Vector2 pos);
 Vector2 getPlayerStartPos();
 EntityArray getLevelRubies(EntityTemplate* rubyTemplate);
 EntityArray getLevelKeys(EntityTemplate* keyTemplate);
+EntityArray getLevelMonsters(EntityTemplate* monsterTemplate);
 bool isTileSolid(int index);
 void setTileTo(int index, char tile);
 int getTotalLevelRubies();
 char getLevelTile();
 SDL_Surface* getTileTexture(int index);
+bool fileExists(char* filePath);

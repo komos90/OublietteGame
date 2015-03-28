@@ -26,36 +26,49 @@ seoras1@gmail.com
 #include "load_level.h"
 #include "images.h"
 
+
+static uint32_t keyColors[MAX_KEYS] = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFF00AA88};
+
 static PixelBuffer pixelBuffer = {0};
 static float* zBuffer = NULL;
 
 
-void drawRect(SDL_Rect rect, uint32_t color)
+void drawRect(Rectangle rect, uint32_t color)
 {
-    if (rect.y < 0) rect.y = 0;
-    if (rect.x < 0) rect.x = 0;
-    for (int yy = rect.y; yy < rect.y + rect.h; ++yy)
+    //screen boundary checks
+    if (rect.x >= pixelBuffer.width || rect.y >= pixelBuffer.height) return;
+    if (rect.x + rect.w >= pixelBuffer.width) rect.w -= rect.x + rect.w - pixelBuffer.width;
+    if (rect.y + rect.h >= pixelBuffer.height) rect.h -= rect.y + rect.h - pixelBuffer.height;  
+    if (rect.y < 0)
     {
-        for (int xx = rect.x; xx < rect.x + rect.w; ++xx)
+        rect.h += rect.y;
+        rect.y = 0;
+    }
+    if (rect.x < 0)
+    {
+        rect.w += rect.x;
+        rect.x = 0;
+    }
+
+    for (int y = rect.y; y < rect.y + rect.h; ++y)
+    {
+        for (int x = rect.x; x < rect.x + rect.w; ++x)
         {
-            if (yy * pixelBuffer.width + xx >= pixelBuffer.width * pixelBuffer.height)
-                return;
-            pixelBuffer.pixels[yy * pixelBuffer.width + xx] = color;
+            pixelBuffer.pixels[y * pixelBuffer.width + x] = color;
         }
     }
 }
 
 void drawPoint(int x, int y, uint32_t color)
 {
-    pixelBuffer.pixels[(int)y  * pixelBuffer.width + (int)x] = color;
+    pixelBuffer.pixels[y  * pixelBuffer.width + x] = color;
 }
 
 void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont)
 {
     //get text length
     int textLength = 0;
-    for (int i = 0; text[i] != '\0'; i++)
-        textLength++;
+    for (textLength = 0; text[textLength] != '\0'; textLength++);
 
     for (int i = 0; i < textLength; i++)
     {
@@ -63,11 +76,11 @@ void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont)
 
         for (int y = 0; y < spriteFont.charH; y++)
         {
-            for (int x = spriteX; x < spriteX + spriteFont.charW; x++)
+            for (int x = 0; x < spriteFont.charW; x++)
             {
-                uint32_t pixelColor = ((uint32_t*)spriteFont.sprite->pixels)[y * spriteFont.sprite->w + x] & color;
+                uint32_t pixelColor = ((uint32_t*)spriteFont.sprite->pixels)[y * spriteFont.sprite->w + x + spriteX] & color;
                 if (pixelColor & 0xFF000000) {
-                    pixelBuffer.pixels[(rect.y + y) * pixelBuffer.width + (rect.x + i * spriteFont.charW + x - spriteX)] = pixelColor;
+                    pixelBuffer.pixels[(rect.y + y) * pixelBuffer.width + (rect.x + i * spriteFont.charW + x)] = pixelColor;
                 }
             }
         }
@@ -203,7 +216,16 @@ void draw(Player player, EntityArray entities)
                 int index = yTexCoord * tileTexture->w + xTexCoord;
                 color32 = texPixels[index];
             }
-
+            //ColorKey for doors
+            if (color32 == 0xFFFF00FF)
+            {
+                char tile = getLevelTile(intersectTileIndex);
+                if (tile == TILE_DOOR0) color32 = keyColors[0];
+                else if (tile == TILE_DOOR1) color32 = keyColors[1];
+                else if (tile == TILE_DOOR2) color32 = keyColors[2];
+                else if (tile == TILE_DOOR3) color32 = keyColors[3];
+            }
+                        
             //Shade pixels for depth effect
             uint32_t finalColor32;
             {
@@ -249,7 +271,7 @@ void draw(Player player, EntityArray entities)
         Entity entity = entities.data[entityIndex];
         Vector2 entityPos = {entity.pos.x - player.pos.x, entity.pos.y - player.pos.y};
         
-        //TODO Write matrix transform function and matrix struct etc.
+        // TODO Write matrix transform function and matrix struct etc.
         {
             Vector2 rotatedPos;
             rotatedPos.x = entityPos.x * cosf(player.rotation) + entityPos.y * sinf(player.rotation);
@@ -284,7 +306,12 @@ void draw(Player player, EntityArray entities)
                 uint32_t pixelColor = ((uint32_t*)entity.base->sprite->pixels)[spriteIndexY * entity.base->sprite->w + spriteIndexX];
                 if (pixelColor & 0xFF000000)
                 {
-                    pixelBuffer.pixels[y * pixelBuffer.width + x] = ((uint32_t*)entity.base->sprite->pixels)[spriteIndexY * entity.base->sprite->w + spriteIndexX];
+                    //inefficient
+                    if (pixelColor == 0xFFFF00FF && entity.base->type == ENTITY_TYPE_KEY)
+                    {
+                        pixelColor = keyColors[((Key*)entity.sub)->id];
+                    }
+                    pixelBuffer.pixels[y * pixelBuffer.width + x] = pixelColor;
                 }
             }
         }

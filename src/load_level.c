@@ -187,6 +187,39 @@ EntityArray getLevelKeys(EntityTemplate* keyTemplate)
     return keyArray;
 }
 
+EntityArray getLevelMonsters(EntityTemplate* monsterTemplate)
+{
+    //Create EntityArray of correct size
+    EntityArray monsterArray = {0};
+    {
+        int monsterCount = 0;
+        for (int i = 0; i < level.width * level.height; i++)
+            if (level.data[i] == TILE_MONSTER)
+                monsterCount++;
+
+        //MALLOC should free when loading a new level
+        monsterArray.size = monsterCount;
+        monsterArray.data = (Entity*)malloc(monsterCount * sizeof(Entity));
+    }
+
+    //Populate array with monster coords
+    int monsterIndex = 0;
+    for (int y = 0; y < level.height; y++)
+    {
+        for (int x = 0; x < level.width; x++)
+        {
+            if (level.data[y * level.width + x] == TILE_MONSTER)
+            {
+                Vector2 tmp = { x * TILE_DIMS + TILE_DIMS/2, y * TILE_DIMS + TILE_DIMS/2 };
+                monsterArray.data[monsterIndex].pos = tmp;
+                monsterArray.data[monsterIndex].base = monsterTemplate;
+                monsterIndex++;
+            }
+        }
+    }
+    return monsterArray;
+}
+
 SDL_Surface* getTileTexture(int index) {
     assert(index >=0 && index < level.width * level.height);
     if(level.data[index] == TILE_WALL)
@@ -204,6 +237,12 @@ SDL_Surface* getTileTexture(int index) {
     {
         return images.secretDoorTexture;
     }
+}
+
+bool fileExists(char* filePath)
+{
+    FILE* file = fopen(filePath, "r");
+    return file == NULL ? false : true;
 }
 
 //TODO Fix levels breaking if they don't end on a blank line
@@ -238,6 +277,7 @@ void loadLevel(char* fileName)
     //Go back to beginning of file
     fsetpos(file, &filePos);
     //MALLOC should free when loading a new level
+    if (level.data != NULL) free(level.data);
     level.data = (char*)malloc(level.width * level.height * sizeof(char));
     //Re-read the file, loading the actual data into the level structure. 
     {

@@ -23,6 +23,7 @@ typedef struct
 
     SDL_Surface* rubySprite;
     SDL_Surface* keySprite;
+    SDL_Surface* monsterSprite;
 } ImageManager;
 
 

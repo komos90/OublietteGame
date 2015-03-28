@@ -16,7 +16,6 @@ seoras1@gmail.com
 
 #include "engine_types.h"
 
-
 static const float H_FOV = M_PI/3;
 static const float V_FOV = M_PI/3;
 
