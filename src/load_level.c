@@ -16,6 +16,7 @@
 
 #include "load_level.h"
 #include "images.h"
+#include "monster.h"
 
 static Level level = {0};
 
@@ -117,6 +118,7 @@ EntityArray getLevelRubies(EntityTemplate* rubyTemplate)
             {
                 Vector2 tmp = { x * TILE_DIMS + TILE_DIMS/2, y * TILE_DIMS + TILE_DIMS/2 };
                 rubyArray.data[rubyIndex].pos = tmp;
+                rubyArray.data[rubyIndex].zPos = -16;
                 rubyArray.data[rubyIndex].base = rubyTemplate;
                 rubyIndex++;
             }
@@ -158,6 +160,7 @@ EntityArray getLevelKeys(EntityTemplate* keyTemplate)
             {
                 Vector2 tmp = { x * TILE_DIMS + TILE_DIMS/2, y * TILE_DIMS + TILE_DIMS/2 };
                 keyArray.data[keyIndex].pos = tmp;
+                keyArray.data[keyIndex].zPos = -12;
                 keyArray.data[keyIndex].base = keyTemplate;
                 //MALLOC should free on new level
                 keyArray.data[keyIndex].sub = malloc(sizeof(Key));
@@ -212,7 +215,11 @@ EntityArray getLevelMonsters(EntityTemplate* monsterTemplate)
             {
                 Vector2 tmp = { x * TILE_DIMS + TILE_DIMS/2, y * TILE_DIMS + TILE_DIMS/2 };
                 monsterArray.data[monsterIndex].pos = tmp;
+                monsterArray.data[monsterIndex].zPos = -12;
                 monsterArray.data[monsterIndex].base = monsterTemplate;
+                //MALLOC should free on new level
+                monsterArray.data[monsterIndex].sub = malloc(sizeof(Monster));
+                ((Monster*)monsterArray.data[monsterIndex].sub)->direction = DIR_NONE;
                 monsterIndex++;
             }
         }

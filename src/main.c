@@ -25,6 +25,7 @@ seoras1@gmail.com
 #include "load_level.h"
 #include "gfx_engine.h"
 #include "images.h"
+#include "monster.h"
 
 static const int SCREEN_WIDTH  = 213;//854;
 static const int SCREEN_HEIGHT = 120;//480;
@@ -106,7 +107,7 @@ int main( int argc, char* args[] )
     PlayerData playerData = { .levelNumber=0 };
     EntityTemplate rubyTemplate = { .sprite=images.rubySprite, .width=32, .height=32, .type=ENTITY_TYPE_RUBY };
     EntityTemplate keyTemplate = { .sprite=images.keySprite, .width=32, .width=32, .type=ENTITY_TYPE_KEY};
-    EntityTemplate monsterTemplate = { .sprite=images.monsterSprite, .width=64, .width=64, .type=ENTITY_TYPE_KEY};
+    EntityTemplate monsterTemplate = { .sprite=images.monsterSprite, .width=64, .width=64, .type=ENTITY_TYPE_MONSTER};
 
     //Init level
     EntityArray entities = initLevel(&player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
@@ -271,12 +272,17 @@ int main( int argc, char* args[] )
                 if(fileExists(nextLevelFilePath))
                 {
                     loadLevel(nextLevelFilePath);
+                    SDL_Log("PreSubFree.");
                     for (int i = 0; i < entities.size; i++)
                     {
+                        SDL_Log("Free %d of %d", i, entities.size);
                         free(entities.data[i].sub);
                     }
+                    SDL_Log("PostSubFree.");
                     free(entities.data);
+                    SDL_Log("PreInitLevel.");
                     entities = initLevel(&player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
+                    SDL_Log("PostInitLevel.");
                 }  
                 else
                 {
@@ -287,34 +293,68 @@ int main( int argc, char* args[] )
         }
 
         //Game Logic ====
-        //Check ruby collision
+        //Main Entity Loop
         for (int i = 0; i < entities.size; i++)
         {
+            //Entity Collision
             SDL_Rect playerRect = { player.pos.x, player.pos.y, player.width, player.height };
             Entity entity = entities.data[i];
             SDL_Rect entityRect = { entity.pos.x, entity.pos.y, entity.base->width, entity.base->height };
-            if (rectsIntersect(playerRect, entityRect))
+            
+            switch(entity.base->type)
             {
-                switch(entity.base->type)
+            case ENTITY_TYPE_RUBY:
                 {
-                case ENTITY_TYPE_RUBY:
+                    if (rectsIntersect(playerRect, entityRect))
                     {
                         playerData.rubiesCollected++;
                         //Remove entity
                         entities.data[i] = entities.data[entities.size - 1];
                         entities.size--;
-                        break;
                     }
-                case ENTITY_TYPE_KEY:
+                    break;
+                }
+            case ENTITY_TYPE_KEY:
+                {
+                    if (rectsIntersect(playerRect, entityRect))
                     {
                         //TEMPORARY!
                         playerData.keysCollected[((Key*)entities.data[i].sub)->id] = true;
                         //Remove entity
                         entities.data[i] = entities.data[entities.size - 1];
                         entities.size--;
-                        break;
                     }
+                    break;
                 }
+            case ENTITY_TYPE_MONSTER:
+                {
+                    if (rectsIntersect(playerRect, entityRect))
+                    {
+                        //TEMPORARY!
+                        char nextLevelFilePath[LEVEL_FILE_PATH_MAX_LEN];
+                        sprintf(nextLevelFilePath, "../res/levels/level%d.lvl", playerData.levelNumber);
+                        if(fileExists(nextLevelFilePath))
+                        {
+                            loadLevel(nextLevelFilePath);
+                            SDL_Log("PreSubFree.");
+                            for (int i = 0; i < entities.size; i++)
+                            {
+                                SDL_Log("Free %d of %d", i, entities.size);
+                                free(entities.data[i].sub);
+                            }
+                            SDL_Log("PostSubFree.");
+                            free(entities.data);
+                            SDL_Log("PreInitLevel.");
+                            entities = initLevel(&player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
+                            SDL_Log("PostInitLevel.");
+                        }
+                    }
+
+                    //Movement Code
+                    monsterMove(&entities.data[i], player);
+
+                    break;
+                } 
             }
         }
         
@@ -334,6 +374,12 @@ int main( int argc, char* args[] )
             SDL_Rect textRect = {0, SCREEN_HEIGHT - 16, 0, 0 };
             drawText(fpsDisplayStr, textRect, 0xFFFF0000, spriteFont);
         }
+        //{
+        //    char fpsDisplayStr[32];
+        //    sprintf(fpsDisplayStr, "EntSize: %d", entities.size);
+        //    SDL_Rect textRect = {128, SCREEN_HEIGHT - 16, 0, 0 };
+        //    drawText(fpsDisplayStr, textRect, 0xFFFF0000, spriteFont);
+        //}
         //Draw keys collected
         {
             for (int i = 0; i < MAX_KEYS; i++)

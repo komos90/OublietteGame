@@ -271,6 +271,11 @@ void draw(Player player, EntityArray entities)
         Entity entity = entities.data[entityIndex];
         Vector2 entityPos = {entity.pos.x - player.pos.x, entity.pos.y - player.pos.y};
         
+        //Change from pos at centre to pos at top left corner
+        //Don't think this is needed!!
+        //entityPos.x -= entity.base->sprite->w / 2;
+        //entityPos.y -= entity.base->sprite->h / 2;
+
         // TODO Write matrix transform function and matrix struct etc.
         {
             Vector2 rotatedPos;
@@ -287,7 +292,7 @@ void draw(Player player, EntityArray entities)
         float scaledSpriteW = projWRatio * entity.base->sprite->w;
         float scaledSpriteH = projHRatio * entity.base->sprite->h;
         int scaledSpriteX = projWRatio * entityPos.y + pixelBuffer.width / 2 - scaledSpriteW/2;
-        int scaledSpriteY = pixelBuffer.height / 2 - scaledSpriteH/2;
+        int scaledSpriteY = pixelBuffer.height / 2 - scaledSpriteH/2 - entity.zPos * projHRatio;
 
         for (int x = scaledSpriteX; x < scaledSpriteX + scaledSpriteW; x++) 
         {

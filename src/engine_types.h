@@ -69,6 +69,7 @@ typedef struct
 typedef struct
 {
     Vector2 pos;
+    float zPos;
     EntityTemplate* base;
     void* sub;
 } Entity;

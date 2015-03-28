@@ -1,0 +1,3 @@
+Ocasional crash on level load.
+Ocasisonal freeze on game start.
+Crash on collision with entity sprite.
