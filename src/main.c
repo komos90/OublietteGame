@@ -117,12 +117,35 @@ int main( int argc, char* args[] )
     const uint8_t* keyState = SDL_GetKeyboardState(NULL);    
     
     bool running = true;
+    bool shouldReloadLevel = false;
     int currentFps = 0;
     //Main Loop ====
     while(running) 
     {
         int frameStartTime = SDL_GetTicks();
         
+        if (shouldReloadLevel)
+        {
+            //TEMPORARY!
+            char nextLevelFilePath[LEVEL_FILE_PATH_MAX_LEN];
+            sprintf(nextLevelFilePath, "../res/levels/level%d.lvl", playerData.levelNumber);
+            if(fileExists(nextLevelFilePath))
+            {
+                loadLevel(nextLevelFilePath);
+                SDL_Log("PreSubFree.");
+                for (int i = 0; i < entities.size; i++)
+                {
+                    SDL_Log("Free %d of %d", i, entities.size);
+                    free(entities.data[i].sub);
+                }
+                SDL_Log("PostSubFree.");
+                free(entities.data);
+                SDL_Log("PreInitLevel.");
+                entities = initLevel(&player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
+                SDL_Log("PostInitLevel.");
+            }
+        }
+        shouldReloadLevel = false;
         //SDL Event Loop
         SDL_Event e;
         while (SDL_PollEvent(&e))
@@ -330,24 +353,7 @@ int main( int argc, char* args[] )
                 {
                     if (rectsIntersect(playerRect, entityRect))
                     {
-                        //TEMPORARY!
-                        char nextLevelFilePath[LEVEL_FILE_PATH_MAX_LEN];
-                        sprintf(nextLevelFilePath, "../res/levels/level%d.lvl", playerData.levelNumber);
-                        if(fileExists(nextLevelFilePath))
-                        {
-                            loadLevel(nextLevelFilePath);
-                            SDL_Log("PreSubFree.");
-                            for (int i = 0; i < entities.size; i++)
-                            {
-                                SDL_Log("Free %d of %d", i, entities.size);
-                                free(entities.data[i].sub);
-                            }
-                            SDL_Log("PostSubFree.");
-                            free(entities.data);
-                            SDL_Log("PreInitLevel.");
-                            entities = initLevel(&player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
-                            SDL_Log("PostInitLevel.");
-                        }
+                        shouldReloadLevel = true;
                     }
 
                     //Movement Code

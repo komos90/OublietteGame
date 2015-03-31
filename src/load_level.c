@@ -120,6 +120,7 @@ EntityArray getLevelRubies(EntityTemplate* rubyTemplate)
                 rubyArray.data[rubyIndex].pos = tmp;
                 rubyArray.data[rubyIndex].zPos = -16;
                 rubyArray.data[rubyIndex].base = rubyTemplate;
+                rubyArray.data[rubyIndex].sub = NULL;
                 rubyIndex++;
             }
         }
@@ -217,6 +218,7 @@ EntityArray getLevelMonsters(EntityTemplate* monsterTemplate)
                 monsterArray.data[monsterIndex].pos = tmp;
                 monsterArray.data[monsterIndex].zPos = -12;
                 monsterArray.data[monsterIndex].base = monsterTemplate;
+                monsterArray.data[monsterIndex].sub = NULL;
                 //MALLOC should free on new level
                 monsterArray.data[monsterIndex].sub = malloc(sizeof(Monster));
                 ((Monster*)monsterArray.data[monsterIndex].sub)->direction = DIR_NONE;
