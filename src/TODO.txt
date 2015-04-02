@@ -1,0 +1,33 @@
+TODO:
+    Clean code
+    Add floor/ceiling rendering texture-mapping
+    Optimize
+    Add more sofisticated monster AI (A*, follow only on sight, stop following when player not in sight for X seconds. Or something similar)
+    Add monster animation (walking, 4 directions)?
+    Add ruby animation.
+    Improve key / door textures.
+    Player headbob
+    Add scaling to sprite font
+
+    Add background music:
+        Title menu
+        Level complete?
+    Add sound effects:
+        Pick up ruby
+        Footsteps
+        Pick up key
+        Found secret
+        Unlock door
+        Level end
+        Monster proximity
+        Monster attack / player death
+
+    Add title menu (No options, just picture and animated "press start/enter" button)       
+    Add level complete screen / level transition
+    Add death screen / transition
+    Add game complete screen
+
+DONE:
+    Apply "lighting" effect to sprites
+    Add background music:
+        Main background

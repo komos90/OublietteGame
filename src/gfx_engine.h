@@ -23,5 +23,6 @@ static const float V_FOV = M_PI/3;
 void drawRect (SDL_Rect rect, uint32_t color);
 void drawPoint (int x, int y, uint32_t color);
 void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont);
-PixelBuffer* createPixelBuffer(int width, int height);
+void createPixelBuffer(int width, int height);
+PixelBuffer* getPixelBuffer();
 void draw (Player player, EntityArray entities);

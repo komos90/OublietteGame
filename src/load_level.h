@@ -40,7 +40,7 @@ typedef struct
 } Level;
 
 bool isTileIndexValid(int i);
-void loadLevel(char* fileName);
+void loadLevelTiles(char* fileName);
 int posVecToTileIndex(Vector2 pos);
 int posVecToIndex(Vector2 pos);
 int posToTileIndex(int x, int y);

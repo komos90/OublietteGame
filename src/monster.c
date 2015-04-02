@@ -19,7 +19,7 @@ void monsterMove(Entity* this, Player player)
         .y=this->pos.y / TILE_DIMS + 0.5 };
 
     //Move in current direction
-    SDL_Log("Current dir is %d", ((Monster*)this->sub)->direction);
+    //SDL_Log("Current dir is %d", ((Monster*)this->sub)->direction);
     float monsterVel = 2.f; 
     this->pos.x += monsterVel * dirOffsets[((Monster*)this->sub)->direction].x;
     this->pos.y += monsterVel * dirOffsets[((Monster*)this->sub)->direction].y;
@@ -29,23 +29,23 @@ void monsterMove(Entity* this, Player player)
         .x=this->pos.x / TILE_DIMS + 0.5,
         .y=this->pos.y / TILE_DIMS + 0.5 };
     bool crossedCenter = oldTileByCenter.x != newTileByCenter.x || oldTileByCenter.y != newTileByCenter.y;
-    if (crossedCenter) SDL_Log("Center Crossed.");
+    //if (crossedCenter) SDL_Log("Center Crossed.");
     if (((Monster*)this->sub)->direction == DIR_NONE || crossedCenter)
     {
         Vector2 curTile = posToTileCoord(this->pos);
         Vector2 minTile = curTile;
         float minDistance = FLT_MAX; 
         
-        SDL_Log("In changing direction code.");
+        //SDL_Log("In changing direction code.");
         for (int i = DIR_UP; i <= DIR_RIGHT; i++)
         {
-            SDL_Log("%d", i);
+            //SDL_Log("%d", i);
             Vector2 consideringTile = {
                 .x=curTile.x + dirOffsets[i].x,
                 .y=curTile.y + dirOffsets[i].y };
             if (isTileSolid(posVecToIndex(consideringTile)))
             {
-                SDL_Log("Skipping solid tile.");
+                //SDL_Log("Skipping solid tile.");
                 continue;
             }
 
@@ -54,7 +54,7 @@ void monsterMove(Entity* this, Player player)
             {
                 minDistance = distance;
                 minTile = consideringTile;
-                SDL_Log("Distance for direction %d is %f. minDistance is %f", i, distance, minDistance);
+                //SDL_Log("Distance for direction %d is %f. minDistance is %f", i, distance, minDistance);
                 ((Monster*)this->sub)->direction = i; //THIS IS A BIT DANGEROUS
             }
         }

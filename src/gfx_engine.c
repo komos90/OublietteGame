@@ -87,7 +87,7 @@ void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont)
     }
 }
 
-PixelBuffer* createPixelBuffer(int width, int height)
+void createPixelBuffer(int width, int height)
 {
     //MALLOC no need to free, kept until program end.
     uint32_t* pixels = (uint32_t*)malloc(width * height * sizeof(uint32_t));
@@ -95,6 +95,10 @@ PixelBuffer* createPixelBuffer(int width, int height)
     pixelBuffer.pixels = pixels;
     pixelBuffer.width = width;
     pixelBuffer.height = height;
+}
+
+PixelBuffer* getPixelBuffer()
+{
     return &pixelBuffer;
 }
 
@@ -157,6 +161,21 @@ float wallDistanceToHeight(float distance)
     return displayHeight;
 }
 
+float getWallIntersectionData(Vector2Int* intersectPos, int* intersectTileIndex, const Player* player, float angle)
+{
+    int hTileIndex;
+    int vTileIndex;
+    Vector2Int hIntersect = getTileHorzIntersection(player->pos, angle, &hTileIndex);
+    float hDistance = sqrt(pow(hIntersect.x - player->pos.x, 2) + pow(hIntersect.y - player->pos.y, 2)) * cos(angle - player->rotation);
+
+    Vector2Int vIntersect = getTileVertIntersection(player->pos, angle, &vTileIndex);
+    float vDistance = sqrt(pow(vIntersect.x - player->pos.x, 2) + pow(vIntersect.y - player->pos.y, 2)) * cos(angle - player->rotation);
+
+    *intersectPos = hDistance <= vDistance ? hIntersect : vIntersect;
+    *intersectTileIndex = hDistance <= vDistance ? hTileIndex : vTileIndex;
+    return hDistance <= vDistance ? hDistance : vDistance;
+}
+
 void draw(Player player, EntityArray entities)
 {
 
@@ -175,22 +194,9 @@ void draw(Player player, EntityArray entities)
     for (int screenColumn = 0; screenColumn < pixelBuffer.width; screenColumn++)
     {
         //Get distance and intersect pos
-        float distance;
         Vector2Int intersectPos;
         int intersectTileIndex;
-        {
-            int hTileIndex;
-            int vTileIndex;
-            Vector2Int hIntersect = getTileHorzIntersection(player.pos, angle, &hTileIndex);
-            float hDistance = sqrt(pow(hIntersect.x - player.pos.x, 2) + pow(hIntersect.y - player.pos.y, 2)) * cos(angle - player.rotation);
-
-            Vector2Int vIntersect = getTileVertIntersection(player.pos, angle, &vTileIndex);
-            float vDistance = sqrt(pow(vIntersect.x - player.pos.x, 2) + pow(vIntersect.y - player.pos.y, 2)) * cos(angle - player.rotation);
-
-            intersectPos = hDistance <= vDistance ? hIntersect : vIntersect;
-            intersectTileIndex = hDistance <= vDistance ? hTileIndex : vTileIndex;
-            distance = hDistance <= vDistance ? hDistance : vDistance;
-        }
+        float distance = getWallIntersectionData(&intersectPos, &intersectTileIndex, &player, angle);
 
         //Save column distance in zBuffer
         zBuffer[screenColumn] = distance;
@@ -277,6 +283,7 @@ void draw(Player player, EntityArray entities)
         //entityPos.y -= entity.base->sprite->h / 2;
 
         // TODO Write matrix transform function and matrix struct etc.
+        // Doubt that^^^ is needed
         {
             Vector2 rotatedPos;
             rotatedPos.x = entityPos.x * cosf(player.rotation) + entityPos.y * sinf(player.rotation);
@@ -316,7 +323,29 @@ void draw(Player player, EntityArray entities)
                     {
                         pixelColor = keyColors[((Key*)entity.sub)->id];
                     }
-                    pixelBuffer.pixels[y * pixelBuffer.width + x] = pixelColor;
+
+                    //Depth shading
+                    //THIS IS USED TWICE, SHOULD BE A FUNCTION
+                    //Not sure if this is in sync with texture shading
+                    uint32_t finalColor32;
+                    {
+                        float intensity;
+                        intensity = (0.5 / entityPos.x) * 100;
+                        if (intensity >= 1.0) finalColor32 = pixelColor;
+                        else
+                        {
+                            uint8_t color[3];
+                            uint8_t finalColor[3];
+                            for (int i = 0; i < 3; i++)
+                            {
+                                color[i] = (pixelColor >> i * 8);
+                                finalColor[i] = color[i] * intensity;
+                            }
+                            finalColor32 = (finalColor[2] << 16) | (finalColor[1] << 8) | finalColor[0];
+                        }
+                    }
+
+                    pixelBuffer.pixels[y * pixelBuffer.width + x] = finalColor32;
                 }
             }
         }

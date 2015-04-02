@@ -255,7 +255,7 @@ bool fileExists(char* filePath)
 }
 
 //TODO Fix levels breaking if they don't end on a blank line
-void loadLevel(char* fileName)
+void loadLevelTiles(char* fileName)
 {
     FILE* file = fopen(fileName, "r");
     if (file == NULL)

@@ -16,9 +16,11 @@ seoras1@gmail.com
 #ifdef __linux__
     #include <SDL2/SDL.h>
     #include <SDL2/SDL_image.h>
+    #include <SDL2/SDL_mixer.h>
 #elif _WIN32
     #include <SDL.h>
-    #include <SDL_image.h> 
+    #include <SDL_image.h>
+    #include <SDL_mixer.h>
 #endif
 
 #include "engine_types.h"
@@ -64,37 +66,95 @@ EntityArray initLevel(
     return entities;
 }
 
-int main( int argc, char* args[] )
+bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
 {
     //Initialise SDL ====
-    if( SDL_Init( SDL_INIT_EVERYTHING) < 0 || IMG_Init(IMG_INIT_PNG) < 0)
+    if (SDL_Init(SDL_INIT_EVERYTHING) < 0 || IMG_Init(IMG_INIT_PNG) < 0)
     {
-        printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
-        return 0;
+        printf ("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+        return false;
     }
-    SDL_Window* window = SDL_CreateWindow(
-        "The Caves - Level 1", SDL_WINDOWPOS_UNDEFINED,
+    //Init audio
+    if (Mix_Init(MIX_INIT_OGG) != MIX_INIT_OGG)
+    {
+        printf ("SDL_mixer could not initialize! SDL_Error: %s\n", SDL_GetError());
+        return false;
+    }
+    if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 4096) == -1)
+    {
+        printf ("SDL_mixer could not open audio! SDL_Error: %s\n", SDL_GetError());
+        return false;
+    }
+    *window = SDL_CreateWindow(
+        "The Caves", SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, 
         SDL_WINDOW_FULLSCREEN_DESKTOP);
-    if (window == NULL)
+    if (*window == NULL)
     {
-        printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
-        return 0;
+        printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        return false;
     }
 
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
+    *renderer = SDL_CreateRenderer(*window, -1, 0);
+    return true;
+}
+
+bool loadLevel(EntityArray* entities, Player* player,
+    PlayerData* playerData, EntityTemplate* rubyTemplate,
+    EntityTemplate* keyTemplate, EntityTemplate* monsterTemplate)
+{
+    char nextLevelFilePath[LEVEL_FILE_PATH_MAX_LEN];
+    sprintf(nextLevelFilePath, "../res/levels/level%d.lvl", playerData->levelNumber);
+    if(fileExists(nextLevelFilePath))
+    { 
+        loadLevelTiles(nextLevelFilePath);
+        for (int i = 0; i < entities->size; i++)
+        {
+            free(entities->data[i].sub);
+        }
+        free(entities->data);
+        (*entities) = initLevel(player, playerData, rubyTemplate, keyTemplate, monsterTemplate);
+    }
+}
+
+void toggleFullscreen(SDL_Window* window)
+{
+    uint32_t flags = SDL_GetWindowFlags(window);
+    if (flags & SDL_WINDOW_FULLSCREEN || flags & SDL_WINDOW_FULLSCREEN_DESKTOP)
+    {
+        SDL_SetWindowFullscreen(window, 0);
+    }
+    else
+    {
+        SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    }
+}
+
+int main(int argc, char* args[])
+{
+    SDL_Window* window = NULL;
+    SDL_Renderer* renderer = NULL;
+    if(!initSDL(&window, &renderer))
+    {
+        SDL_Log("SDLinit failed.");
+        return 1;
+    }
     SDL_Texture* screenTexture = SDL_CreateTexture(
         renderer, SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH,
         SCREEN_HEIGHT);
+    if (screenTexture == NULL)
+    {
+        SDL_Log("screenTexture is NULL.");
+        return 1;
+    }
+
     //Grab cursor
     SDL_SetRelativeMouseMode(true);
 
     //Allocate pixel buffer
-    PixelBuffer* pixelBuffer = createPixelBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
+    createPixelBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    //Load level from file and add level entities to entity list
-    loadLevel("../res/levels/level0.lvl");
     loadImages();
 
     //Load sprite font
@@ -102,15 +162,21 @@ int main( int argc, char* args[] )
     spriteFont.sprite = IMG_Load("../res/fonts/atari_font.png");
     spriteFont.sprite = SDL_ConvertSurfaceFormat(spriteFont.sprite, SDL_PIXELFORMAT_ARGB8888, 0);
 
+    //Audio SHOULD EXTRACT TO SEPARATE FILE
+    Mix_Music* gameBackgroundMusic = Mix_LoadMUS("../res/music/game_back.ogg");
+
     //Create player
     Player player = { .width=32, .height=32 };
     PlayerData playerData = { .levelNumber=0 };
     EntityTemplate rubyTemplate = { .sprite=images.rubySprite, .width=32, .height=32, .type=ENTITY_TYPE_RUBY };
     EntityTemplate keyTemplate = { .sprite=images.keySprite, .width=32, .width=32, .type=ENTITY_TYPE_KEY};
-    EntityTemplate monsterTemplate = { .sprite=images.monsterSprite, .width=64, .width=64, .type=ENTITY_TYPE_MONSTER};
+    EntityTemplate monsterTemplate = { .sprite=images.monsterSprite, .width=64, .height=64, .type=ENTITY_TYPE_MONSTER};
 
     //Init level
-    EntityArray entities = initLevel(&player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
+    EntityArray entities = {0};
+    loadLevel(&entities, &player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
+    //TEMP START PLAYING MUSIC
+    Mix_FadeInMusic(gameBackgroundMusic, -1, 1000);
 
     //Get input devices' states
     SDL_Joystick* gamePad = SDL_JoystickOpen(0);
@@ -126,26 +192,9 @@ int main( int argc, char* args[] )
         
         if (shouldReloadLevel)
         {
-            //TEMPORARY!
-            char nextLevelFilePath[LEVEL_FILE_PATH_MAX_LEN];
-            sprintf(nextLevelFilePath, "../res/levels/level%d.lvl", playerData.levelNumber);
-            if(fileExists(nextLevelFilePath))
-            {
-                loadLevel(nextLevelFilePath);
-                SDL_Log("PreSubFree.");
-                for (int i = 0; i < entities.size; i++)
-                {
-                    SDL_Log("Free %d of %d", i, entities.size);
-                    free(entities.data[i].sub);
-                }
-                SDL_Log("PostSubFree.");
-                free(entities.data);
-                SDL_Log("PreInitLevel.");
-                entities = initLevel(&player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
-                SDL_Log("PostInitLevel.");
-            }
+            loadLevel(&entities, &player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
+            shouldReloadLevel = false;
         }
-        shouldReloadLevel = false;
         //SDL Event Loop
         SDL_Event e;
         while (SDL_PollEvent(&e))
@@ -160,19 +209,7 @@ int main( int argc, char* args[] )
                 {
                     case SDLK_RETURN:
                         if (e.key.keysym.mod & KMOD_ALT)
-                        {
-                            uint32_t flags = SDL_GetWindowFlags(window);
-                            if (flags & SDL_WINDOW_FULLSCREEN ||
-                                flags & SDL_WINDOW_FULLSCREEN_DESKTOP)
-                            {
-                                SDL_SetWindowFullscreen(window, 0);
-                            }
-                            else
-                            {
-                                SDL_SetWindowFullscreen(
-                                    window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-                            }
-                        }
+                            toggleFullscreen(window);
                         break;
                 }
                 break;
@@ -181,7 +218,6 @@ int main( int argc, char* args[] )
             }
         }
         //Joystick input
-        //HACK Should decouple Input and Game Logic
         Vector2 oldPlayerPos = player.pos;
         Vector2 moveVector = {0};
         int moveVel = 4;
@@ -289,29 +325,7 @@ int main( int argc, char* args[] )
             {
                 //Load next level
                 playerData.levelNumber++;
-                //Create file path for next level
-                char nextLevelFilePath[LEVEL_FILE_PATH_MAX_LEN];
-                sprintf(nextLevelFilePath, "../res/levels/level%d.lvl", playerData.levelNumber);
-                if(fileExists(nextLevelFilePath))
-                {
-                    loadLevel(nextLevelFilePath);
-                    SDL_Log("PreSubFree.");
-                    for (int i = 0; i < entities.size; i++)
-                    {
-                        SDL_Log("Free %d of %d", i, entities.size);
-                        free(entities.data[i].sub);
-                    }
-                    SDL_Log("PostSubFree.");
-                    free(entities.data);
-                    SDL_Log("PreInitLevel.");
-                    entities = initLevel(&player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
-                    SDL_Log("PostInitLevel.");
-                }  
-                else
-                {
-                    //Game End
-                    exit(0);
-                }
+                loadLevel(&entities, &player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
             }
         }
 
@@ -380,12 +394,6 @@ int main( int argc, char* args[] )
             SDL_Rect textRect = {0, SCREEN_HEIGHT - 16, 0, 0 };
             drawText(fpsDisplayStr, textRect, 0xFFFF0000, spriteFont);
         }
-        //{
-        //    char fpsDisplayStr[32];
-        //    sprintf(fpsDisplayStr, "EntSize: %d", entities.size);
-        //    SDL_Rect textRect = {128, SCREEN_HEIGHT - 16, 0, 0 };
-        //    drawText(fpsDisplayStr, textRect, 0xFFFF0000, spriteFont);
-        //}
         //Draw keys collected
         {
             for (int i = 0; i < MAX_KEYS; i++)
@@ -401,7 +409,7 @@ int main( int argc, char* args[] )
         }
 
         //Render the pixel buffer to the screen
-        SDL_UpdateTexture(screenTexture, NULL, pixelBuffer->pixels, SCREEN_WIDTH * sizeof(uint32_t));        
+        SDL_UpdateTexture(screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));        
         SDL_RenderCopy(renderer, screenTexture, NULL, NULL);
         SDL_RenderPresent(renderer);
 
