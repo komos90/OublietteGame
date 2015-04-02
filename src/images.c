@@ -34,6 +34,10 @@ void loadImages() {
     images.secretDoorTexture = SDL_ConvertSurfaceFormat(images.secretDoorTexture, SDL_PIXELFORMAT_ARGB8888, 0);
     assert(images.secretDoorTexture != NULL);
 
+    images.floorTexture = IMG_Load("../res/textures/floor.png");
+    images.floorTexture = SDL_ConvertSurfaceFormat(images.floorTexture, SDL_PIXELFORMAT_ARGB8888, 0);
+    assert(images.floorTexture != NULL);
+
     images.rubySprite  = IMG_Load("../res/sprites/ruby.png");
     images.rubySprite  = SDL_ConvertSurfaceFormat(images.rubySprite, SDL_PIXELFORMAT_ARGB8888, 0);
     assert(images.rubySprite != NULL);

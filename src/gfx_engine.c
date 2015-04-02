@@ -176,6 +176,26 @@ float getWallIntersectionData(Vector2Int* intersectPos, int* intersectTileIndex,
     return hDistance <= vDistance ? hDistance : vDistance;
 }
 
+uint32_t depthShading(uint32_t inColor, float distance)
+{
+    uint32_t outColor;
+    float intensity;
+    intensity = (0.5 / distance) * 100;
+    if (intensity >= 1.0) outColor = inColor;
+    else
+    {
+        uint8_t inColor8[3];
+        uint8_t outColor8[3];
+        for (int i = 0; i < 3; i++)
+        {
+            inColor8[i] = (inColor >> i * 8);
+            outColor8[i] = inColor8[i] * intensity;
+        }
+        outColor = (outColor8[2] << 16) | (outColor8[1] << 8) | outColor8[0];
+    }
+    return outColor;
+}
+
 void draw(Player player, EntityArray entities)
 {
 
@@ -202,7 +222,9 @@ void draw(Player player, EntityArray entities)
         zBuffer[screenColumn] = distance;
 
         float height = wallDistanceToHeight(distance);
-        for (int y = (pixelBuffer.height - height) / 2; y < (pixelBuffer.height + height) / 2; y++)
+        //y used after the loop
+        int y;
+        for (y = (pixelBuffer.height - height) / 2; y < (pixelBuffer.height + height) / 2; y++)
         {
             //Range corrections
             if (y >= pixelBuffer.height) break;
@@ -233,24 +255,27 @@ void draw(Player player, EntityArray entities)
             }
                         
             //Shade pixels for depth effect
-            uint32_t finalColor32;
-            {
-                float intensity;
-                intensity = (0.5 / distance) * 100;
-                if (intensity >= 1.0) finalColor32 = color32;
-                else
-                {
-                    uint8_t color[3];
-                    uint8_t finalColor[3];
-                    for (int i = 0; i < 3; i++)
-                    {
-                        color[i] = (color32 >> i * 8);
-                        finalColor[i] = color[i] * intensity;
-                    }
-                    finalColor32 = (finalColor[2] << 16) | (finalColor[1] << 8) | finalColor[0];
-                }
-            }
-            drawPoint(screenColumn, y, (uint32_t)finalColor32);
+            uint32_t finalColor32 = depthShading(color32, distance);
+            drawPoint(screenColumn, y, finalColor32);
+        }
+        //Draw floor
+        //Issue, this is the correct height, but this implies that the walls are actually 128 high...
+        int playerHeight = TILE_DIMS;  //Should be stored somewhere else and probably used in other calculations
+        for (; y < pixelBuffer.height; y++)
+        {
+            float floorDistance = playerHeight / tanf((y - pixelBuffer.height/2) * (V_FOV / pixelBuffer.height));
+            Vector2Int floorTexCoord = {0};
+            floorTexCoord.x = (int)(cosf(angle) * floorDistance + player.pos.x) % TILE_DIMS;
+            floorTexCoord.y = (int)(sinf(angle) * floorDistance + player.pos.y) % TILE_DIMS;
+
+            //Should be able to scale texture
+            int texIndex = floorTexCoord.y * images.floorTexture->w + floorTexCoord.x;
+            uint32_t color = ((uint32_t*)(images.floorTexture->pixels))[texIndex];
+
+            //Depth shading
+            color = depthShading(color, floorDistance);
+
+            drawPoint(screenColumn, y, color);
         }
         angle += (H_FOV / pixelBuffer.width);
     }
@@ -327,23 +352,7 @@ void draw(Player player, EntityArray entities)
                     //Depth shading
                     //THIS IS USED TWICE, SHOULD BE A FUNCTION
                     //Not sure if this is in sync with texture shading
-                    uint32_t finalColor32;
-                    {
-                        float intensity;
-                        intensity = (0.5 / entityPos.x) * 100;
-                        if (intensity >= 1.0) finalColor32 = pixelColor;
-                        else
-                        {
-                            uint8_t color[3];
-                            uint8_t finalColor[3];
-                            for (int i = 0; i < 3; i++)
-                            {
-                                color[i] = (pixelColor >> i * 8);
-                                finalColor[i] = color[i] * intensity;
-                            }
-                            finalColor32 = (finalColor[2] << 16) | (finalColor[1] << 8) | finalColor[0];
-                        }
-                    }
+                    uint32_t finalColor32 = depthShading(pixelColor, entityPos.x);
 
                     pixelBuffer.pixels[y * pixelBuffer.width + x] = finalColor32;
                 }

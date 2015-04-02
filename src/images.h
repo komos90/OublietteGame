@@ -20,6 +20,7 @@ typedef struct
     SDL_Surface* caveTexture;
     SDL_Surface* doorTexture;
     SDL_Surface* secretDoorTexture;
+    SDL_Surface* floorTexture;
 
     SDL_Surface* rubySprite;
     SDL_Surface* keySprite;
