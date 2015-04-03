@@ -29,8 +29,8 @@ seoras1@gmail.com
 #include "images.h"
 #include "monster.h"
 
-static const int SCREEN_WIDTH  = 427;//1366;//854;//213;//854;
-static const int SCREEN_HEIGHT = 240;//768;//480;//120;//480;
+static const int SCREEN_WIDTH  = 240;//427;//1366;//854;//213;//854;
+static const int SCREEN_HEIGHT = 120;//240;//768;//480;//120;//480;
 
 //Temp Globals
 static uint32_t keyColorsTemp[MAX_KEYS] = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFF00AA88};
