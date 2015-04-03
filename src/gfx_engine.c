@@ -278,8 +278,8 @@ void draw(Player player, EntityArray entities)
         {
             float floorDistance = (TILE_DIMS - playerHeight) / fabs(tanf((y - pixelBuffer.height/2) * (V_FOV / pixelBuffer.height)));
             Vector2Int floorTexCoord = {0};
-            floorTexCoord.x = (int)(cosf(angle) * floorDistance + player.pos.x) % TILE_DIMS;
-            floorTexCoord.y = (int)(sinf(angle) * floorDistance + player.pos.y) % TILE_DIMS;
+            floorTexCoord.x = (int)((cosf(angle) * floorDistance) * (1/cosf(angle - player.rotation)) + player.pos.x) % TILE_DIMS;
+            floorTexCoord.y = (int)((sinf(angle) * floorDistance) * (1/cosf(angle - player.rotation)) + player.pos.y) % TILE_DIMS;
 
             //Should be able to scale texture
             int texIndex = floorTexCoord.y * images.ceilingTexture->w + floorTexCoord.x;
@@ -330,8 +330,8 @@ void draw(Player player, EntityArray entities)
         {
             float floorDistance = playerHeight / tanf((y - pixelBuffer.height/2) * (V_FOV / pixelBuffer.height));
             Vector2Int floorTexCoord = {0};
-            floorTexCoord.x = (int)(cosf(angle) * floorDistance + player.pos.x) % TILE_DIMS;
-            floorTexCoord.y = (int)(sinf(angle) * floorDistance + player.pos.y) % TILE_DIMS;
+            floorTexCoord.x = (int)((cosf(angle) * floorDistance) * (1/cosf(angle - player.rotation)) + player.pos.x) % TILE_DIMS;
+            floorTexCoord.y = (int)((sinf(angle) * floorDistance) * (1/cosf(angle - player.rotation)) + player.pos.y) % TILE_DIMS;
 
             //Should be able to scale texture
             int texIndex = floorTexCoord.y * images.floorTexture->w + floorTexCoord.x;
@@ -376,8 +376,8 @@ void draw(Player player, EntityArray entities)
         // Doubt that^^^ is needed
         {
             Vector2 rotatedPos;
-            rotatedPos.x = entityPos.x * cosf(player.rotation) + entityPos.y * sinf(player.rotation);
-            rotatedPos.y = entityPos.x * -sinf(player.rotation) + entityPos.y * cosf(player.rotation);
+            rotatedPos.x = (entityPos.x * cosf(player.rotation) + entityPos.y * sinf(player.rotation));
+            rotatedPos.y = (entityPos.x * -sinf(player.rotation) + entityPos.y * cosf(player.rotation));
             entityPos = rotatedPos;
         }
 
