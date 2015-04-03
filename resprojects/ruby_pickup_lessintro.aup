@@ -1,0 +1,28 @@
+<?xml version="1.0" standalone="no" ?>
+<!DOCTYPE project PUBLIC "-//audacityproject-1.3.0//DTD//EN" "http://audacity.sourceforge.net/xml/audacityproject-1.3.0.dtd" >
+<project xmlns="http://audacity.sourceforge.net/xml/" projname="ruby_pickup_lessintro_data" version="1.3.0" audacityversion="2.0.5" sel0="0.0000000000" sel1="0.0000000000" vpos="0" h="0.8295733333" zoom="187500.0000000000" rate="44100.0">
+	<tags>
+		<tag name="TITLE" value="Ruby Pickup"/>
+		<tag name="ARTIST" value="Seoras Macdonald"/>
+	</tags>
+	<wavetrack name="Audio Track" channel="0" linked="1" mute="0" solo="0" height="150" minimized="0" isSelected="1" rate="44100" gain="1.0" pan="0.0">
+		<waveclip offset="0.00000000">
+			<sequence maxsamples="262144" sampleformat="262159" numsamples="36798">
+				<waveblock start="0">
+					<simpleblockfile filename="e000014f.au" len="36798" min="-0.234249" max="0.192768" rms="0.022145"/>
+				</waveblock>
+			</sequence>
+			<envelope numpoints="0"/>
+		</waveclip>
+	</wavetrack>
+	<wavetrack name="Audio Track" channel="1" linked="0" mute="0" solo="0" height="150" minimized="0" isSelected="1" rate="44100" gain="1.0" pan="0.0">
+		<waveclip offset="0.00000000">
+			<sequence maxsamples="262144" sampleformat="262159" numsamples="36798">
+				<waveblock start="0">
+					<simpleblockfile filename="e0000d14.au" len="36798" min="-0.164704" max="0.279807" rms="0.02099"/>
+				</waveblock>
+			</sequence>
+			<envelope numpoints="0"/>
+		</waveclip>
+	</wavetrack>
+</project>

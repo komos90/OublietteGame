@@ -1,34 +1,47 @@
-TODO:
+ALWAYS:     
     Clean code
-    Add floor/ceiling rendering texture-mapping
     Optimize
+    Fix bugs
+
+TODO:
     Add more sofisticated monster AI (A*, follow only on sight, stop following when player not in sight for X seconds. Or something similar)
-    Add monster animation (walking, 4 directions)?
-    Add ruby animation.
-    Improve key / door textures.
-    Player headbob
+    Add sprite animation functionality (based on time and direction)
+    Player headbob??
     Add scaling to sprite font
+    Add ruby and key symbols to UI
 
-    Add background music:
-        Title menu
-        Level complete?
-    Add sound effects:
-        Pick up ruby
-        Footsteps
-        Pick up key
-        Found secret
-        Unlock door
-        Level end
-        Monster proximity
-        Monster attack / player death
+    Assets:
+        Music:
+            Title menu
+            Level complete?
+        SFX:
+            Pick up ruby
+            Footsteps
+            Pick up key
+            Found secret
+            Unlock door
+            Level end
+            Monster proximity
+            Monster attack / player death
+        Animations:
+            monster (movement in 4 directions, walk, attack)
+            ruby
+            key
+        Sprites/Textures:
+            Key
+            Door
+            Ceiling
+            probably a lot more
 
-    Add title menu (No options, just picture and animated "press start/enter" button)       
-    Add level complete screen / level transition
-    Add death screen / transition
-    Add game complete screen
+    Polish:
+        Add title menu (No options, just picture and animated "press start/enter" button)       
+        Add level complete screen / level transition
+        Add death screen / transition
+        Add game complete screen
 
 DONE:
     Add floor rendering texture-mapping
+    Add ceiling rendering texture-mapping
     Apply "lighting" effect to sprites
     Add background music:
         Main background

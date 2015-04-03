@@ -80,7 +80,7 @@ bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
         printf ("SDL_mixer could not initialize! SDL_Error: %s\n", SDL_GetError());
         return false;
     }
-    if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 4096) == -1)
+    if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 1024) == -1)//4096 was here
     {
         printf ("SDL_mixer could not open audio! SDL_Error: %s\n", SDL_GetError());
         return false;
@@ -164,6 +164,7 @@ int main(int argc, char* args[])
 
     //Audio SHOULD EXTRACT TO SEPARATE FILE
     Mix_Music* gameBackgroundMusic = Mix_LoadMUS("../res/music/game_back.ogg");
+    Mix_Chunk* rubySfx = Mix_LoadWAV("../res/sfx/ruby_pickup.ogg");
 
     //Create player
     Player player = { .width=32, .height=32 };
@@ -348,6 +349,8 @@ int main(int argc, char* args[])
                         //Remove entity
                         entities.data[i] = entities.data[entities.size - 1];
                         entities.size--;
+                        //Play SFX
+                        Mix_PlayChannel(-1, rubySfx, 0);
                     }
                     break;
                 }
