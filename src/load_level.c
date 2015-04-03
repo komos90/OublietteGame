@@ -216,7 +216,7 @@ EntityArray getLevelMonsters(EntityTemplate* monsterTemplate)
             {
                 Vector2 tmp = { x * TILE_DIMS + TILE_DIMS/2, y * TILE_DIMS + TILE_DIMS/2 };
                 monsterArray.data[monsterIndex].pos = tmp;
-                monsterArray.data[monsterIndex].zPos = -12;
+                monsterArray.data[monsterIndex].zPos = 0;
                 monsterArray.data[monsterIndex].base = monsterTemplate;
                 monsterArray.data[monsterIndex].sub = NULL;
                 //MALLOC should free on new level

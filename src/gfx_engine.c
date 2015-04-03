@@ -202,7 +202,7 @@ Vector2Int getTileVertIntersection(Vector2 pos, float angle, int* tileIndex)
 
 float wallDistanceToHeight(float distance)
 {
-    float screenViewHeight = distance * tanf(V_FOV/2.f);
+    float screenViewHeight = 2 * distance * tanf(V_FOV/2.f);
     float displayHeight = TILE_DIMS * (pixelBuffer.height / screenViewHeight);
     return displayHeight;
 }
@@ -212,10 +212,10 @@ float getWallIntersectionData(Vector2Int* intersectPos, int* intersectTileIndex,
     int hTileIndex;
     int vTileIndex;
     Vector2Int hIntersect = getTileHorzIntersection(player->pos, angle, &hTileIndex);
-    float hDistance = sqrt(pow(hIntersect.x - player->pos.x, 2) + pow(hIntersect.y - player->pos.y, 2)) * cos(angle - player->rotation);
+    float hDistance = sqrt(pow(hIntersect.x - player->pos.x, 2) + pow(hIntersect.y - player->pos.y, 2)) * cosf(angle - player->rotation);
 
     Vector2Int vIntersect = getTileVertIntersection(player->pos, angle, &vTileIndex);
-    float vDistance = sqrt(pow(vIntersect.x - player->pos.x, 2) + pow(vIntersect.y - player->pos.y, 2)) * cos(angle - player->rotation);
+    float vDistance = sqrt(pow(vIntersect.x - player->pos.x, 2) + pow(vIntersect.y - player->pos.y, 2)) * cosf(angle - player->rotation);
 
     *intersectPos = hDistance <= vDistance ? hIntersect : vIntersect;
     *intersectTileIndex = hDistance <= vDistance ? hTileIndex : vTileIndex;
@@ -272,11 +272,11 @@ void draw(Player player, EntityArray entities)
         int y;
         //ceiling
         //Issue, this is the correct height, but this implies that the walls are actually 128 high...
-        int playerHeight = TILE_DIMS;  //Should be stored somewhere else and probably used in other calculations
+        int playerHeight = TILE_DIMS / 2;  //Should be stored somewhere else and probably used in other calculations
         //This should be extracted into a function
         for (y = 0; y < (pixelBuffer.height - height) / 2; y++)
         {
-            float floorDistance = playerHeight / fabs(tanf((y - pixelBuffer.height/2) * (V_FOV / pixelBuffer.height)));
+            float floorDistance = (TILE_DIMS - playerHeight) / fabs(tanf((y - pixelBuffer.height/2) * (V_FOV / pixelBuffer.height)));
             Vector2Int floorTexCoord = {0};
             floorTexCoord.x = (int)(cosf(angle) * floorDistance + player.pos.x) % TILE_DIMS;
             floorTexCoord.y = (int)(sinf(angle) * floorDistance + player.pos.y) % TILE_DIMS;
