@@ -180,7 +180,7 @@ uint32_t depthShading(uint32_t inColor, float distance)
 {
     uint32_t outColor;
     float intensity;
-    intensity = (0.5 / distance) * 100;
+    intensity = (0.5 / distance) * 150;
     if (intensity >= 1.0) outColor = inColor;
     else
     {
@@ -224,7 +224,28 @@ void draw(Player player, EntityArray entities)
         float height = wallDistanceToHeight(distance);
         //y used after the loop
         int y;
-        for (y = (pixelBuffer.height - height) / 2; y < (pixelBuffer.height + height) / 2; y++)
+        //ceiling
+        //Issue, this is the correct height, but this implies that the walls are actually 128 high...
+        int playerHeight = TILE_DIMS;  //Should be stored somewhere else and probably used in other calculations
+        //This should be extracted into a function
+        for (y = 0; y < (pixelBuffer.height - height) / 2; y++)
+        {
+            float floorDistance = playerHeight / fabs(tanf((y - pixelBuffer.height/2) * (V_FOV / pixelBuffer.height)));
+            Vector2Int floorTexCoord = {0};
+            floorTexCoord.x = (int)(cosf(angle) * floorDistance + player.pos.x) % TILE_DIMS;
+            floorTexCoord.y = (int)(sinf(angle) * floorDistance + player.pos.y) % TILE_DIMS;
+
+            //Should be able to scale texture
+            int texIndex = floorTexCoord.y * images.ceilingTexture->w + floorTexCoord.x;
+            uint32_t color = ((uint32_t*)(images.ceilingTexture->pixels))[texIndex];
+
+            //Depth shading
+            color = depthShading(color, floorDistance);
+
+            drawPoint(screenColumn, y, color);
+        }
+        //walls
+        for (; y < (pixelBuffer.height + height) / 2; y++)
         {
             //Range corrections
             if (y >= pixelBuffer.height) break;
@@ -259,8 +280,6 @@ void draw(Player player, EntityArray entities)
             drawPoint(screenColumn, y, finalColor32);
         }
         //Draw floor
-        //Issue, this is the correct height, but this implies that the walls are actually 128 high...
-        int playerHeight = TILE_DIMS;  //Should be stored somewhere else and probably used in other calculations
         for (; y < pixelBuffer.height; y++)
         {
             float floorDistance = playerHeight / tanf((y - pixelBuffer.height/2) * (V_FOV / pixelBuffer.height));

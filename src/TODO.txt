@@ -28,6 +28,7 @@ TODO:
     Add game complete screen
 
 DONE:
+    Add floor rendering texture-mapping
     Apply "lighting" effect to sprites
     Add background music:
         Main background

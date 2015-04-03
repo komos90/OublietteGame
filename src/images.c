@@ -38,6 +38,10 @@ void loadImages() {
     images.floorTexture = SDL_ConvertSurfaceFormat(images.floorTexture, SDL_PIXELFORMAT_ARGB8888, 0);
     assert(images.floorTexture != NULL);
 
+    images.ceilingTexture = IMG_Load("../res/textures/ceiling.png");
+    images.ceilingTexture = SDL_ConvertSurfaceFormat(images.ceilingTexture, SDL_PIXELFORMAT_ARGB8888, 0);
+    assert(images.ceilingTexture != NULL);
+
     images.rubySprite  = IMG_Load("../res/sprites/ruby.png");
     images.rubySprite  = SDL_ConvertSurfaceFormat(images.rubySprite, SDL_PIXELFORMAT_ARGB8888, 0);
     assert(images.rubySprite != NULL);
