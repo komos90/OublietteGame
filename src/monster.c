@@ -9,7 +9,6 @@
 void monsterMove(Entity* this, Player player)
 {
     //Should probably check entity is actually a monster
-
     Vector2 targetTile = { .x=player.pos.x / TILE_DIMS, .y=player.pos.y / TILE_DIMS };
     Vector2 dirOffsets[5] = { {0}, { .y=-1 }, { .y=1 }, { .x=-1 }, { .x=1 } };
 
@@ -58,8 +57,10 @@ void monsterMove(Entity* this, Player player)
                 ((Monster*)this->sub)->direction = i; //THIS IS A BIT DANGEROUS
             }
         }
-        //Vector2 newPos = { .x=curTile.x * TILE_DIMS + TILE_DIMS/2, 
-        //                   .y=curTile.y * TILE_DIMS + TILE_DIMS/2 };
-        //this->pos = newPos;
     }
+}
+
+void monsterMoveAStar(Entity* this, Player player)
+{
+
 }

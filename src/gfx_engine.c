@@ -64,6 +64,52 @@ void drawPoint(int x, int y, uint32_t color)
     pixelBuffer.pixels[y  * pixelBuffer.width + x] = color;
 }
 
+//Can add srcRect later for animation
+void blitToPixelBuffer(SDL_Surface* image, Rectangle destRect, uint32_t maskColor)
+{
+    //Modifying destRect to fit inside screen
+    if (destRect.x < 0)
+    {
+        destRect.w += destRect.x;
+        destRect.x = 0;
+    }
+    else if (destRect.x >= pixelBuffer.width)
+    {
+        destRect.w += (pixelBuffer.width - 1) - destRect.x;
+        destRect.x = pixelBuffer.width - 1;
+    }
+    if (destRect.y < 0)
+    {
+        destRect.h += destRect.y;
+        destRect.y = 0;
+    }
+    else if (destRect.y >= pixelBuffer.height)
+    {
+        destRect.h += (pixelBuffer.height - 1) - destRect.y;
+        destRect.y = pixelBuffer.height - 1;
+    }
+
+    for (int y = 0; y < destRect.h; y++)
+    {
+        for (int x = 0; x < destRect.w; x++)
+        {
+            int texCoordX = x * (image->w / (float)destRect.w);
+            int texCoordY = y * (image->h / (float)destRect.h);
+            uint32_t color = ((uint32_t*)image->pixels)[texCoordY * image->w + texCoordX];
+            //if color not fully transparent
+            if (color & 0xFF000000)
+            {
+                //inefficient
+                if (color == 0xFFFF00FF)
+                {
+                    color = maskColor;
+                }
+                pixelBuffer.pixels[(destRect.y + y) * pixelBuffer.width + destRect.x + x] = color;
+            }
+        }
+    }
+}
+
 void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont)
 {
     //get text length

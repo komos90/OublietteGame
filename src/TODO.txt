@@ -6,9 +6,12 @@ ALWAYS:
 TODO:
     Add more sofisticated monster AI (A*, follow only on sight, stop following when player not in sight for X seconds. Or something similar)
     Add sprite animation functionality (based on time and direction)
-    Player headbob??
     Add scaling to sprite font
-    Add ruby and key symbols to UI
+    Add key symbols to UI
+    Get secret walls to sink into the floor or something
+    Same for doors
+    Player headbob??
+    Add more variey to wall textures?
 
     Assets:
         Music:
@@ -40,6 +43,7 @@ TODO:
         Add game complete screen
 
 DONE:
+    Add a ruby icon on UI (by adding a scaledBlit function)
     Add floor rendering texture-mapping
     Add ceiling rendering texture-mapping
     Apply "lighting" effect to sprites

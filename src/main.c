@@ -80,7 +80,7 @@ bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
         printf ("SDL_mixer could not initialize! SDL_Error: %s\n", SDL_GetError());
         return false;
     }
-    if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 1024) == -1)//4096 was here
+    if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 1024) == -1)
     {
         printf ("SDL_mixer could not open audio! SDL_Error: %s\n", SDL_GetError());
         return false;
@@ -384,29 +384,30 @@ int main(int argc, char* args[])
         //Draw ====
         //Send game entities to gfx engine to be rendered 
         draw(player, entities);
-        //Draw test text
+        //All this should be in a drawUI() function in gfx_engine.c
+        //Draw rubies collected
         {
+            Rectangle rubyImageRect = { SCREEN_WIDTH/32, SCREEN_HEIGHT/32, 11, 11 };
+            blitToPixelBuffer(images.rubySprite, rubyImageRect, 0);
             char rubyCountStr[32];
             sprintf(rubyCountStr, "%d/%d", playerData.rubiesCollected, getTotalLevelRubies());
             SDL_Rect textRect = { SCREEN_WIDTH/8, SCREEN_HEIGHT/16, 0, 0 };
             drawText(rubyCountStr, textRect, 0xFF7A0927, spriteFont);
         }
-        {
+        /*{
             char fpsDisplayStr[32];
             sprintf(fpsDisplayStr, "Fps: %d", currentFps);
             SDL_Rect textRect = {0, SCREEN_HEIGHT - 16, 0, 0 };
             drawText(fpsDisplayStr, textRect, 0xFFFF0000, spriteFont);
-        }
+        }*/
         //Draw keys collected
         {
             for (int i = 0; i < MAX_KEYS; i++)
             {
                 if (playerData.keysCollected[i] == true)
                 {
-                    //VERY TEMPORARY!
-                    //SHOULD DRAW WEE KEY ICON
-                    SDL_Rect textRect = { SCREEN_WIDTH/3 + i * 16, SCREEN_HEIGHT/16, 0, 0 };
-                    drawText("K", textRect, keyColorsTemp[i], spriteFont);
+                    Rectangle keyImageRect = { SCREEN_WIDTH/3 + i * 16, SCREEN_HEIGHT/32, 11, 11 };
+                    blitToPixelBuffer(images.keySprite, keyImageRect, keyColorsTemp[i]);
                 }
             }
         }
