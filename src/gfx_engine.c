@@ -7,11 +7,8 @@ seoras1@gmail.com
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <limits.h>
-#include <float.h>
 
 #ifdef __linux__
     #include <SDL2/SDL.h>
@@ -64,6 +61,10 @@ void drawPoint(int x, int y, uint32_t color)
     pixelBuffer.pixels[y  * pixelBuffer.width + x] = color;
 }
 
+uint32_t getPixel(SDL_Surface* image, int x, int y) {
+    return ((uint32_t*)image->pixels)[y * image->w + x];
+}
+
 //Can add srcRect later for animation
 void blitToPixelBuffer(SDL_Surface* image, Rectangle destRect, uint32_t maskColor)
 {
@@ -95,16 +96,15 @@ void blitToPixelBuffer(SDL_Surface* image, Rectangle destRect, uint32_t maskColo
         {
             int texCoordX = x * (image->w / (float)destRect.w);
             int texCoordY = y * (image->h / (float)destRect.h);
-            uint32_t color = ((uint32_t*)image->pixels)[texCoordY * image->w + texCoordX];
+            uint32_t color = getPixel(image, texCoordX, texCoordY);
             //if color not fully transparent
             if (color & 0xFF000000)
             {
-                //inefficient
                 if (color == 0xFFFF00FF)
                 {
                     color = maskColor;
                 }
-                pixelBuffer.pixels[(destRect.y + y) * pixelBuffer.width + destRect.x + x] = color;
+                drawPoint(destRect.x + x, destRect.y + y, color);
             }
         }
     }
@@ -124,9 +124,9 @@ void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont)
         {
             for (int x = 0; x < spriteFont.charW; x++)
             {
-                uint32_t pixelColor = ((uint32_t*)spriteFont.sprite->pixels)[y * spriteFont.sprite->w + x + spriteX] & color;
+                uint32_t pixelColor = getPixel(spriteFont.sprite, x + spriteX, y) & color;
                 if (pixelColor & 0xFF000000) {
-                    pixelBuffer.pixels[(rect.y + y) * pixelBuffer.width + (rect.x + i * spriteFont.charW + x)] = pixelColor;
+                    drawPoint(rect.x + i * spriteFont.charW + x, rect.y + y, pixelColor);
                 }
             }
         }
@@ -224,38 +224,33 @@ float getWallIntersectionData(Vector2Int* intersectPos, int* intersectTileIndex,
 
 uint32_t depthShading(uint32_t inColor, float distance)
 {
-    uint32_t outColor;
-    float intensity;
-    intensity = (0.5 / distance) * 150;
-    if (intensity >= 1.0) outColor = inColor;
-    else
+    float intensity = (0.5 / distance) * 150;
+    if (intensity >= 1.0) return inColor;
+
+    uint8_t outColor8[3];
+    for (int i = 0; i < 3; i++)
     {
-        uint8_t inColor8[3];
-        uint8_t outColor8[3];
-        for (int i = 0; i < 3; i++)
-        {
-            inColor8[i] = (inColor >> i * 8);
-            outColor8[i] = inColor8[i] * intensity;
-        }
-        outColor = (outColor8[2] << 16) | (outColor8[1] << 8) | outColor8[0];
+        outColor8[i] = (uint8_t)(inColor >> i * 8) * intensity;
     }
-    return outColor;
+    return (outColor8[2] << 16) | (outColor8[1] << 8) | outColor8[0];
+}
+
+void drawFloorCeiling(int y, int screenColumn, float angle, Player* player, int playerHeight, SDL_Surface* texture) {
+    float distance = (TILE_DIMS - playerHeight) / fabs(tanf((y - pixelBuffer.height/2) * (V_FOV / pixelBuffer.height)));
+
+    int texX = (int)((cosf(angle) * distance) * (1/cosf(angle - player->rotation)) + player->pos.x) % TILE_DIMS;
+    int texY = (int)((sinf(angle) * distance) * (1/cosf(angle - player->rotation)) + player->pos.y) % TILE_DIMS;
+
+    //Should be able to scale texture
+    uint32_t color = getPixel(texture, texX, texY);
+
+    //Depth shading
+    color = depthShading(color, distance);
+    drawPoint(screenColumn, y, color);
 }
 
 void draw(Player player, EntityArray entities)
 {
-
-    //Clear pixel buffer & draw ceiling
-    {
-        uint8_t ceilColor = 0x5;
-        memset((void*)pixelBuffer.pixels, ceilColor, pixelBuffer.width * pixelBuffer.height * sizeof(uint32_t));
-    }
-    //Draw floor
-    {
-        SDL_Rect floorRect = {0, pixelBuffer.height / 2, pixelBuffer.width, pixelBuffer.height};
-        drawRect(floorRect, 0x000E0904);
-    }
-
     float angle = -H_FOV/2 + player.rotation;
     for (int screenColumn = 0; screenColumn < pixelBuffer.width; screenColumn++)
     {
@@ -263,54 +258,30 @@ void draw(Player player, EntityArray entities)
         Vector2Int intersectPos;
         int intersectTileIndex;
         float distance = getWallIntersectionData(&intersectPos, &intersectTileIndex, &player, angle);
+        float height = wallDistanceToHeight(distance);
 
         //Save column distance in zBuffer
         zBuffer[screenColumn] = distance;
 
-        float height = wallDistanceToHeight(distance);
-        //y used after the loop
-        int y;
-        //ceiling
-        //Issue, this is the correct height, but this implies that the walls are actually 128 high...
         int playerHeight = TILE_DIMS / 2;  //Should be stored somewhere else and probably used in other calculations
         //This should be extracted into a function
-        for (y = 0; y < (pixelBuffer.height - height) / 2; y++)
+        int y = 0;
+        //Ceiling
+        for (; y < (pixelBuffer.height - height) / 2; y++)
         {
-            float floorDistance = (TILE_DIMS - playerHeight) / fabs(tanf((y - pixelBuffer.height/2) * (V_FOV / pixelBuffer.height)));
-            Vector2Int floorTexCoord = {0};
-            floorTexCoord.x = (int)((cosf(angle) * floorDistance) * (1/cosf(angle - player.rotation)) + player.pos.x) % TILE_DIMS;
-            floorTexCoord.y = (int)((sinf(angle) * floorDistance) * (1/cosf(angle - player.rotation)) + player.pos.y) % TILE_DIMS;
-
-            //Should be able to scale texture
-            int texIndex = floorTexCoord.y * images.ceilingTexture->w + floorTexCoord.x;
-            uint32_t color = ((uint32_t*)(images.ceilingTexture->pixels))[texIndex];
-
-            //Depth shading
-            color = depthShading(color, floorDistance);
-
-            drawPoint(screenColumn, y, color);
+            drawFloorCeiling(y, screenColumn, angle, &player, playerHeight, images.ceilingTexture);
         }
         //walls
         for (; y < (pixelBuffer.height + height) / 2; y++)
         {
             //Range corrections
             if (y >= pixelBuffer.height) break;
-            if (y < 0) y = 0;
 
-            uint32_t color32 = 0;
             //Texture Mapping
-            {
-                int yTexCoord = ((TILE_DIMS / (height)) * (y - (pixelBuffer.height - height) / 2));
-                int xTexCoord = intersectPos.x % TILE_DIMS + intersectPos.y % TILE_DIMS;
-                if (yTexCoord < 0) yTexCoord = 0;
-                else if (yTexCoord >= TILE_DIMS) yTexCoord = TILE_DIMS - 1;
-                
-                SDL_Surface* tileTexture = getTileTexture(intersectTileIndex);
+            int yTexCoord = ((TILE_DIMS / (height)) * (y - (pixelBuffer.height - height) / 2));
+            int xTexCoord = intersectPos.x % TILE_DIMS + intersectPos.y % TILE_DIMS;
+            uint32_t color32 = getPixel(getTileTexture(intersectTileIndex), xTexCoord, yTexCoord);
 
-                uint32_t* texPixels = (uint32_t*)(tileTexture->pixels);
-                int index = yTexCoord * tileTexture->w + xTexCoord;
-                color32 = texPixels[index];
-            }
             //ColorKey for doors
             if (color32 == 0xFFFF00FF)
             {
@@ -322,25 +293,13 @@ void draw(Player player, EntityArray entities)
             }
                         
             //Shade pixels for depth effect
-            uint32_t finalColor32 = depthShading(color32, distance);
-            drawPoint(screenColumn, y, finalColor32);
+            color32 = depthShading(color32, distance);
+            drawPoint(screenColumn, y, color32);
         }
         //Draw floor
         for (; y < pixelBuffer.height; y++)
         {
-            float floorDistance = playerHeight / tanf((y - pixelBuffer.height/2) * (V_FOV / pixelBuffer.height));
-            Vector2Int floorTexCoord = {0};
-            floorTexCoord.x = (int)((cosf(angle) * floorDistance) * (1/cosf(angle - player.rotation)) + player.pos.x) % TILE_DIMS;
-            floorTexCoord.y = (int)((sinf(angle) * floorDistance) * (1/cosf(angle - player.rotation)) + player.pos.y) % TILE_DIMS;
-
-            //Should be able to scale texture
-            int texIndex = floorTexCoord.y * images.floorTexture->w + floorTexCoord.x;
-            uint32_t color = ((uint32_t*)(images.floorTexture->pixels))[texIndex];
-
-            //Depth shading
-            color = depthShading(color, floorDistance);
-
-            drawPoint(screenColumn, y, color);
+            drawFloorCeiling(y, screenColumn, angle, &player, playerHeight, images.floorTexture);
         }
         angle += (H_FOV / pixelBuffer.width);
     }
@@ -362,18 +321,11 @@ void draw(Player player, EntityArray entities)
         }
     }
 
-    for ( int entityIndex = 0; entityIndex < entities.size; entityIndex++)
+    for (int entityIndex = 0; entityIndex < entities.size; entityIndex++)
     {
         Entity entity = entities.data[entityIndex];
         Vector2 entityPos = {entity.pos.x - player.pos.x, entity.pos.y - player.pos.y};
         
-        //Change from pos at centre to pos at top left corner
-        //Don't think this is needed!!
-        //entityPos.x -= entity.base->sprite->w / 2;
-        //entityPos.y -= entity.base->sprite->h / 2;
-
-        // TODO Write matrix transform function and matrix struct etc.
-        // Doubt that^^^ is needed
         {
             Vector2 rotatedPos;
             rotatedPos.x = (entityPos.x * cosf(player.rotation) + entityPos.y * sinf(player.rotation));
@@ -405,17 +357,14 @@ void draw(Player player, EntityArray entities)
                 int spriteIndexY = ((float)(y - scaledSpriteY) / scaledSpriteH) * entity.base->spriteHeight + entity.base->spriteHeight * entity.yClip;
 
                 //Super basic alpha transparency
-                uint32_t pixelColor = ((uint32_t*)entity.base->sprite->pixels)[spriteIndexY * entity.base->sprite->w + spriteIndexX];
+                uint32_t pixelColor = getPixel(entity.base->sprite, spriteIndexX, spriteIndexY);
                 if (pixelColor & 0xFF000000)
                 {
-                    //inefficient
                     if (pixelColor == 0xFFFF00FF && entity.base->type == ENTITY_TYPE_KEY)
                     {
                         pixelColor = keyColors[((Key*)entity.sub)->id];
                     }
 
-                    //Depth shading
-                    //THIS IS USED TWICE, SHOULD BE A FUNCTION
                     //Not sure if this is in sync with texture shading
                     uint32_t finalColor32 = depthShading(pixelColor, entityPos.x);
 

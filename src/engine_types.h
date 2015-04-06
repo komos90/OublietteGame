@@ -72,9 +72,9 @@ typedef struct
 {
     Vector2 pos;
     float zPos;
-    EntityTemplate* base;
     int xClip;
     int yClip;
+    EntityTemplate* base;
     void* sub;
 } Entity;
 
@@ -89,7 +89,6 @@ typedef struct
     int id;
 } Key;
 
-//TODO Should this be in this file?
 typedef struct
 {
     int levelNumber;
