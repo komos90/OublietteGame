@@ -29,8 +29,8 @@ seoras1@gmail.com
 #include "images.h"
 #include "monster.h"
 
-static const int SCREEN_WIDTH  = 240;//427;//1366;//854;//213;//854;
-static const int SCREEN_HEIGHT = 120;//240;//768;//480;//120;//480;
+static const int SCREEN_WIDTH  = 437;//427;//1366;//854;//213;//854;
+static const int SCREEN_HEIGHT = 240;//240;//768;//480;//120;//480;
 
 //Temp Globals
 static uint32_t keyColorsTemp[MAX_KEYS] = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFF00AA88};
@@ -169,9 +169,9 @@ int main(int argc, char* args[])
     //Create player
     Player player = { .width=32, .height=32 };
     PlayerData playerData = { .levelNumber=0 };
-    EntityTemplate rubyTemplate = { .sprite=images.rubySprite, .width=32, .height=32, .type=ENTITY_TYPE_RUBY };
-    EntityTemplate keyTemplate = { .sprite=images.keySprite, .width=32, .width=32, .type=ENTITY_TYPE_KEY};
-    EntityTemplate monsterTemplate = { .sprite=images.monsterSprite, .width=64, .height=64, .type=ENTITY_TYPE_MONSTER};
+    EntityTemplate rubyTemplate = { .sprite=images.rubySprite, .width=32, .height=32, .spriteWidth=16, .spriteHeight=16, .type=ENTITY_TYPE_RUBY };
+    EntityTemplate keyTemplate = { .sprite=images.keySprite, .width=32, .width=32, .spriteWidth=16, .spriteHeight=16, .type=ENTITY_TYPE_KEY};
+    EntityTemplate monsterTemplate = { .sprite=images.monsterSprite, .width=64, .height=64, .spriteWidth=64, .spriteHeight=64, .type=ENTITY_TYPE_MONSTER};
 
     //Init level
     EntityArray entities = {0};

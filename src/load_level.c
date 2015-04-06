@@ -119,6 +119,8 @@ EntityArray getLevelRubies(EntityTemplate* rubyTemplate)
                 Vector2 tmp = { x * TILE_DIMS + TILE_DIMS/2, y * TILE_DIMS + TILE_DIMS/2 };
                 rubyArray.data[rubyIndex].pos = tmp;
                 rubyArray.data[rubyIndex].zPos = -16;
+                rubyArray.data[rubyIndex].xClip = 0;
+                rubyArray.data[rubyIndex].yClip = 0;
                 rubyArray.data[rubyIndex].base = rubyTemplate;
                 rubyArray.data[rubyIndex].sub = NULL;
                 rubyIndex++;
@@ -162,6 +164,8 @@ EntityArray getLevelKeys(EntityTemplate* keyTemplate)
                 Vector2 tmp = { x * TILE_DIMS + TILE_DIMS/2, y * TILE_DIMS + TILE_DIMS/2 };
                 keyArray.data[keyIndex].pos = tmp;
                 keyArray.data[keyIndex].zPos = -12;
+                keyArray.data[keyIndex].xClip = 0;
+                keyArray.data[keyIndex].yClip = 0;
                 keyArray.data[keyIndex].base = keyTemplate;
                 //MALLOC should free on new level
                 keyArray.data[keyIndex].sub = malloc(sizeof(Key));
@@ -217,6 +221,8 @@ EntityArray getLevelMonsters(EntityTemplate* monsterTemplate)
                 Vector2 tmp = { x * TILE_DIMS + TILE_DIMS/2, y * TILE_DIMS + TILE_DIMS/2 };
                 monsterArray.data[monsterIndex].pos = tmp;
                 monsterArray.data[monsterIndex].zPos = 0;
+                monsterArray.data[monsterIndex].xClip = 0;
+                monsterArray.data[monsterIndex].yClip = 0;
                 monsterArray.data[monsterIndex].base = monsterTemplate;
                 monsterArray.data[monsterIndex].sub = NULL;
                 //MALLOC should free on new level

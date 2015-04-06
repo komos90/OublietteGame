@@ -386,8 +386,8 @@ void draw(Player player, EntityArray entities)
         float projWRatio = projW == 0 ? 1 : (pixelBuffer.width / projW);
         float projHRatio = projH == 0 ? 1 : (pixelBuffer.height / projH);
 
-        float scaledSpriteW = projWRatio * entity.base->sprite->w;
-        float scaledSpriteH = projHRatio * entity.base->sprite->h;
+        float scaledSpriteW = projWRatio * entity.base->spriteWidth;
+        float scaledSpriteH = projHRatio * entity.base->spriteHeight;
         int scaledSpriteX = projWRatio * entityPos.y + pixelBuffer.width / 2 - scaledSpriteW/2;
         int scaledSpriteY = pixelBuffer.height / 2 - scaledSpriteH/2 - entity.zPos * projHRatio;
 
@@ -401,8 +401,8 @@ void draw(Player player, EntityArray entities)
                 if (y < 0) y = 0;
                 if (y >= pixelBuffer.height) break;
 
-                int spriteIndexX = ((float)(x - scaledSpriteX) / scaledSpriteW) * entity.base->sprite->w;
-                int spriteIndexY = ((float)(y - scaledSpriteY) / scaledSpriteH) * entity.base->sprite->h;
+                int spriteIndexX = ((float)(x - scaledSpriteX) / scaledSpriteW) * entity.base->spriteWidth + entity.base->spriteWidth * entity.xClip;
+                int spriteIndexY = ((float)(y - scaledSpriteY) / scaledSpriteH) * entity.base->spriteHeight + entity.base->spriteHeight * entity.yClip;
 
                 //Super basic alpha transparency
                 uint32_t pixelColor = ((uint32_t*)entity.base->sprite->pixels)[spriteIndexY * entity.base->sprite->w + spriteIndexX];

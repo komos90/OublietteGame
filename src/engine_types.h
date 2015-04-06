@@ -64,6 +64,8 @@ typedef struct
     EntityType type;
     int width;
     int height;
+    int spriteWidth;
+    int spriteHeight;
 } EntityTemplate;
 
 typedef struct
@@ -71,6 +73,8 @@ typedef struct
     Vector2 pos;
     float zPos;
     EntityTemplate* base;
+    int xClip;
+    int yClip;
     void* sub;
 } Entity;
 
