@@ -5,6 +5,7 @@ ALWAYS:
 
 TODO:
     Add more sofisticated monster AI (A*, follow only on sight, stop following when player not in sight for X seconds. Or something similar)
+    Add "patrol points" for monsters
     Add sprite animation functionality (based on time and direction)
     Add scaling to sprite font
     

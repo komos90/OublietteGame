@@ -375,6 +375,7 @@ int main(int argc, char* args[])
 
                     //Movement Code
                     monsterMove(&entities.data[i], player);
+                    //monsterMoveAStar();
 
                     break;
                 } 

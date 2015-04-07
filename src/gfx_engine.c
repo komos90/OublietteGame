@@ -22,7 +22,7 @@ seoras1@gmail.com
 #include "engine_types.h"
 #include "load_level.h"
 #include "images.h"
-
+#include "monster.h"
 
 static uint32_t keyColors[MAX_KEYS] = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFF00AA88};
 
@@ -342,6 +342,41 @@ void draw(Player player, EntityArray entities)
         float scaledSpriteH = projHRatio * entity.base->spriteHeight;
         int scaledSpriteX = projWRatio * entityPos.y + pixelBuffer.width / 2 - scaledSpriteW/2;
         int scaledSpriteY = pixelBuffer.height / 2 - scaledSpriteH/2 - entity.zPos * projHRatio;
+
+        //I dont't think xClip, yClip should be members of entity
+        if (entity.base->type == ENTITY_TYPE_MONSTER)
+        {
+            float monsterAngle = 0.f;
+            switch(((Monster*)entity.sub)->direction)
+            {
+            case DIR_DOWN:
+                monsterAngle = M_PI/2;
+                break;
+            case DIR_LEFT:
+                monsterAngle = M_PI;
+                break;
+            case DIR_UP:
+                monsterAngle = -M_PI/2;
+                break;
+            }
+            monsterAngle = constrainAngle(player.rotation - monsterAngle);
+            if (monsterAngle <= -3*M_PI/4 || monsterAngle >= 3*M_PI/4)
+            {
+                entity.yClip = 0;
+            }
+            if (monsterAngle >= -M_PI/4 && monsterAngle <= M_PI/4)
+            {
+                entity.yClip = 1;
+            }
+            if (monsterAngle >= M_PI/4 && monsterAngle <= 3*M_PI/4)
+            {
+                entity.yClip = 2;
+            }
+            if (monsterAngle <= -M_PI/4 && monsterAngle >= -3*M_PI/4)
+            {
+                entity.yClip = 3;
+            }
+        }
 
         for (int x = scaledSpriteX; x < scaledSpriteX + scaledSpriteW; x++) 
         {
