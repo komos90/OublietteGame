@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h> 
 
 #ifdef __linux__
     #include <SDL2/SDL.h>
@@ -19,6 +20,8 @@
 #include "monster.h"
 
 static Level level = {0};
+//TEMP
+static char monsterFile[128];
 
 bool isTileIndexValid(int i)
 {
@@ -195,43 +198,119 @@ EntityArray getLevelKeys(EntityTemplate* keyTemplate)
     return keyArray;
 }
 
-EntityArray getLevelMonsters(EntityTemplate* monsterTemplate)
+EntityArray getLevelMonsters(EntityTemplate* monsterTemplate, int levelNumber)
 {
+    //TEMP!!
+    //Should store monster patrol array in level struct (loaded in the loadLevel function)
+    //And then initialise the monsterArray using the patrol array in the level struct
+    //Should patrol points be stored in monster struct? Probably.
+    char fileName[128];// = "../res/levels/level0.mon";
+    sprintf(fileName, "../res/levels/level%d.mon", levelNumber);
+    FILE* file = fopen(fileName, "r");
+    if (file == NULL)
+    {
+        SDL_Log("Could not open monster file.");
+        SDL_Log(fileName);
+        exit(1);
+    }
+
     //Create EntityArray of correct size
     EntityArray monsterArray = {0};
     {
+        //Save the pos beginning of file
+        fpos_t filePos;
+        fgetpos(file, &filePos);
         int monsterCount = 0;
-        for (int i = 0; i < level.width * level.height; i++)
-            if (level.data[i] == TILE_MONSTER)
-                monsterCount++;
+        //Count the number of lines in the file
+        {
+            int ch;
+            while (EOF != (ch=getc(file)))
+            {
+                if (ch == '\n')
+                    ++monsterCount;
+            }
+        }
+        //Go back to beginning of file
+        fsetpos(file, &filePos);
 
         //MALLOC should free when loading a new level
         monsterArray.size = monsterCount;
         monsterArray.data = (Entity*)malloc(monsterCount * sizeof(Entity));
     }
-
-    //Populate array with monster coords
-    int monsterIndex = 0;
-    for (int y = 0; y < level.height; y++)
+    if (monsterArray.size >= 1)
     {
-        for (int x = 0; x < level.width; x++)
+        char line [256];
+        fgets(line, 255, file);
+        int monsterIndex = 0;
+        while (!feof(file))
         {
-            if (level.data[y * level.width + x] == TILE_MONSTER)
+            int monsterX = 0;
+            int monsterY = 0;
+            char* buf;
+
+            //Count tokens in line
+            buf = line;
+            int tokenCount = 0;
+            for (;;)
             {
-                Vector2 tmp = { x * TILE_DIMS + TILE_DIMS/2, y * TILE_DIMS + TILE_DIMS/2 };
-                monsterArray.data[monsterIndex].pos = tmp;
-                monsterArray.data[monsterIndex].zPos = 0;
-                monsterArray.data[monsterIndex].xClip = 0;
-                monsterArray.data[monsterIndex].yClip = 0;
-                monsterArray.data[monsterIndex].base = monsterTemplate;
-                monsterArray.data[monsterIndex].sub = NULL;
-                //MALLOC should free on new level
-                monsterArray.data[monsterIndex].sub = malloc(sizeof(Monster));
-                ((Monster*)monsterArray.data[monsterIndex].sub)->direction = DIR_NONE;
-                monsterIndex++;
+                while (*buf == ' ')
+                {
+                    buf++;
+                }
+                if (*buf == '\0')
+                {
+                    break;
+                }
+                tokenCount++;
+                while (*buf != '\0' && *buf != ' ')
+                {
+                    buf++;
+                }
             }
+
+            //MALLOC should free on new level
+            monsterArray.data[monsterIndex].sub = malloc(sizeof(Monster));
+            ((Monster*)monsterArray.data[monsterIndex].sub)->direction = DIR_NONE;
+            //MALLOC, should free on new level
+            ((Monster*)monsterArray.data[monsterIndex].sub)->patrolPoints = malloc((tokenCount / 2) * sizeof(Vector2Int));
+            ((Monster*)monsterArray.data[monsterIndex].sub)->patrolLength = (tokenCount / 2);
+
+            bool firstLoop = true;
+            int patrolIndex = 0;
+            monsterX = atoi(strtok(line, " "));
+            while(true)
+            {
+                if (!firstLoop)
+                {
+                    buf = strtok(NULL, " ");
+                    if (buf == NULL) break;
+                    monsterX = atoi(buf);
+                }
+                buf = strtok(NULL, " ");
+                if (buf == NULL) break;
+                monsterY = atoi(buf);
+
+                ((Monster*)monsterArray.data[monsterIndex].sub)->patrolPoints[patrolIndex].x = monsterX;
+                ((Monster*)monsterArray.data[monsterIndex].sub)->patrolPoints[patrolIndex].y = monsterY;
+                firstLoop = false;
+                patrolIndex++;
+            }
+            ((Monster*)monsterArray.data[monsterIndex].sub)->patrolIndex = 1;
+            ((Monster*)monsterArray.data[monsterIndex].sub)->aiState = AI_PATROL;
+            ((Monster*)monsterArray.data[monsterIndex].sub)->giveUpChaseTimer.active = false;
+
+            Vector2 tmp = { ((Monster*)monsterArray.data[monsterIndex].sub)->patrolPoints[0].x * TILE_DIMS + TILE_DIMS/2,
+                            ((Monster*)monsterArray.data[monsterIndex].sub)->patrolPoints[0].y * TILE_DIMS + TILE_DIMS/2 };
+            monsterArray.data[monsterIndex].pos = tmp;
+            monsterArray.data[monsterIndex].zPos = 0;
+            monsterArray.data[monsterIndex].xClip = 0;
+            monsterArray.data[monsterIndex].yClip = 0;
+            monsterArray.data[monsterIndex].base = monsterTemplate;
+            monsterIndex++;
+            fgets(line, 255, file);
         }
     }
+
     return monsterArray;
 }
 

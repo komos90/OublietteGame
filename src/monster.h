@@ -25,9 +25,22 @@ typedef enum
     DIR_RIGHT,
 } Direction;
 
+typedef enum
+{
+    AI_PATROL,
+    AI_CHASE
+} AIMode;
+
 typedef struct
 {
     Direction direction;
+    Vector2Int* patrolPoints;
+    int patrolLength;
+    int patrolIndex;
+    Vector2Int targetTile;
+    AIMode aiState;
+    CountdownTimer giveUpChaseTimer;
 } Monster;
 
-void monsterMove(Entity* this, Player player);
+float getMonsterAngle(Entity* this);
+void monsterMove(Entity* this);

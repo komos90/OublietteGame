@@ -29,11 +29,15 @@ seoras1@gmail.com
 #include "images.h"
 #include "monster.h"
 
+//Resolution
 static const int SCREEN_WIDTH  = 437;//427;//1366;//854;//213;//854;
 static const int SCREEN_HEIGHT = 240;//240;//768;//480;//120;//480;
 
 //Temp Globals
 static uint32_t keyColorsTemp[MAX_KEYS] = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFF00AA88};
+static float monsterSightRadius = 256.f;    //Should be in monster entity base
+static float monsterFov = M_PI/2;           //Should be in monster entity base
+static float monsterChaseTimeLimit = 5000;           //Should be in monster entity base
 
 EntityArray initLevel(
     Player* player, PlayerData* playerData, EntityTemplate* rubyTemplate,
@@ -49,7 +53,7 @@ EntityArray initLevel(
 
     EntityArray rubies = getLevelRubies(rubyTemplate);
     EntityArray keys = getLevelKeys(keyTemplate);
-    EntityArray monsters = getLevelMonsters(monsterTemplate);
+    EntityArray monsters = getLevelMonsters(monsterTemplate, playerData->levelNumber);
     
     EntityArray entities;
     entities.size = rubies.size + keys.size + monsters.size;
@@ -110,6 +114,10 @@ bool loadLevel(EntityArray* entities, Player* player,
         loadLevelTiles(nextLevelFilePath);
         for (int i = 0; i < entities->size; i++)
         {
+            if (entities->data[i].base->type == ENTITY_TYPE_MONSTER)
+            {
+                free(((Monster*)entities->data[i].sub)->patrolPoints);
+            }
             free(entities->data[i].sub);
         }
         free(entities->data);
@@ -373,8 +381,83 @@ int main(int argc, char* args[])
                         shouldReloadLevel = true;
                     }
 
-                    //Movement Code
-                    monsterMove(&entities.data[i], player);
+                    //This should be in a function
+                    //  monster.c:
+                    //      update(void)
+                    //      {
+                    //          updateTargetTile(void);
+                    //          pathFind(void);
+                    //      }
+                    Entity* entity = &entities.data[i];
+                    Monster* monster = (Monster*)entity->sub;
+                    /*-----------------------------
+                     *Check for aiState transitions
+                     *---------------------------*/
+                    
+                    if (distanceFormula(player.pos, entity->pos) < monsterSightRadius)
+                    {
+                        float monsterAngle = getMonsterAngle(entity);
+                        Vector2 tmp1 = { .x=player.pos.x - entity->pos.x, .y=player.pos.y - entity->pos.y};
+                        Vector2 tmp2 = {0};
+                        tmp2.x = cos(monsterAngle) * tmp1.x + sin(monsterAngle) * tmp1.y;
+                        tmp2.y = -sin(monsterAngle) * tmp1.x + cos(monsterAngle) * tmp1.y;
+                        float playerAngle = atan2(tmp2.y, tmp2.x);
+
+                        if (fabs(playerAngle) < monsterFov / 2)
+                        {
+                            switch(monster->aiState)
+                            {
+                                case AI_PATROL:
+                                {
+                                    monster->aiState = AI_CHASE;
+                                    monster->giveUpChaseTimer.active = true;
+                                    monster->giveUpChaseTimer.endTime = SDL_GetTicks() + monsterChaseTimeLimit;
+                                    break;
+                                }
+                                case AI_CHASE:
+                                {
+                                    monster->giveUpChaseTimer.endTime = SDL_GetTicks() + monsterChaseTimeLimit;
+                                    break;
+                                }
+                            }
+                        }
+                        else if (monster->aiState == AI_CHASE && monster->giveUpChaseTimer.active &&
+                            monster->giveUpChaseTimer.endTime < SDL_GetTicks())
+                        {
+                            monster->aiState = AI_PATROL;
+                        }
+                    }
+                    
+                    /*-------------------------------------
+                     * Select target tile, based on aiState
+                     *-----------------------------------*/
+                    switch (monster->aiState)
+                    {
+                        case AI_PATROL:
+                        {
+                            if ((int)(entities.data[i].pos.x / TILE_DIMS) == monster->targetTile.x &&
+                                (int)(entities.data[i].pos.y / TILE_DIMS) == monster->targetTile.y)
+                            {
+                                monster->patrolIndex = (monster->patrolIndex + 1) % monster->patrolLength;
+                            }
+
+                            Vector2Int tmp = { .x=monster->patrolPoints[monster->patrolIndex].x,
+                                               .y=monster->patrolPoints[monster->patrolIndex].y };
+                            monster->targetTile = tmp;
+                            break;
+                        }
+                        case AI_CHASE:
+                        {
+                            Vector2Int tmp = { .x=player.pos.x / TILE_DIMS, .y=player.pos.y / TILE_DIMS};
+                            monster->targetTile = tmp;
+                            break;
+                        }
+                    }
+                    
+                    /*---------
+                     * Pathfind
+                     *-------*/
+                    monsterMove(&entities.data[i]);
                     //monsterMoveAStar();
 
                     break;
@@ -396,11 +479,14 @@ int main(int argc, char* args[])
             drawText(rubyCountStr, textRect, 0xFF7A0927, spriteFont);
         }
         /*{
-            char fpsDisplayStr[32];
-            sprintf(fpsDisplayStr, "Fps: %d", currentFps);
+            char* patrolStateString = "Patrol State.";
+            char* chaseStateString = "Chase State!";
+            char* aiString = changeToChaseState ? chaseStateString : patrolStateString;
+            char finalString[32];
+            sprintf(finalString, "AI State: %s", aiString);
             SDL_Rect textRect = {0, SCREEN_HEIGHT - 16, 0, 0 };
-            drawText(fpsDisplayStr, textRect, 0xFFFF0000, spriteFont);
-        }*/
+            drawText(finalString, textRect, 0xFFFF0000, spriteFont);
+        }/**/
         //Draw keys collected
         {
             for (int i = 0; i < MAX_KEYS; i++)

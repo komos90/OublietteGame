@@ -5,11 +5,30 @@
 #include "engine_types.h"
 #include "load_level.h"
 
+float getMonsterAngle(Entity* this)
+{
+    float monsterAngle = 0.f;
+    switch(((Monster*)this->sub)->direction)
+    {
+    case DIR_DOWN:
+        monsterAngle = M_PI/2;
+        break;
+    case DIR_LEFT:
+        monsterAngle = M_PI;
+        break;
+    case DIR_UP:
+        monsterAngle = -M_PI/2;
+        break;
+    }
+    return monsterAngle;
+}
 
-void monsterMove(Entity* this, Player player)
+void monsterMove(Entity* this)
 {
     //Should probably check entity is actually a monster
-    Vector2 targetTile = { .x=player.pos.x / TILE_DIMS, .y=player.pos.y / TILE_DIMS };
+    Monster* monster = (Monster*)this->sub;
+
+    Vector2Int targetTile = monster->targetTile;
     Vector2 dirOffsets[5] = { {0}, { .y=-1 }, { .y=1 }, { .x=-1 }, { .x=1 } };
 
     //Store old center to check whether center of tile was crossed.
@@ -57,9 +76,14 @@ void monsterMove(Entity* this, Player player)
 
 void monsterMoveAStar(Entity* this, Player player)
 {
+    //NOTE:
+    //  + Monster struct should have Vector2Int targetTile. pathfinding should use this target.
+    //  Changing from patrol to chasing player and back should be done outside of the pathfinding function, by changing targetTile
     //TODO, monster should:
-    //  + Patrol/Move randomly
+    //  + Patrol
     //  + Check if player is in line of sight
     //  + if so, chase down using A*
-    //  + if player not in line of sight for X seconds, resume patrol/random movement
+    //  + if player not in line of sight for X seconds, resume patrol
+
+    
 }

@@ -4,14 +4,15 @@ ALWAYS:
     Fix bugs
 
 TODO:
-    Add more sofisticated monster AI (A*, follow only on sight, stop following when player not in sight for X seconds. Or something similar)
-    Add "patrol points" for monsters
-    Add sprite animation functionality (based on time and direction)
+    Add more sofisticated monster AI (A*)
+    Stop monsters from seeing through walls
+    Add initial direction to .mon files
+    
+    Add sprite animation functionality based on time (xClip)
     Add scaling to sprite font
     
     Get secret walls to sink into the floor or something
     Same for doors
-    Player headbob??
     Add more variey to wall textures?
 
     Assets:
@@ -43,7 +44,15 @@ TODO:
         Add death screen / transition
         Add game complete screen
 
+    Big Undertaking, probably won't add:
+        Level editor
+
 DONE:
+    got monster sprite to show correct clip based on viewing angle
+    Add "patrol points" for monsters
+    Add monster line of sight
+    Get monster to switch between chase and patrol aiStates
+    Add timer for monster to give up chase
     Add key symbols to UI
     Add a ruby icon on UI (by adding a scaledBlit function)
     Add floor rendering texture-mapping

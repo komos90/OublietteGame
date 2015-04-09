@@ -48,7 +48,7 @@ Vector2 posToTileCoord(Vector2 pos);
 Vector2 getPlayerStartPos();
 EntityArray getLevelRubies(EntityTemplate* rubyTemplate);
 EntityArray getLevelKeys(EntityTemplate* keyTemplate);
-EntityArray getLevelMonsters(EntityTemplate* monsterTemplate);
+EntityArray getLevelMonsters(EntityTemplate* monsterTemplate, int levelNumber);
 bool isTileSolid(int index);
 void setTileTo(int index, char tile);
 int getTotalLevelRubies();

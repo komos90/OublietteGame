@@ -96,6 +96,12 @@ typedef struct
     bool keysCollected[MAX_KEYS];
 } PlayerData;
 
+typedef struct
+{
+    bool active;
+    int endTime;
+} CountdownTimer;
+
 typedef SDL_Rect Rectangle;
 
 //TODO should have tile type with properties such as isSolid, keyId

@@ -346,20 +346,8 @@ void draw(Player player, EntityArray entities)
         //I dont't think xClip, yClip should be members of entity
         if (entity.base->type == ENTITY_TYPE_MONSTER)
         {
-            float monsterAngle = 0.f;
-            switch(((Monster*)entity.sub)->direction)
-            {
-            case DIR_DOWN:
-                monsterAngle = M_PI/2;
-                break;
-            case DIR_LEFT:
-                monsterAngle = M_PI;
-                break;
-            case DIR_UP:
-                monsterAngle = -M_PI/2;
-                break;
-            }
-            monsterAngle = constrainAngle(player.rotation - monsterAngle);
+            float monsterAngle = constrainAngle(player.rotation - getMonsterAngle(&entity));
+            
             if (monsterAngle <= -3*M_PI/4 || monsterAngle >= 3*M_PI/4)
             {
                 entity.yClip = 0;
