@@ -10,6 +10,7 @@ TODO:
     
     Add sprite animation functionality based on time (xClip)
     Add scaling to sprite font
+    Get sprites in syn withe the rest of the display
     
     Get secret walls to sink into the floor or something
     Same for doors
@@ -30,8 +31,6 @@ TODO:
             Monster attack / player death
         Animations:
             monster (movement in 4 directions, walk, attack)
-            ruby
-            key
         Sprites/Textures:
             Key
             Door

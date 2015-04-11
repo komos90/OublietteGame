@@ -29,6 +29,11 @@ static uint32_t keyColors[MAX_KEYS] = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFF0
 static PixelBuffer pixelBuffer = {0};
 static float* zBuffer = NULL;
 
+/*---------------------
+ * Precomputed tangents
+ --------------------*/
+static float tanHFovOver2;
+static float tanVFovOver2;
 
 void drawRect(Rectangle rect, uint32_t color)
 {
@@ -141,6 +146,10 @@ void createPixelBuffer(int width, int height)
     pixelBuffer.pixels = pixels;
     pixelBuffer.width = width;
     pixelBuffer.height = height;
+
+    //Init precomputed trig functions
+    tanHFovOver2 = tanf(H_FOV/2.f);
+    tanVFovOver2 = tanf(V_FOV/2.f);
 }
 
 PixelBuffer* getPixelBuffer()
@@ -158,8 +167,9 @@ Vector2Int getTileHorzIntersection(Vector2 pos, float angle, int* tileIndex)
     if (!yPositive) yInter += TILE_DIMS;
 
     float xAngle = yPositive ? angle - M_PI/2 : -(angle - M_PI/2);
-    float xInter = (abs(yInter - pos.y) * tanf(xAngle)) + pos.x;
-    float xInc = TILE_DIMS * tanf(xAngle);
+    float tanXAngle = tanf(xAngle);
+    float xInter = (abs(yInter - pos.y) * tanXAngle) + pos.x;
+    float xInc = TILE_DIMS * tanXAngle;
 
     int xDir = xPositive ? 1 : -1;
     int yDir = yPositive ? -1 : 1;
@@ -184,8 +194,9 @@ Vector2Int getTileVertIntersection(Vector2 pos, float angle, int* tileIndex)
     if (xPositive) xInter += TILE_DIMS;
 
     float yAngle = xPositive ? angle : M_PI - angle;
-    float yInter = (abs(xInter - pos.x) * tanf(yAngle)) + pos.y;
-    float yInc = TILE_DIMS * tanf(yAngle);
+    float tanYAngle = tanf(yAngle);
+    float yInter = (abs(xInter - pos.x) * tanYAngle) + pos.y;
+    float yInc = TILE_DIMS * tanYAngle;
 
     int xDir = xPositive ? 1 : -1;
     int yDir = yPositive ? -1 : 1;
@@ -202,20 +213,20 @@ Vector2Int getTileVertIntersection(Vector2 pos, float angle, int* tileIndex)
 
 float wallDistanceToHeight(float distance)
 {
-    float screenViewHeight = 2 * distance * tanf(V_FOV/2.f);
+    float screenViewHeight = 2 * distance * tanVFovOver2;
     float displayHeight = TILE_DIMS * (pixelBuffer.height / screenViewHeight);
     return displayHeight;
 }
 
-float getWallIntersectionData(Vector2Int* intersectPos, int* intersectTileIndex, const Player* player, float angle)
+float getWallIntersectionData(Vector2Int* intersectPos, int* intersectTileIndex, const Player* player, float angle, float cosScreenAngle)
 {
     int hTileIndex;
     int vTileIndex;
     Vector2Int hIntersect = getTileHorzIntersection(player->pos, angle, &hTileIndex);
-    float hDistance = sqrt(pow(hIntersect.x - player->pos.x, 2) + pow(hIntersect.y - player->pos.y, 2)) * cosf(angle - player->rotation);
+    float hDistance = sqrt(pow(hIntersect.x - player->pos.x, 2) + pow(hIntersect.y - player->pos.y, 2)) * cosScreenAngle;
 
     Vector2Int vIntersect = getTileVertIntersection(player->pos, angle, &vTileIndex);
-    float vDistance = sqrt(pow(vIntersect.x - player->pos.x, 2) + pow(vIntersect.y - player->pos.y, 2)) * cosf(angle - player->rotation);
+    float vDistance = sqrt(pow(vIntersect.x - player->pos.x, 2) + pow(vIntersect.y - player->pos.y, 2)) * cosScreenAngle;
 
     *intersectPos = hDistance <= vDistance ? hIntersect : vIntersect;
     *intersectTileIndex = hDistance <= vDistance ? hTileIndex : vTileIndex;
@@ -235,11 +246,11 @@ uint32_t depthShading(uint32_t inColor, float distance)
     return (outColor8[2] << 16) | (outColor8[1] << 8) | outColor8[0];
 }
 
-void drawFloorCeiling(int y, int screenColumn, float angle, Player* player, int playerHeight, SDL_Surface* texture) {
+void drawFloorCeiling(int y, int screenColumn, float sinAngle, float cosAngle, float cosScreenAngle, Player* player, int playerHeight, SDL_Surface* texture) {
     float distance = (TILE_DIMS - playerHeight) / fabs(tanf((y - pixelBuffer.height/2) * (V_FOV / pixelBuffer.height)));
 
-    int texX = (int)((cosf(angle) * distance) * (1/cosf(angle - player->rotation)) + player->pos.x) % TILE_DIMS;
-    int texY = (int)((sinf(angle) * distance) * (1/cosf(angle - player->rotation)) + player->pos.y) % TILE_DIMS;
+    int texX = (int)((cosAngle * distance) * (1/cosScreenAngle) + player->pos.x) % TILE_DIMS;
+    int texY = (int)((sinAngle * distance) * (1/cosScreenAngle) + player->pos.y) % TILE_DIMS;
 
     //Should be able to scale texture
     uint32_t color = getPixel(texture, texX, texY);
@@ -249,16 +260,50 @@ void drawFloorCeiling(int y, int screenColumn, float angle, Player* player, int 
     drawPoint(screenColumn, y, color);
 }
 
+void sortSprites(EntityArray* entities, Vector2 playerPos)
+{
+    for (int i = entities->size - 1; i >= 0; i--)
+    {
+        for (int j = 0; j < i; j++)
+        {
+            if (distanceFormula(entities->data[j].pos, playerPos) < 
+                distanceFormula(entities->data[j + 1].pos, playerPos))
+            {
+                //Swap
+                Entity tmp = entities->data[j];
+                entities->data[j] = entities->data[j + 1];
+                entities->data[j + 1] = tmp;
+            }
+        }
+    }
+}
+
 void draw(Player player, EntityArray entities)
 {
+    /*------------------------------------------------------------------------
+     *player rotation is now fixed, so precomputing trig functions to speed up
+     -----------------------------------------------------------------------*/
+    const float sinPlayerAngle = sinf(player.rotation);
+    const float cosPlayerAngle = cosf(player.rotation);
+
     float angle = -H_FOV/2 + player.rotation;
     for (int screenColumn = 0; screenColumn < pixelBuffer.width; screenColumn++)
     {
+        /*---------------------------------------------------------------------
+         *angle, and player rotation are now fixed, so precomputing to speed up
+         --------------------------------------------------------------------*/
+        const float sinAngle = sinf(angle);
+        const float cosAngle = cosf(angle);
+        const float tanAngle = tanf(angle);
+        //const float sinScreenAngle = sinf(angle - player.rotation);
+        const float cosScreenAngle = cosf(angle - player.rotation);
+        
         //Get distance and intersect pos
         Vector2Int intersectPos;
         int intersectTileIndex;
-        float distance = getWallIntersectionData(&intersectPos, &intersectTileIndex, &player, angle);
+        float distance = getWallIntersectionData(&intersectPos, &intersectTileIndex, &player, angle, cosScreenAngle);
         float height = wallDistanceToHeight(distance);
+        SDL_Surface* tileTexture = getTileTexture(intersectTileIndex);
 
         //Save column distance in zBuffer
         zBuffer[screenColumn] = distance;
@@ -269,7 +314,7 @@ void draw(Player player, EntityArray entities)
         //Ceiling
         for (; y < (pixelBuffer.height - height) / 2; y++)
         {
-            drawFloorCeiling(y, screenColumn, angle, &player, playerHeight, images.ceilingTexture);
+            drawFloorCeiling(y, screenColumn, sinAngle, cosAngle, cosScreenAngle, &player, playerHeight, images.ceilingTexture);
         }
         //walls
         for (; y < (pixelBuffer.height + height) / 2; y++)
@@ -280,7 +325,7 @@ void draw(Player player, EntityArray entities)
             //Texture Mapping
             int yTexCoord = ((TILE_DIMS / (height)) * (y - (pixelBuffer.height - height) / 2));
             int xTexCoord = intersectPos.x % TILE_DIMS + intersectPos.y % TILE_DIMS;
-            uint32_t color32 = getPixel(getTileTexture(intersectTileIndex), xTexCoord, yTexCoord);
+            uint32_t color32 = getPixel(tileTexture, xTexCoord, yTexCoord);
 
             //ColorKey for doors
             if (color32 == 0xFFFF00FF)
@@ -299,27 +344,14 @@ void draw(Player player, EntityArray entities)
         //Draw floor
         for (; y < pixelBuffer.height; y++)
         {
-            drawFloorCeiling(y, screenColumn, angle, &player, playerHeight, images.floorTexture);
+            drawFloorCeiling(y, screenColumn, sinAngle, cosAngle, cosScreenAngle, &player, playerHeight, images.floorTexture);
         }
         angle += (H_FOV / pixelBuffer.width);
     }
 
     //Sprite drawing ====
     //Sort sprites by distatnce
-    for (int i = entities.size - 1; i >= 0; i--)
-    {
-        for (int j = 0; j < i; j++)
-        {
-            if (distanceFormula(entities.data[j].pos, player.pos) < 
-                distanceFormula(entities.data[j + 1].pos, player.pos))
-            {
-                //Swap
-                Entity tmp = entities.data[j];
-                entities.data[j] = entities.data[j + 1];
-                entities.data[j + 1] = tmp;
-            }
-        }
-    }
+    sortSprites(&entities, player.pos);
 
     for (int entityIndex = 0; entityIndex < entities.size; entityIndex++)
     {
@@ -328,13 +360,13 @@ void draw(Player player, EntityArray entities)
         
         {
             Vector2 rotatedPos;
-            rotatedPos.x = (entityPos.x * cosf(player.rotation) + entityPos.y * sinf(player.rotation));
-            rotatedPos.y = (entityPos.x * -sinf(player.rotation) + entityPos.y * cosf(player.rotation));
+            rotatedPos.x = (entityPos.x * cosPlayerAngle + entityPos.y * sinPlayerAngle);
+            rotatedPos.y = (entityPos.x * -sinPlayerAngle + entityPos.y * cosPlayerAngle);
             entityPos = rotatedPos;
         }
 
-        float projW = 2 * (entityPos.x * tan(H_FOV/2));
-        float projH = 2 * (entityPos.x * tan(V_FOV/2));
+        float projW = 2 * (entityPos.x * tanHFovOver2);
+        float projH = 2 * (entityPos.x * tanVFovOver2);
         float projWRatio = projW == 0 ? 1 : (pixelBuffer.width / projW);
         float projHRatio = projH == 0 ? 1 : (pixelBuffer.height / projH);
 
