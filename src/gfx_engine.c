@@ -35,45 +35,90 @@ static float* zBuffer = NULL;
 static float tanHFovOver2;
 static float tanVFovOver2;
 
+/*------------------------------------------------------------------------------
+ * Input:
+ *      int x: The x coordinate to draw point.
+ *      int y: The y coordinate to draw point.
+ *      uint32_t color: the colour the point should be draw.
+ * Description:
+ *      Draws a single point to the main pixel buffer
+ *----------------------------------------------------------------------------*/
+void drawPoint(int x, int y, uint32_t color)
+{
+    pixelBuffer.pixels[y  * pixelBuffer.width + x] = color;
+}
+
+/*------------------------------------------------------------------------------
+ * Input: A rectangle that is to be drawn to the pixel buffer, and the colour it
+ *        should be drawn in.
+ * Description: Draws a filled rectangle, rect, of a solid colour, color, to the
+ *              main pixel buffer.
+ *----------------------------------------------------------------------------*/
 void drawRect(Rectangle rect, uint32_t color)
 {
-    //screen boundary checks
+    ////Check and adjust the rect if it crosses screen boundaries.
+    //If the left side of rect > the screen width OR the top of the rect is
+    //greater than the screen height THEN return
     if (rect.x >= pixelBuffer.width || rect.y >= pixelBuffer.height) return;
+    //If the right side of the rect >= the screen width THEN reduce the width
+    //of the rect acordingly.
     if (rect.x + rect.w >= pixelBuffer.width) rect.w -= rect.x + rect.w - pixelBuffer.width;
+    //Same as above but for bottom of rect and screen height
     if (rect.y + rect.h >= pixelBuffer.height) rect.h -= rect.y + rect.h - pixelBuffer.height;  
+    //Cut off part of rect above the screen.
     if (rect.y < 0)
     {
         rect.h += rect.y;
         rect.y = 0;
     }
+    //Cut off part of rect left of the screen.
     if (rect.x < 0)
     {
         rect.w += rect.x;
         rect.x = 0;
     }
 
+    //Draw a point for every pixel in the rectangle in the specified color
     for (int y = rect.y; y < rect.y + rect.h; ++y)
     {
         for (int x = rect.x; x < rect.x + rect.w; ++x)
         {
-            pixelBuffer.pixels[y * pixelBuffer.width + x] = color;
+            drawPoint(x, y, color);
         }
     }
 }
 
-void drawPoint(int x, int y, uint32_t color)
-{
-    pixelBuffer.pixels[y  * pixelBuffer.width + x] = color;
-}
-
+/*------------------------------------------------------------------------------
+ * Input:
+ *      SDL_Surface* image: The image to retrive the pixel from
+ *      int x: The x coordinate of the pixel you want the colour of.
+ *      int y: The y coordinate of the pixel you want the colour of.
+ * Description:
+ *      Gets the colour of a specified pixel from a specified image.
+ * Output:
+ *      uint32 The colour of the pixel at (x,y) in image.
+ *----------------------------------------------------------------------------*/
 uint32_t getPixel(SDL_Surface* image, int x, int y) {
     return ((uint32_t*)image->pixels)[y * image->w + x];
 }
 
-//Can add srcRect later for animation
+/*------------------------------------------------------------------------------
+ * Input:
+ *      SDL_Surface* image: The image to be drawn
+ *      SDL_Rect destRect: The rectangle on the screen to draw the image
+ *      uint32_t maskColor: The colour to replace 0xFFFF00FF with.
+ * Description:
+ *      Draws an image to the screen, scaling as neccessary, to the rectangle
+ *      destRect. The colour 0xFFFF00FF (bright pink) is replaced with the
+ *      colour maskColor.
+ * To Do:
+ *      Add srcRect parameter to allow the use of sprite sheets
+ *----------------------------------------------------------------------------*/
 void blitToPixelBuffer(SDL_Surface* image, Rectangle destRect, uint32_t maskColor)
 {
-    //Modifying destRect to fit inside screen
+    ////Keep destRect inside screen boundaries
+    //IF the left side of the rectangle < left side of screen THEN
+    //shift the rectangle to the right
     if (destRect.x < 0)
     {
         destRect.w += destRect.x;
@@ -132,6 +177,28 @@ void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont)
                 uint32_t pixelColor = getPixel(spriteFont.sprite, x + spriteX, y) & color;
                 if (pixelColor & 0xFF000000) {
                     drawPoint(rect.x + i * spriteFont.charW + x, rect.y + y, pixelColor);
+                }
+            }
+        }
+    }
+}
+
+void drawTextToSurface(char* text, SDL_Surface* surface, SDL_Rect rect, uint32_t color, SpriteFont spriteFont)
+{
+    //get text length
+    int textLength = 0;
+    for (textLength = 0; text[textLength] != '\0'; textLength++);
+
+    for (int i = 0; i < textLength; i++)
+    {
+        int spriteX = (text[i] - 32) * spriteFont.charW;
+        for (int y = 0; y < spriteFont.charH; y++)
+        {
+            for (int x = 0; x < spriteFont.charW; x++)
+            {
+                uint32_t pixelColor = getPixel(spriteFont.sprite, x + spriteX, y) & color;
+                if (pixelColor & 0xFF000000) {
+                    ((uint32_t*)surface->pixels)[(rect.y + y) * surface->w + rect.x + i * spriteFont.charW + x ] = pixelColor;
                 }
             }
         }

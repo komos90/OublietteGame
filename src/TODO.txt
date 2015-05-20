@@ -47,6 +47,7 @@ TODO:
         Level editor
 
 DONE:
+    Add game start transition start
     got monster sprite to show correct clip based on viewing angle
     Add "patrol points" for monsters
     Add monster line of sight

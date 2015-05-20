@@ -29,6 +29,7 @@ seoras1@gmail.com
 #include "images.h"
 #include "monster.h"
 
+
 //Resolution
 static const int SCREEN_WIDTH  = 320;
 static const int SCREEN_HEIGHT = 240;
@@ -38,6 +39,7 @@ static uint32_t keyColorsTemp[MAX_KEYS] = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0
 static float monsterSightRadius = 256.f;    //Should be in monster entity base
 static float monsterFov = M_PI/2;           //Should be in monster entity base
 static float monsterChaseTimeLimit = 5000;           //Should be in monster entity base
+
 
 EntityArray initLevel(
     Player* player, PlayerData* playerData, EntityTemplate* rubyTemplate,
@@ -138,6 +140,16 @@ void toggleFullscreen(SDL_Window* window)
     }
 }
 
+void onLevelStartTransitionEnd(void** args, int length)
+{
+    SDL_Log("onLevelStartTransitionEnd called");
+    int* transitionDirection = args[0];
+    bool* paused = args[1];
+
+    *transitionDirection = 0;
+    *paused = !paused;
+}
+
 int main(int argc, char* args[])
 {
     SDL_Window* window = NULL;
@@ -187,6 +199,38 @@ int main(int argc, char* args[])
     //TEMP START PLAYING MUSIC
     Mix_FadeInMusic(gameBackgroundMusic, -1, 1000);
 
+    //WRITING TEST
+    /*{
+        char* rubyCountStr = "They";
+        SDL_Rect textRect = { 1, 0, 0, 0 };
+        drawTextToSurface(rubyCountStr, images.secretDoorTexture, textRect, 0xFFFFFFFF, spriteFont);
+        rubyCountStr = "are";
+        textRect.y = 8;
+        drawTextToSurface(rubyCountStr, images.secretDoorTexture, textRect, 0xFFFFFFFF, spriteFont);
+        rubyCountStr = "coming";
+        textRect.y = 16;
+        drawTextToSurface(rubyCountStr, images.secretDoorTexture, textRect, 0xFFFF0000, spriteFont);
+    }*/
+
+    bool paused = true;
+
+    //should encapsulate in transition object
+    float transitionFraction = 1.0f;
+    float transitionSpeed = 0.01f;
+    int transitionDirection = -1;
+    bool transitionJustFinished = false;
+    void** transitionArgs;
+    int transitionArgsLength;
+    void (*onTransitionDone)(void* args, int length);
+
+    //Setup level start transition
+    void* levelStartTransitionArgs[2] = {&transitionDirection, &paused};
+    transitionArgs = levelStartTransitionArgs;
+    transitionArgsLength = 2;
+    onTransitionDone = onLevelStartTransitionEnd;
+
+    //Setup level end transition
+
     //Get input devices' states
     SDL_Joystick* gamePad = SDL_JoystickOpen(0);
     const uint8_t* keyState = SDL_GetKeyboardState(NULL);    
@@ -220,12 +264,18 @@ int main(int argc, char* args[])
                         if (e.key.keysym.mod & KMOD_ALT)
                             toggleFullscreen(window);
                         break;
+                    case SDLK_p:
+                        paused = !paused;
+                        break;
                 }
                 break;
             case SDL_MOUSEMOTION:
+                if (paused) break;
                 player.rotation += e.motion.xrel * 0.001;
             }
         }
+        if (!paused)
+        {
         //Joystick input
         Vector2 oldPlayerPos = player.pos;
         Vector2 moveVector = {0};
@@ -339,132 +389,158 @@ int main(int argc, char* args[])
         }
 
         //Game Logic ====
-        //Main Entity Loop
-        for (int i = 0; i < entities.size; i++)
-        {
-            //Entity Collision
-            SDL_Rect playerRect = { player.pos.x, player.pos.y, player.width, player.height };
-            Entity entity = entities.data[i];
-            SDL_Rect entityRect = { entity.pos.x, entity.pos.y, entity.base->width, entity.base->height };
-            
-            switch(entity.base->type)
+            //Main Entity Loop
+            for (int i = 0; i < entities.size; i++)
             {
-            case ENTITY_TYPE_RUBY:
+                //Entity Collision
+                SDL_Rect playerRect = { player.pos.x, player.pos.y, player.width, player.height };
+                Entity entity = entities.data[i];
+                SDL_Rect entityRect = { entity.pos.x, entity.pos.y, entity.base->width, entity.base->height };
+                
+                switch(entity.base->type)
                 {
-                    if (rectsIntersect(playerRect, entityRect))
+                case ENTITY_TYPE_RUBY:
                     {
-                        playerData.rubiesCollected++;
-                        //Remove entity
-                        entities.data[i] = entities.data[entities.size - 1];
-                        entities.size--;
-                        //Play SFX
-                        Mix_PlayChannel(-1, rubySfx, 0);
-                    }
-                    break;
-                }
-            case ENTITY_TYPE_KEY:
-                {
-                    if (rectsIntersect(playerRect, entityRect))
-                    {
-                        //TEMPORARY!
-                        playerData.keysCollected[((Key*)entities.data[i].sub)->id] = true;
-                        //Remove entity
-                        entities.data[i] = entities.data[entities.size - 1];
-                        entities.size--;
-                    }
-                    break;
-                }
-            case ENTITY_TYPE_MONSTER:
-                {
-                    if (rectsIntersect(playerRect, entityRect))
-                    {
-                        shouldReloadLevel = true;
-                    }
-
-                    //This should be in a function
-                    //  monster.c:
-                    //      update(void)
-                    //      {
-                    //          updateTargetTile(void);
-                    //          pathFind(void);
-                    //      }
-                    Entity* entity = &entities.data[i];
-                    Monster* monster = (Monster*)entity->sub;
-                    /*-----------------------------
-                     *Check for aiState transitions
-                     *---------------------------*/
-                    
-                    if (distanceFormula(player.pos, entity->pos) < monsterSightRadius)
-                    {
-                        float monsterAngle = getMonsterAngle(entity);
-                        Vector2 tmp1 = { .x=player.pos.x - entity->pos.x, .y=player.pos.y - entity->pos.y};
-                        Vector2 tmp2 = {0};
-                        tmp2.x = cos(monsterAngle) * tmp1.x + sin(monsterAngle) * tmp1.y;
-                        tmp2.y = -sin(monsterAngle) * tmp1.x + cos(monsterAngle) * tmp1.y;
-                        float playerAngle = atan2(tmp2.y, tmp2.x);
-
-                        if (fabs(playerAngle) < monsterFov / 2)
+                        if (rectsIntersect(playerRect, entityRect))
                         {
-                            switch(monster->aiState)
+                            playerData.rubiesCollected++;
+                            //Remove entity
+                            entities.data[i] = entities.data[entities.size - 1];
+                            entities.size--;
+                            //Play SFX
+                            Mix_PlayChannel(-1, rubySfx, 0);
+                        }
+                        break;
+                    }
+                case ENTITY_TYPE_KEY:
+                    {
+                        if (rectsIntersect(playerRect, entityRect))
+                        {
+                            //TEMPORARY!
+                            playerData.keysCollected[((Key*)entities.data[i].sub)->id] = true;
+                            //Remove entity
+                            entities.data[i] = entities.data[entities.size - 1];
+                            entities.size--;
+                        }
+                        break;
+                    }
+                case ENTITY_TYPE_MONSTER:
+                    {
+                        if (rectsIntersect(playerRect, entityRect))
+                        {
+                            shouldReloadLevel = true;
+                        }
+
+                        //This should be in a function
+                        //  monster.c:
+                        //      update(void)
+                        //      {
+                        //          updateTargetTile(void);
+                        //          pathFind(void);
+                        //      }
+                        Entity* entity = &entities.data[i];
+                        Monster* monster = (Monster*)entity->sub;
+                        /*-----------------------------
+                         *Check for aiState transitions
+                         *---------------------------*/
+                        
+                        if (distanceFormula(player.pos, entity->pos) < monsterSightRadius)
+                        {
+                            float monsterAngle = getMonsterAngle(entity);
+                            Vector2 tmp1 = { .x=player.pos.x - entity->pos.x, .y=player.pos.y - entity->pos.y};
+                            Vector2 tmp2 = {0};
+                            tmp2.x = cos(monsterAngle) * tmp1.x + sin(monsterAngle) * tmp1.y;
+                            tmp2.y = -sin(monsterAngle) * tmp1.x + cos(monsterAngle) * tmp1.y;
+                            float playerAngle = atan2(tmp2.y, tmp2.x);
+
+                            if (fabs(playerAngle) < monsterFov / 2)
                             {
-                                case AI_PATROL:
+                                switch(monster->aiState)
                                 {
-                                    monster->aiState = AI_CHASE;
-                                    monster->giveUpChaseTimer.active = true;
-                                    monster->giveUpChaseTimer.endTime = SDL_GetTicks() + monsterChaseTimeLimit;
-                                    break;
-                                }
-                                case AI_CHASE:
-                                {
-                                    monster->giveUpChaseTimer.endTime = SDL_GetTicks() + monsterChaseTimeLimit;
-                                    break;
+                                    case AI_PATROL:
+                                    {
+                                        monster->aiState = AI_CHASE;
+                                        monster->giveUpChaseTimer.active = true;
+                                        monster->giveUpChaseTimer.endTime = SDL_GetTicks() + monsterChaseTimeLimit;
+                                        break;
+                                    }
+                                    case AI_CHASE:
+                                    {
+                                        monster->giveUpChaseTimer.endTime = SDL_GetTicks() + monsterChaseTimeLimit;
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                        else if (monster->aiState == AI_CHASE && monster->giveUpChaseTimer.active &&
-                            monster->giveUpChaseTimer.endTime < SDL_GetTicks())
-                        {
-                            monster->aiState = AI_PATROL;
-                        }
-                    }
-                    
-                    /*-------------------------------------
-                     * Select target tile, based on aiState
-                     *-----------------------------------*/
-                    switch (monster->aiState)
-                    {
-                        case AI_PATROL:
-                        {
-                            if ((int)(entities.data[i].pos.x / TILE_DIMS) == monster->targetTile.x &&
-                                (int)(entities.data[i].pos.y / TILE_DIMS) == monster->targetTile.y)
+                            else if (monster->aiState == AI_CHASE && monster->giveUpChaseTimer.active &&
+                                monster->giveUpChaseTimer.endTime < SDL_GetTicks())
                             {
-                                monster->patrolIndex = (monster->patrolIndex + 1) % monster->patrolLength;
+                                monster->aiState = AI_PATROL;
                             }
-
-                            Vector2Int tmp = { .x=monster->patrolPoints[monster->patrolIndex].x,
-                                               .y=monster->patrolPoints[monster->patrolIndex].y };
-                            monster->targetTile = tmp;
-                            break;
                         }
-                        case AI_CHASE:
+                        
+                        /*-------------------------------------
+                         * Select target tile, based on aiState
+                         *-----------------------------------*/
+                        switch (monster->aiState)
                         {
-                            Vector2Int tmp = { .x=player.pos.x / TILE_DIMS, .y=player.pos.y / TILE_DIMS};
-                            monster->targetTile = tmp;
-                            break;
-                        }
-                    }
-                    
-                    /*---------
-                     * Pathfind
-                     *-------*/
-                    monsterMove(&entities.data[i]);
-                    //monsterMoveAStar();
+                            case AI_PATROL:
+                            {
+                                if ((int)(entities.data[i].pos.x / TILE_DIMS) == monster->targetTile.x &&
+                                    (int)(entities.data[i].pos.y / TILE_DIMS) == monster->targetTile.y)
+                                {
+                                    monster->patrolIndex = (monster->patrolIndex + 1) % monster->patrolLength;
+                                }
 
-                    break;
-                } 
+                                Vector2Int tmp = { .x=monster->patrolPoints[monster->patrolIndex].x,
+                                                   .y=monster->patrolPoints[monster->patrolIndex].y };
+                                monster->targetTile = tmp;
+                                break;
+                            }
+                            case AI_CHASE:
+                            {
+                                Vector2Int tmp = { .x=player.pos.x / TILE_DIMS, .y=player.pos.y / TILE_DIMS};
+                                monster->targetTile = tmp;
+                                break;
+                            }
+                        }
+                        
+                        /*---------
+                         * Pathfind
+                         *-------*/
+                        monsterMove(&entities.data[i]);
+                        //monsterMoveAStar();
+
+                        break;
+                    } 
+                }
             }
         }
-        
+        //Update screen fade
+        if (transitionDirection != 0)
+        {
+            transitionFraction += transitionDirection * transitionSpeed;
+            if (transitionDirection > 0 && transitionFraction > 1.f) 
+            {
+                transitionFraction = 1.f;
+                transitionJustFinished = true;
+            }
+            if (transitionDirection < 0 && transitionFraction < 0.f)
+            {
+                 transitionFraction = 0.f;
+                 transitionJustFinished = true;
+            }
+        }
+        if (transitionJustFinished)
+        {
+            if (onTransitionDone != 0)
+            {
+                (*onTransitionDone)(transitionArgs, transitionArgsLength);
+            }
+            else {
+                SDL_Log("Error: No transition function!");
+            }
+            transitionJustFinished = false;
+        }
         //Draw ====
         //Send game entities to gfx engine to be rendered 
         draw(player, entities);
@@ -497,6 +573,16 @@ int main(int argc, char* args[])
                     blitToPixelBuffer(images.keySprite, keyImageRect, keyColorsTemp[i]);
                 }
             }
+        }
+
+        //Draw screen fade to black
+        {
+            uint32_t fadeColour = 0x000000; 
+            SDL_Rect topRect = {0, 0, SCREEN_WIDTH, (SCREEN_HEIGHT / 2) * transitionFraction};
+            SDL_Rect botRect = {0, SCREEN_HEIGHT - (SCREEN_HEIGHT / 2) * transitionFraction,
+                SCREEN_WIDTH, (SCREEN_HEIGHT / 2) * transitionFraction};
+            drawRect(topRect, fadeColour);
+            drawRect(botRect, fadeColour);
         }
 
         //Render the pixel buffer to the screen
