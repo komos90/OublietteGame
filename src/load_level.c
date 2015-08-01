@@ -35,6 +35,13 @@ int posToTileIndex(int x, int y)
     return index;
 }
 
+int coordToTileIndex(int x, int y)
+{
+    int index = (int)(y * level.width + x);
+    return index;
+}
+
+
 int posVecToTileIndex(Vector2 pos)
 {
     return (int)(pos.y / TILE_DIMS) * level.width + (int)(pos.x / TILE_DIMS);
@@ -51,7 +58,7 @@ Vector2 posToTileCoord(Vector2 pos)
     return coordVec;
 }
 
-Vector2 getPlayerStartPos()
+Vector2 getPlayerStartPos(void)
 {
     for (int y = 0; y < level.height; y++)
     {
@@ -84,7 +91,7 @@ void setTileTo(int index, char tile)
     level.data[index] = tile;
 }
 
-int getTotalLevelRubies()
+int getTotalLevelRubies(void)
 {
     return level.rubyCount;
 }

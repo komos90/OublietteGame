@@ -143,11 +143,31 @@ void toggleFullscreen(SDL_Window* window)
 void onLevelStartTransitionEnd(void** args, int length)
 {
     SDL_Log("onLevelStartTransitionEnd called");
-    int* transitionDirection = args[0];
-    bool* paused = args[1];
+    bool* paused = args[0];
+    *paused = false;
+    SDL_Log("onLevelStartTransitionEnd call ended");
+}
 
-    *transitionDirection = 0;
-    *paused = !paused;
+void onLevelEndTransitionEnd(void** args, int length)
+{
+    SDL_Log("onLevelEndTransitionEnd called");
+    PlayerData*     playerData =        args[0];
+
+    void***  transitionArgs =            args[1];
+    void***  levelStartTransitionArgs =  args[2];
+    void (**onTransitionDone) (void**, int) = args[3];
+    void (*onLevelStartTransitionEnd) (void**, int) = args[4];
+    bool* shouldReloadLevel = args[5];
+    int* transitionDirection = args[6];
+
+    (*playerData).levelNumber++;
+    //loadLevel(entities, player, playerData, rubyTemplate, keyTemplate, monsterTemplate);
+    *shouldReloadLevel = true;
+    *transitionArgs = (void**)levelStartTransitionArgs;
+    SDL_Log("ptrs: %x, %x, %d", levelStartTransitionArgs, *levelStartTransitionArgs, *(bool*)*levelStartTransitionArgs);
+    *onTransitionDone = onLevelStartTransitionEnd;
+    *transitionDirection = -1;
+    SDL_Log("onLevelEndTransitionEnd call ended");
 }
 
 int main(int argc, char* args[])
@@ -213,6 +233,7 @@ int main(int argc, char* args[])
     }*/
 
     bool paused = true;
+    bool shouldReloadLevel = false;
 
     //should encapsulate in transition object
     float transitionFraction = 1.0f;
@@ -224,19 +245,22 @@ int main(int argc, char* args[])
     void (*onTransitionDone)(void* args, int length);
 
     //Setup level start transition
-    void* levelStartTransitionArgs[2] = {&transitionDirection, &paused};
+    void* levelStartTransitionArgs[1] = {&paused};
     transitionArgs = levelStartTransitionArgs;
-    transitionArgsLength = 2;
-    onTransitionDone = onLevelStartTransitionEnd;
+    transitionArgsLength = 1;
+    onTransitionDone = (void (*)(void*, int))onLevelStartTransitionEnd; //ugly function pointer cast
 
     //Setup level end transition
+    void* levelEndTransitionArgs[] = {&playerData, &transitionArgs,
+        &levelStartTransitionArgs, &onTransitionDone, 
+        onLevelStartTransitionEnd, &shouldReloadLevel, &transitionDirection};
 
+    SDL_Log("ptrs: %x, %x, %d", levelStartTransitionArgs, *levelStartTransitionArgs, *(bool*)*levelStartTransitionArgs);
     //Get input devices' states
     SDL_Joystick* gamePad = SDL_JoystickOpen(0);
     const uint8_t* keyState = SDL_GetKeyboardState(NULL);    
     
     bool running = true;
-    bool shouldReloadLevel = false;
     int currentFps = 0;
     //Main Loop ====
     while(running) 
@@ -276,6 +300,7 @@ int main(int argc, char* args[])
         }
         if (!paused)
         {
+            //SDL_Log("Not paused!!");
         //Joystick input
         Vector2 oldPlayerPos = player.pos;
         Vector2 moveVector = {0};
@@ -383,8 +408,12 @@ int main(int argc, char* args[])
             else if (tile == TILE_LEVEL_END)
             {
                 //Load next level
-                playerData.levelNumber++;
-                loadLevel(&entities, &player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
+                onTransitionDone = (void (*)(void*, int))onLevelEndTransitionEnd;
+                transitionArgs = levelEndTransitionArgs;
+                transitionDirection = 1;
+                paused = true;
+                //playerData.levelNumber++;
+                //loadLevel(&entities, &player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
             }
         }
 
@@ -507,9 +536,8 @@ int main(int argc, char* args[])
                         /*---------
                          * Pathfind
                          *-------*/
-                        monsterMove(&entities.data[i]);
-                        //monsterMoveAStar();
-
+                        monsterMoveAStar(&entities.data[i]);
+                        //monsterMove(&entities.data[i]);
                         break;
                     } 
                 }
@@ -532,6 +560,8 @@ int main(int argc, char* args[])
         }
         if (transitionJustFinished)
         {
+            transitionJustFinished = false;
+            transitionDirection = 0;
             if (onTransitionDone != 0)
             {
                 (*onTransitionDone)(transitionArgs, transitionArgsLength);
@@ -539,7 +569,6 @@ int main(int argc, char* args[])
             else {
                 SDL_Log("Error: No transition function!");
             }
-            transitionJustFinished = false;
         }
         //Draw ====
         //Send game entities to gfx engine to be rendered 

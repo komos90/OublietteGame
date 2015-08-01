@@ -29,4 +29,4 @@ typedef struct
 extern ImageManager images;
 
 
-void loadImages();
+void loadImages(void);

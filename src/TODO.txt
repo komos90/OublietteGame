@@ -10,11 +10,12 @@ TODO:
     
     Add sprite animation functionality based on time (xClip)
     Add scaling to sprite font
-    Get sprites in syn withe the rest of the display
+    Get sprites in sync withe the rest of the display
     
     Get secret walls to sink into the floor or something
     Same for doors
     Add more variey to wall textures?
+    Add Animated level end portal
 
     Assets:
         Music:
@@ -26,6 +27,7 @@ TODO:
             Pick up key
             Found secret
             Unlock door
+            Locked door
             Level end
             Monster proximity
             Monster attack / player death
@@ -35,6 +37,7 @@ TODO:
             Key
             Door
             Ceiling
+            Animated level end portal
             probably a lot more
 
     Polish:
@@ -47,6 +50,7 @@ TODO:
         Level editor
 
 DONE:
+    Got basics of A* algorithm working
     Add game start transition start
     got monster sprite to show correct clip based on viewing angle
     Add "patrol points" for monsters

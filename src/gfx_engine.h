@@ -27,5 +27,5 @@ void blitToPixelBuffer(SDL_Surface* image, Rectangle destRect, uint32_t maskColo
 void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont);
 void drawTextToSurface(char* text, SDL_Surface* surface, SDL_Rect rect, uint32_t color, SpriteFont spriteFont);
 void createPixelBuffer(int width, int height);
-PixelBuffer* getPixelBuffer();
+PixelBuffer* getPixelBuffer(void);
 void draw(Player player, EntityArray entities);

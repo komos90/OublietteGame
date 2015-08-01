@@ -219,7 +219,7 @@ void createPixelBuffer(int width, int height)
     tanVFovOver2 = tanf(V_FOV/2.f);
 }
 
-PixelBuffer* getPixelBuffer()
+PixelBuffer* getPixelBuffer(void)
 {
     return &pixelBuffer;
 }

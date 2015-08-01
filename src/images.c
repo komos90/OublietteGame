@@ -26,7 +26,7 @@ void loadImage(SDL_Surface** image, char* filePath) {
     *image = SDL_ConvertSurfaceFormat(*image, SDL_PIXELFORMAT_ARGB8888, 0);
 }
 
-void loadImages() {
+void loadImages(void) {
     loadImage(&images.caveTexture, "../res/textures/cave.png");
     loadImage(&images.doorTexture, "../res/textures/locked_door.png");
     loadImage(&images.secretDoorTexture, "../res/textures/secret_door.png");

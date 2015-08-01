@@ -15,6 +15,7 @@ seoras1@gmail.com
 #endif
 
 #include "engine_types.h"
+#include "linked_list.h"
 
 typedef enum
 {
@@ -38,9 +39,11 @@ typedef struct
     int patrolLength;
     int patrolIndex;
     Vector2Int targetTile;
+    LinkedList pathList;
     AIMode aiState;
     CountdownTimer giveUpChaseTimer;
 } Monster;
 
 float getMonsterAngle(Entity* this);
 void monsterMove(Entity* this);
+void monsterMoveAStar(Entity* this);

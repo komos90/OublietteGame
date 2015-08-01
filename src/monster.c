@@ -1,9 +1,11 @@
 #include <float.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "monster.h"
 #include "engine_types.h"
 #include "load_level.h"
+#include "linked_list.h"
 
 float getMonsterAngle(Entity* this)
 {
@@ -74,7 +76,32 @@ void monsterMove(Entity* this)
     }
 }
 
-void monsterMoveAStar(Entity* this, Player player)
+bool isValidTileForPath(int x, int y)
+{
+    int tileIndex = posToTileIndex(x, y);
+    if (isTileIndexValid(tileIndex) && !isTileSolid(tileIndex)) return true;
+    return false;
+}
+
+float generateHeuristic(PathTile pathTile, Vector2Int target, Entity* monster)
+{
+    float f = abs(pathTile.x - monster->pos.x) + abs(pathTile.y - monster->pos.y);
+    float g = abs(pathTile.x - target.x) + abs(pathTile.y - target.y);
+    return f + 2 * g;
+}
+
+bool reachedPlayer(ListNode* current, Vector2Int target)
+{
+    //SDL_Log("playerTile: %f, %f", playerTile.x + 1, playerTile.y + 1);
+    return (current->tile.x == target.x &&
+            current->tile.y == target.y);
+}
+
+void findPath() {
+
+}
+
+void monsterMoveAStar(Entity* this)
 {
     //NOTE:
     //  + Monster struct should have Vector2Int targetTile. pathfinding should use this target.
@@ -85,5 +112,50 @@ void monsterMoveAStar(Entity* this, Player player)
     //  + if so, chase down using A*
     //  + if player not in line of sight for X seconds, resume patrol
 
-    
+    LinkedList searchTiles = {0};
+    LinkedList removedTiles = {0};
+    Vector2 thisTile = posToTileCoord(this->pos);
+
+    PathTile nearMon[4] = { { x:thisTile.x - 1, y:thisTile.y     },
+                            { x:thisTile.x + 1, y:thisTile.y     }, 
+                            { x:thisTile.x,     y:thisTile.y - 1 }, 
+                            { x:thisTile.x,     y:thisTile.y + 1 } };
+
+    for (int i = 0; i < 4; i++)
+    {
+        if (!isTileSolid(coordToTileIndex(nearMon[i].x, nearMon[i].y)))
+        {
+            nearMon[i].heuristic = generateHeuristic(nearMon[i], ((Monster*)this->sub)->targetTile, this);
+            linkedListMinPriorityAdd(&searchTiles, nearMon[i]);
+        }
+    }
+    //TMP
+    for (ListNode* current = searchTiles.front;
+         current != NULL && !reachedPlayer(current, ((Monster*)this->sub)->targetTile);
+         current = searchTiles.front)
+    {
+        thisTile.x = current->tile.x;
+        thisTile.y = current->tile.y;
+
+        PathTile nearMonCur[4] = { { x:thisTile.x - 1, y:thisTile.y     },
+                                   { x:thisTile.x + 1, y:thisTile.y     }, 
+                                   { x:thisTile.x,     y:thisTile.y - 1 }, 
+                                   { x:thisTile.x,     y:thisTile.y + 1 } };
+
+        for (int i = 0; i < 4; i++)
+        {
+            if (!linkedListContainsTile(&searchTiles, nearMonCur[i]) &&
+                !linkedListContainsTile(&removedTiles, nearMonCur[i]) &&
+                !isTileSolid(coordToTileIndex(nearMonCur[i].x, nearMonCur[i].y)))
+            {
+                nearMonCur[i].heuristic = generateHeuristic(nearMonCur[i], ((Monster*)this->sub)->targetTile, this);
+                linkedListMinPriorityAdd(&searchTiles, nearMonCur[i]);
+                //SDL_Log("x:%d, y:%d, h:%f", current->tile.x, current->tile.y, current->tile.heuristic);
+            }   
+        }
+        SDL_Log("x: %d, y: %d", current->tile.x, current->tile.y);
+        linkedListMinPriorityAdd(&removedTiles, current->tile);
+        linkedListRemoveTile(&searchTiles, current->tile);
+    }
+    exit(42);
 }
