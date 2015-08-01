@@ -6,11 +6,41 @@
 
 void linkedListAddBack(LinkedList* list, PathTile tile)
 {
-    ListNode* listNode = (ListNode*)malloc(sizeof(ListNode));
+    ListNode* listNode = (ListNode*)calloc(1, sizeof(ListNode));
     listNode->tile = tile; // PROBABLY NEED TO DO THIS MEMBERWISE
     listNode->next = NULL;
-    list->back->next = listNode;
-    list->back = listNode;
+
+    if (list->front == NULL)
+    {
+        list->front = listNode;
+        return;
+    }
+    for (ListNode* current = list->front;
+         current != NULL;
+         current = current->next)
+    {
+        if (current->next == NULL)
+        {
+            current->next = listNode;
+            return;
+        }
+    }
+}
+
+void linkedListAddFront(LinkedList* list, PathTile tile)
+{
+    ListNode* listNode = (ListNode*)calloc(1, sizeof(ListNode));
+    listNode->tile = tile; // PROBABLY NEED TO DO THIS MEMBERWISE
+    listNode->next = list->front;
+    list->front = listNode;
+}
+
+void linkedListRemoveFront(LinkedList* list)
+{
+    if (list->front == NULL) return;
+    ListNode* tmp = list->front;
+    list->front = list->front->next;
+    free(tmp);
 }
 
 bool linkedListContainsTile(LinkedList* list, PathTile tile)
@@ -25,6 +55,22 @@ bool linkedListContainsTile(LinkedList* list, PathTile tile)
             current->tile.y == tile.y) return true;
     }
     return false;
+}
+
+PathTile* linkedListFindTile(LinkedList* list, int x, int y)
+{
+    SDL_Log("a");
+    if (list->front == NULL) return NULL;
+
+    for (ListNode* current = list->front;
+         current != NULL;
+         current = current->next)
+    {
+        if (current->tile.x == x &&
+            current->tile.y == y) return &current->tile;
+    }
+    return NULL;
+    SDL_Log("b");
 }
 
 void linkedListRemoveTile(LinkedList* list, PathTile tile)
@@ -52,7 +98,6 @@ void linkedListRemoveTile(LinkedList* list, PathTile tile)
         prev = current;
     }
 }
-
 
 void linkedListMinPriorityAdd(LinkedList* list, PathTile tile)
 {

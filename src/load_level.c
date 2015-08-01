@@ -305,6 +305,7 @@ EntityArray getLevelMonsters(EntityTemplate* monsterTemplate, int levelNumber)
             ((Monster*)monsterArray.data[monsterIndex].sub)->patrolIndex = 1;
             ((Monster*)monsterArray.data[monsterIndex].sub)->aiState = AI_PATROL;
             ((Monster*)monsterArray.data[monsterIndex].sub)->giveUpChaseTimer.active = false;
+            ((Monster*)monsterArray.data[monsterIndex].sub)->pathList.front = NULL;
 
             Vector2 tmp = { ((Monster*)monsterArray.data[monsterIndex].sub)->patrolPoints[0].x * TILE_DIMS + TILE_DIMS/2,
                             ((Monster*)monsterArray.data[monsterIndex].sub)->patrolPoints[0].y * TILE_DIMS + TILE_DIMS/2 };
@@ -313,6 +314,7 @@ EntityArray getLevelMonsters(EntityTemplate* monsterTemplate, int levelNumber)
             monsterArray.data[monsterIndex].xClip = 0;
             monsterArray.data[monsterIndex].yClip = 0;
             monsterArray.data[monsterIndex].base = monsterTemplate;
+
             monsterIndex++;
             fgets(line, 255, file);
         }

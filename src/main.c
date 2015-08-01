@@ -455,11 +455,6 @@ int main(int argc, char* args[])
                     }
                 case ENTITY_TYPE_MONSTER:
                     {
-                        if (rectsIntersect(playerRect, entityRect))
-                        {
-                            shouldReloadLevel = true;
-                        }
-
                         //This should be in a function
                         //  monster.c:
                         //      update(void)
@@ -472,7 +467,11 @@ int main(int argc, char* args[])
                         /*-----------------------------
                          *Check for aiState transitions
                          *---------------------------*/
-                        
+
+                        if (rectsIntersect(playerRect, entityRect))
+                        {
+                            shouldReloadLevel = true;
+                        }
                         if (distanceFormula(player.pos, entity->pos) < monsterSightRadius)
                         {
                             float monsterAngle = getMonsterAngle(entity);
@@ -518,6 +517,7 @@ int main(int argc, char* args[])
                                     (int)(entities.data[i].pos.y / TILE_DIMS) == monster->targetTile.y)
                                 {
                                     monster->patrolIndex = (monster->patrolIndex + 1) % monster->patrolLength;
+                                    monsterMoveAStar(entity);
                                 }
 
                                 Vector2Int tmp = { .x=monster->patrolPoints[monster->patrolIndex].x,
@@ -536,8 +536,7 @@ int main(int argc, char* args[])
                         /*---------
                          * Pathfind
                          *-------*/
-                        monsterMoveAStar(&entities.data[i]);
-                        //monsterMove(&entities.data[i]);
+                        monsterMove(&entities.data[i]);
                         break;
                     } 
                 }
