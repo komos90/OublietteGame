@@ -164,10 +164,13 @@ void onLevelEndTransitionEnd(void** args, int length)
     //loadLevel(entities, player, playerData, rubyTemplate, keyTemplate, monsterTemplate);
     *shouldReloadLevel = true;
     *transitionArgs = (void**)levelStartTransitionArgs;
-    SDL_Log("ptrs: %x, %x, %d", levelStartTransitionArgs, *levelStartTransitionArgs, *(bool*)*levelStartTransitionArgs);
     *onTransitionDone = onLevelStartTransitionEnd;
     *transitionDirection = -1;
     SDL_Log("onLevelEndTransitionEnd call ended");
+}
+
+bool sign(int x) {
+    return (x > 0) - (x < 0);
 }
 
 int main(int argc, char* args[])
@@ -255,7 +258,6 @@ int main(int argc, char* args[])
         &levelStartTransitionArgs, &onTransitionDone, 
         onLevelStartTransitionEnd, &shouldReloadLevel, &transitionDirection};
 
-    SDL_Log("ptrs: %x, %x, %d", levelStartTransitionArgs, *levelStartTransitionArgs, *(bool*)*levelStartTransitionArgs);
     //Get input devices' states
     SDL_Joystick* gamePad = SDL_JoystickOpen(0);
     const uint8_t* keyState = SDL_GetKeyboardState(NULL);    
@@ -300,7 +302,6 @@ int main(int argc, char* args[])
         }
         if (!paused)
         {
-            //SDL_Log("Not paused!!");
         //Joystick input
         Vector2 oldPlayerPos = player.pos;
         Vector2 moveVector = {0};
@@ -472,6 +473,9 @@ int main(int argc, char* args[])
                         {
                             shouldReloadLevel = true;
                         }
+                        /*--------------------------------
+                         *Check if monster has seen player
+                         *------------------------------*/
                         if (distanceFormula(player.pos, entity->pos) < monsterSightRadius)
                         {
                             float monsterAngle = getMonsterAngle(entity);
@@ -480,22 +484,69 @@ int main(int argc, char* args[])
                             tmp2.x = cos(monsterAngle) * tmp1.x + sin(monsterAngle) * tmp1.y;
                             tmp2.y = -sin(monsterAngle) * tmp1.x + cos(monsterAngle) * tmp1.y;
                             float playerAngle = atan2(tmp2.y, tmp2.x);
-
+                            //SDL_Log("In sight range.");
                             if (fabs(playerAngle) < monsterFov / 2)
                             {
-                                switch(monster->aiState)
+                                /*------------------------------------
+                                 *Cast ray and check for walls between
+                                 *player and monster
+                                 *----------------------------------*/
+                                //SDL_Log("In sight cone.");
+                                bool isWallBetween = false;
                                 {
-                                    case AI_PATROL:
+                                    int playerPos[] = {player.pos.x, player.pos.y};
+                                    int cursorPoint[] = {entity->pos.x, entity->pos.y};
+                                    int dif[] = {player.pos.x - entity->pos.x, player.pos.y - entity->pos.y};
+                                    int maxAxis = 1;
+                                    int minAxis = 0;
+
+                                    if (abs(dif[0]) > abs(dif[1]))
                                     {
-                                        monster->aiState = AI_CHASE;
-                                        monster->giveUpChaseTimer.active = true;
-                                        monster->giveUpChaseTimer.endTime = SDL_GetTicks() + monsterChaseTimeLimit;
-                                        break;
+                                        maxAxis = 0;
+                                        minAxis = 1;
                                     }
-                                    case AI_CHASE:
+                                    //SDL_Log("maxAxis:%d, ", maxAxis);
+                                    //SDL_Log("difMA:%d, difmA:%d", dif[maxAxis], dif[minAxis]);
+                                    if (dif[maxAxis] != 0)
                                     {
-                                        monster->giveUpChaseTimer.endTime = SDL_GetTicks() + monsterChaseTimeLimit;
-                                        break;
+                                        
+                                        float gradient = (float)dif[minAxis] / (float)dif[maxAxis];
+                                        float step = dif[maxAxis] < 0 ? - TILE_DIMS : TILE_DIMS;
+                                        do
+                                        {
+                                            //SDL_Log("cp1 %d cp2 %d", cursorPoint[0], cursorPoint[1]);
+                                            //SDL_Log("pp1 %d pp2 %d", playerPos[0], playerPos[1]);
+                                            int tileIndex = posToTileIndex(cursorPoint[0], cursorPoint[1]);
+                                            if (!isTileIndexValid(tileIndex)) break;
+                                            if (isTileSolid(tileIndex))
+                                            {
+                                                isWallBetween = true;
+                                                break;
+                                            }
+                                            //SDL_Log("step%f, gradient%f", step, gradient);
+                                            cursorPoint[maxAxis] += step;
+                                            cursorPoint[minAxis] += step * gradient;
+                                        } while (sign(dif[maxAxis]) == sign(playerPos[maxAxis] - cursorPoint[maxAxis]));
+                                    }
+                                }
+
+                                if (!isWallBetween)
+                                {
+                                    //SDL_Log("No walls between.");
+                                    switch(monster->aiState)
+                                    {
+                                        case AI_PATROL:
+                                        {
+                                            monster->aiState = AI_CHASE;
+                                            monster->giveUpChaseTimer.active = true;
+                                            monster->giveUpChaseTimer.endTime = SDL_GetTicks() + monsterChaseTimeLimit;
+                                            break;
+                                        }
+                                        case AI_CHASE:
+                                        {
+                                            monster->giveUpChaseTimer.endTime = SDL_GetTicks() + monsterChaseTimeLimit;
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -582,15 +633,7 @@ int main(int argc, char* args[])
             SDL_Rect textRect = { SCREEN_WIDTH/8, SCREEN_HEIGHT/16, 0, 0 };
             drawText(rubyCountStr, textRect, 0xFF7A0927, spriteFont);
         }
-        /*{
-            char* patrolStateString = "Patrol State.";
-            char* chaseStateString = "Chase State!";
-            char* aiString = changeToChaseState ? chaseStateString : patrolStateString;
-            char finalString[32];
-            sprintf(finalString, "AI State: %s", aiString);
-            SDL_Rect textRect = {0, SCREEN_HEIGHT - 16, 0, 0 };
-            drawText(finalString, textRect, 0xFFFF0000, spriteFont);
-        }/**/
+
         //Draw keys collected
         {
             for (int i = 0; i < MAX_KEYS; i++)

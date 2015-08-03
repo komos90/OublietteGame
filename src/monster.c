@@ -32,24 +32,14 @@ void monsterMove(Entity* this)
     Monster* monster = (Monster*)this->sub;
     if (monster->pathList.front == NULL)
     {
-        SDL_Log("null1");
         monsterMoveAStar(this);
         if (monster->pathList.front == NULL)
         {
-            SDL_Log("null2");
             return;
         }
     }
 
-    //SDL_Log("Monster move");
     Vector2Int targetTile = {monster->pathList.front->tile.x, monster->pathList.front->tile.y};
-    for (ListNode* current = ((Monster*)this->sub)->pathList.front;
-         current != NULL;
-         current = current->next)
-    {
-        SDL_Log("x: %d, y: %d", current->tile.x, current->tile.y);
-    }
-    
     Vector2 dirOffsets[5] = { {0}, { .y=-1 }, { .y=1 }, { .x=-1 }, { .x=1 } };
 
     //Store old center to check whether center of tile was crossed.
@@ -120,7 +110,6 @@ float generateHeuristic(PathTile pathTile, Vector2Int target, Entity* monster)
 
 bool reachedPlayer(ListNode* current, Vector2Int target)
 {
-    //SDL_Log("playerTile: %f, %f", playerTile.x + 1, playerTile.y + 1);
     return (current->tile.x == target.x &&
             current->tile.y == target.y);
 }
@@ -188,16 +177,11 @@ void monsterMoveAStar(Entity* this)
             {
                 nearMonCur[i].heuristic = generateHeuristic(nearMonCur[i], target, this);
                 linkedListMinPriorityAdd(&searchTiles, nearMonCur[i]);
-                //SDL_Log("x:%d, y:%d, h:%f", current->tile.x, current->tile.y, current->tile.heuristic);
             }   
         }
-        //SDL_Log("x: %d, y: %d", current->tile.x, current->tile.y);
         linkedListAddFront(&removedTiles, current->tile);
-        //SDL_Log("%d, %d, %d, %d", current->tile.x, current->tile.y, current->tile.parentX, current->tile.parentY);
         linkedListRemoveTile(&searchTiles, current->tile);
     }
-    SDL_Log("c");
-    //SDL_Log("x: %d, y: %d", removedTiles.front->tile.x, removedTiles.front->tile.y);
     PathTile tmp = { x:target.x, y:target.y};
     linkedListAddFront(&finalPath, tmp);
     if (removedTiles.front != NULL)
@@ -207,7 +191,6 @@ void monsterMoveAStar(Entity* this)
         {
             if (tmp.parentX == 0 && tmp.parentY == 0) break;
             linkedListAddFront(&finalPath, tmp);
-            SDL_Log("%d, %d, %d, %d", tmp.x, tmp.y, tmp.parentX, tmp.parentY);
             PathTile* tmpPtr = linkedListFindTile(&removedTiles, tmp.parentX, tmp.parentY);
             if (tmpPtr == NULL) 
             {
@@ -218,16 +201,7 @@ void monsterMoveAStar(Entity* this)
         }
     }
     
-    SDL_Log("d");
     ((Monster*)this->sub)->pathList = finalPath;
 
-    //TMP DEBUG
-    for (ListNode* current = ((Monster*)this->sub)->pathList.front;
-         current != NULL;
-         current = current->next)
-    {
-        //SDL_Log("x: %d, y: %d", current->tile.x, current->tile.y);
-    }
-    //SDL_Log("astarend%d%d", ((Monster*)this->sub)->pathList.front->tile.x, ((Monster*)this->sub)->pathList.front->tile.y);
     // NEED TO DELETE LINKED LISTS
 }

@@ -59,7 +59,6 @@ bool linkedListContainsTile(LinkedList* list, PathTile tile)
 
 PathTile* linkedListFindTile(LinkedList* list, int x, int y)
 {
-    SDL_Log("a");
     if (list->front == NULL) return NULL;
 
     for (ListNode* current = list->front;
@@ -70,7 +69,6 @@ PathTile* linkedListFindTile(LinkedList* list, int x, int y)
             current->tile.y == y) return &current->tile;
     }
     return NULL;
-    SDL_Log("b");
 }
 
 void linkedListRemoveTile(LinkedList* list, PathTile tile)

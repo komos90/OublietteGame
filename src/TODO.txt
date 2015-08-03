@@ -4,10 +4,12 @@ ALWAYS:
     Fix bugs
 
 TODO:
-    Add more sofisticated monster AI (A*)
-    Stop monsters from seeing through walls
-    Add initial direction to .mon files
-    
+    Title Menu
+    After level score screen
+    game end screen
+    death screen or something
+    Add Animated level end portal
+    Save/load game system
     Add sprite animation functionality based on time (xClip)
     Add scaling to sprite font
     Get sprites in sync withe the rest of the display
@@ -15,7 +17,6 @@ TODO:
     Get secret walls to sink into the floor or something
     Same for doors
     Add more variey to wall textures?
-    Add Animated level end portal
 
     Assets:
         Music:
@@ -48,8 +49,11 @@ TODO:
 
     Big Undertaking, probably won't add:
         Level editor
+    Add initial direction to .mon files
 
 DONE:
+    Stop monsters from seeing through walls
+    Add more sofisticated monster AI (A*)
     Got basics of A* algorithm working
     Add game start transition start
     got monster sprite to show correct clip based on viewing angle
