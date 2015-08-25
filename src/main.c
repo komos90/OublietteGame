@@ -264,6 +264,68 @@ int main(int argc, char* args[])
     
     bool running = true;
     int currentFps = 0;
+
+    //Main Menu Loop (Complete hack but whatever)
+    while(running) {
+        int frameStartTime = SDL_GetTicks();
+
+        //SDL Event Loop
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
+        {
+            switch(e.type)
+            {
+            case SDL_QUIT:
+                exit(0);
+                break;
+            case SDL_KEYDOWN:
+                switch(e.key.keysym.sym)
+                {
+                    case SDLK_RETURN:
+                        if (e.key.keysym.mod & KMOD_ALT)
+                        {
+                            toggleFullscreen(window);
+                        } else {
+                            running = false;
+                        }
+                        break;
+                    case SDLK_ESCAPE:
+                        exit(0);
+                        break;
+                }
+                break;
+            }
+        }
+        {
+                SDL_Rect tmpRect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+            blitToPixelBuffer(images.mainMenuBack, tmpRect, 0);
+        }
+        {
+                SDL_Rect tmpRect = {(SCREEN_WIDTH - images.mainMenuTitle->w) / 2, 
+                SCREEN_HEIGHT / 5, images.mainMenuTitle->w, images.mainMenuTitle->h};
+            blitToPixelBuffer(images.mainMenuTitle, tmpRect, 0);
+        }
+        {
+                SDL_Rect tmpRect = {2.f * sinf(SDL_GetTicks() / 600.0) + (SCREEN_WIDTH - images.mainMenuStartButton->w) / 2, 
+                6.f * sinf(SDL_GetTicks() / 300.0) + (SCREEN_HEIGHT * 4) / 5, images.mainMenuStartButton->w, images.mainMenuStartButton->h};
+            blitToPixelBuffer(images.mainMenuStartButton, tmpRect, 0);
+        }
+
+        //Render the pixel buffer to the screen
+        SDL_UpdateTexture(screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));        
+        SDL_RenderCopy(renderer, screenTexture, NULL, NULL);
+        SDL_RenderPresent(renderer);
+
+        //Lock to 60 fps
+        int delta = SDL_GetTicks() - frameStartTime;
+        if (delta < 1000/60)
+        {
+            SDL_Delay(1000/60 - delta);
+        }
+        currentFps = 1000/(SDL_GetTicks() - frameStartTime);
+    }
+    running = true;
+
     //Main Loop ====
     while(running) 
     {
@@ -292,6 +354,9 @@ int main(int argc, char* args[])
                         break;
                     case SDLK_p:
                         paused = !paused;
+                        break;
+                    case SDLK_ESCAPE:
+                        running = false;
                         break;
                 }
                 break;

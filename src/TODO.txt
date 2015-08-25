@@ -4,10 +4,10 @@ ALWAYS:
     Fix bugs
 
 TODO:
-    Title Menu
     After level score screen
     game end screen
     death screen or something
+    (If fullscreen) Set aspect ratio depending screen size using  SDL_GetVideoInfo();
     Add Animated level end portal
     Save/load game system
     Add sprite animation functionality based on time (xClip)
@@ -17,6 +17,9 @@ TODO:
     Get secret walls to sink into the floor or something
     Same for doors
     Add more variey to wall textures?
+    Compass?
+    3D Sounds including level end portal sound and monster roar
+    read resolution etc from config file. 
 
     Assets:
         Music:
@@ -41,8 +44,7 @@ TODO:
             Animated level end portal
             probably a lot more
 
-    Polish:
-        Add title menu (No options, just picture and animated "press start/enter" button)       
+    Polish:    
         Add level complete screen / level transition
         Add death screen / transition
         Add game complete screen
@@ -52,6 +54,7 @@ TODO:
     Add initial direction to .mon files
 
 DONE:
+    Title Menu
     Stop monsters from seeing through walls
     Add more sofisticated monster AI (A*)
     Got basics of A* algorithm working

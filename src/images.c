@@ -35,4 +35,7 @@ void loadImages(void) {
     loadImage(&images.rubySprite, "../res/sprites/ruby.png");
     loadImage(&images.keySprite, "../res/sprites/key.png");
     loadImage(&images.monsterSprite, "../res/sprites/monster.png");
+    loadImage(&images.mainMenuBack, "../res/sprites/main_menu_back.png");
+    loadImage(&images.mainMenuTitle, "../res/sprites/main_menu_title.png");
+    loadImage(&images.mainMenuStartButton, "../res/sprites/main_menu_start.png");
 }

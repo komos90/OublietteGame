@@ -24,6 +24,9 @@ typedef struct
     SDL_Surface* rubySprite;
     SDL_Surface* keySprite;
     SDL_Surface* monsterSprite;
+    SDL_Surface* mainMenuBack;
+    SDL_Surface* mainMenuTitle;
+    SDL_Surface* mainMenuStartButton;
 } ImageManager;
 
 extern ImageManager images;
