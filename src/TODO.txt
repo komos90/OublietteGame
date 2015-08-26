@@ -4,19 +4,17 @@ ALWAYS:
     Fix bugs
 
 TODO:
-    (If fullscreen) Set aspect ratio depending screen size using  SDL_GetVideoInfo();
-    fix ai vision bug (not seeing player when only slightly obscured by wall)
-    Add Animated level end portal
-    Add sprite animation functionality based on time (xClip)
-    Get sprites in sync with the rest of the display
-    
-    Get secret walls to sink into the floor or something
-    Same for doors
-    Add more variey to wall textures?
+    Get secret walls and doors to sink into the floor or something
     Compass?
     3D Sounds including level end portal sound and monster roar
     read resolution etc from config file.
     restart level feature?
+    Instructions on wall in game? Or simplified controls?
+    fix ai vision bug (not seeing player when only slightly obscured by wall)
+    Get sprites in sync with the rest of the display
+    Add initial direction to .mon files?
+    Asjust alignment of text etc. with new resolution
+    Make level end transition more magic-portaly (Swirl transition? Freeze frame, screen spirals)
 
     Assets:
         Music:
@@ -34,23 +32,14 @@ TODO:
             Monster attack / player death
         Animations:
             monster (movement in 4 directions, walk, attack)
+            level end portal
         Sprites/Textures:
-            Key
-            Door
-            Ceiling
             Animated level end portal
-            probably a lot more
-
-    Polish:    
-        Add level complete screen / level transition
-        Add death screen / transition
-        Add game complete screen
-
-    Big Undertaking, probably won't add:
-        Level editor
-    Add initial direction to .mon files
 
 DONE:
+    Add Xclip animation functionality
+    Add level end portal
+    (If fullscreen) Set aspect ratio depending screen size using SDL_GetVideoInfo();
     death screen or something
     game end screen
     After level score screen

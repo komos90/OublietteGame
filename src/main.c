@@ -31,8 +31,8 @@ seoras1@gmail.com
 
 
 //Resolution
-static const int SCREEN_WIDTH  = 320;
-static const int SCREEN_HEIGHT = 240;
+static int SCREEN_WIDTH  = 0;
+static const int SCREEN_HEIGHT = 256;
 
 //Temp Globals
 static uint32_t keyColorsTemp[MAX_KEYS] = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFF00AA88};
@@ -43,7 +43,7 @@ static float monsterChaseTimeLimit = 5000;           //Should be in monster enti
 
 EntityArray initLevel(
     Player* player, PlayerData* playerData, EntityTemplate* rubyTemplate,
-    EntityTemplate* keyTemplate, EntityTemplate* monsterTemplate)
+    EntityTemplate* keyTemplate, EntityTemplate* monsterTemplate, EntityTemplate* endPortalTemplate)
 {
     player->pos = getPlayerStartPos();
     player->rotation = 0;
@@ -56,14 +56,15 @@ EntityArray initLevel(
     EntityArray rubies = getLevelRubies(rubyTemplate);
     EntityArray keys = getLevelKeys(keyTemplate);
     EntityArray monsters = getLevelMonsters(monsterTemplate, playerData->levelNumber);
-    
+    Entity endPortalEntity = { .pos=getLevelEndPos(), .base=endPortalTemplate};
+
     EntityArray entities;
-    entities.size = rubies.size + keys.size + monsters.size;
+    entities.size = rubies.size + keys.size + monsters.size + 1;
     entities.data = (Entity*)malloc(entities.size * sizeof(Entity));
     memcpy((void*)entities.data, (void*)rubies.data, rubies.size * sizeof(Entity));
     memcpy((void*)(entities.data + rubies.size), (void*)keys.data, keys.size * sizeof(Entity));
     memcpy((void*)(entities.data + rubies.size + keys.size), (void*)monsters.data, monsters.size * sizeof(Entity));
-
+    entities.data[entities.size - 1] = endPortalEntity;
     //Free memory
     free(rubies.data);
     free(keys.data);
@@ -91,6 +92,10 @@ bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
         printf ("SDL_mixer could not open audio! SDL_Error: %s\n", SDL_GetError());
         return false;
     }
+    //Set screen size depending on aspect ratio
+    SDL_DisplayMode displayMode;
+    SDL_GetCurrentDisplayMode(0, &displayMode);
+    SCREEN_WIDTH = (int)SCREEN_HEIGHT * ((float)displayMode.w / (float)displayMode.h);
     *window = SDL_CreateWindow(
         "The Caves", SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, 
@@ -107,7 +112,7 @@ bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
 
 bool loadLevel(EntityArray* entities, Player* player,
     PlayerData* playerData, EntityTemplate* rubyTemplate,
-    EntityTemplate* keyTemplate, EntityTemplate* monsterTemplate)
+    EntityTemplate* keyTemplate, EntityTemplate* monsterTemplate, EntityTemplate* levelEndPortal)
 {
     char nextLevelFilePath[LEVEL_FILE_PATH_MAX_LEN];
     sprintf(nextLevelFilePath, "../res/levels/level%d.lvl", playerData->levelNumber);
@@ -123,7 +128,7 @@ bool loadLevel(EntityArray* entities, Player* player,
             free(entities->data[i].sub);
         }
         free(entities->data);
-        (*entities) = initLevel(player, playerData, rubyTemplate, keyTemplate, monsterTemplate);
+        (*entities) = initLevel(player, playerData, rubyTemplate, keyTemplate, monsterTemplate, levelEndPortal);
         return true;
     }
     else return false;
@@ -256,6 +261,7 @@ int main(int argc, char* args[])
         SDL_Log("SDLinit failed.");
         return 1;
     }
+    
     SDL_Texture* screenTexture = SDL_CreateTexture(
         renderer, SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH,
@@ -265,6 +271,7 @@ int main(int argc, char* args[])
         SDL_Log("screenTexture is NULL.");
         return 1;
     }
+    SDL_Log("WIDTH %d", SCREEN_WIDTH);
 
     //Grab cursor
     SDL_SetRelativeMouseMode(true);
@@ -286,13 +293,14 @@ int main(int argc, char* args[])
     //Create player
     Player player = { .width=32, .height=32 };
     PlayerData playerData = { .levelNumber=0 };
-    EntityTemplate rubyTemplate = { .sprite=images.rubySprite, .width=32, .height=32, .spriteWidth=16, .spriteHeight=16, .type=ENTITY_TYPE_RUBY };
-    EntityTemplate keyTemplate = { .sprite=images.keySprite, .width=32, .width=32, .spriteWidth=16, .spriteHeight=16, .type=ENTITY_TYPE_KEY};
+    EntityTemplate rubyTemplate = { .sprite=images.rubySprite, .width=16, .height=16, .spriteWidth=16, .spriteHeight=16, .type=ENTITY_TYPE_RUBY };
+    EntityTemplate keyTemplate = { .sprite=images.keySprite, .width=16, .width=16, .spriteWidth=16, .spriteHeight=16, .type=ENTITY_TYPE_KEY};
     EntityTemplate monsterTemplate = { .sprite=images.monsterSprite, .width=64, .height=64, .spriteWidth=64, .spriteHeight=64, .type=ENTITY_TYPE_MONSTER};
+    EntityTemplate endPortalTemplate = { .sprite=images.levelEndPortal, .width=256, .height=64, .spriteWidth=64, .spriteHeight=64, .animationSpeed=30, .type=ENTITY_TYPE_PORTAL};
 
     //Init level
     EntityArray entities = {0};
-    loadLevel(&entities, &player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
+    loadLevel(&entities, &player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate, &endPortalTemplate);
     //TEMP START PLAYING MUSIC
     Mix_FadeInMusic(gameBackgroundMusic, -1, 1000);
 
@@ -412,7 +420,7 @@ int main(int argc, char* args[])
         
         if (shouldReloadLevel)
         {
-            loadLevel(&entities, &player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate);
+            loadLevel(&entities, &player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate, &endPortalTemplate);
             shouldReloadLevel = false;
         }
         //SDL Event Loop
@@ -571,6 +579,18 @@ int main(int argc, char* args[])
                 Entity entity = entities.data[i];
                 SDL_Rect entityRect = { entity.pos.x, entity.pos.y, entity.base->width, entity.base->height };
                 
+                //update animation
+                entities.data[i].xClipCounter++;
+                if (entities.data[i].xClipCounter > entities.data[i].base->animationSpeed)
+                {
+                    entities.data[i].xClipCounter = 0;
+                    entities.data[i].xClip++;
+                    if (entities.data[i].xClip * entities.data[i].base->spriteWidth >= entities.data[i].base->width)
+                    {
+                        entities.data[i].xClip = 0;
+                    }
+                }
+
                 switch(entity.base->type)
                 {
                 case ENTITY_TYPE_RUBY:

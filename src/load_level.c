@@ -348,6 +348,23 @@ bool fileExists(char* filePath)
     return file == NULL ? false : true;
 }
 
+Vector2 getLevelEndPos()
+{
+    for (int y = 0; y < level.height; y++)
+    {
+        for (int x = 0; x < level.width; x++)
+        {
+            if (level.data[y * level.width + x] == TILE_LEVEL_END)
+            {
+                Vector2 levelEndPos = { x * TILE_DIMS + TILE_DIMS/2, y * TILE_DIMS + TILE_DIMS/2 };
+                return levelEndPos;
+            }
+        }
+    }
+    Vector2 errorVector = {0, 0};
+    return errorVector;
+}
+
 //TODO Fix levels breaking if they don't end on a blank line
 void loadLevelTiles(char* fileName)
 {

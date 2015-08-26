@@ -56,3 +56,4 @@ int getTotalLevelRubies(void);
 char getLevelTile(int index);
 SDL_Surface* getTileTexture(int index);
 bool fileExists(char* filePath);
+Vector2 getLevelEndPos();

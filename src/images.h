@@ -27,6 +27,7 @@ typedef struct
     SDL_Surface* mainMenuBack;
     SDL_Surface* mainMenuTitle;
     SDL_Surface* mainMenuStartButton;
+    SDL_Surface* levelEndPortal;
 } ImageManager;
 
 extern ImageManager images;

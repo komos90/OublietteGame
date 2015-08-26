@@ -21,7 +21,8 @@ typedef enum
 {
     ENTITY_TYPE_RUBY,
     ENTITY_TYPE_KEY,
-    ENTITY_TYPE_MONSTER
+    ENTITY_TYPE_MONSTER,
+    ENTITY_TYPE_PORTAL
 } EntityType;
 
 typedef struct 
@@ -66,6 +67,7 @@ typedef struct
     int height;
     int spriteWidth;
     int spriteHeight;
+    int animationSpeed;
 } EntityTemplate;
 
 typedef struct
@@ -76,6 +78,7 @@ typedef struct
     int yClip;
     EntityTemplate* base;
     void* sub;
+    int xClipCounter;
 } Entity;
 
 typedef struct
