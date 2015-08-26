@@ -4,15 +4,11 @@ ALWAYS:
     Fix bugs
 
 TODO:
-    game end screen
-    death screen or something
     (If fullscreen) Set aspect ratio depending screen size using  SDL_GetVideoInfo();
     fix ai vision bug (not seeing player when only slightly obscured by wall)
     Add Animated level end portal
-    Save/load game system
     Add sprite animation functionality based on time (xClip)
-    Add scaling to sprite font
-    Get sprites in sync withe the rest of the display
+    Get sprites in sync with the rest of the display
     
     Get secret walls to sink into the floor or something
     Same for doors
@@ -55,6 +51,8 @@ TODO:
     Add initial direction to .mon files
 
 DONE:
+    death screen or something
+    game end screen
     After level score screen
     Title Menu
     Stop monsters from seeing through walls

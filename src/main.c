@@ -219,12 +219,12 @@ void onLevelEndTransitionEnd(void** args, int length)
         blitToPixelBuffer(images->rubySprite, tmpRect, 0);
 
         {char levelEndText[32];
-        sprintf(levelEndText, "THE END", playerData->levelNumber + 1);
+        sprintf(levelEndText, "THE END");
         SDL_Rect textRect = { SCREEN_WIDTH / 2 - 26, SCREEN_HEIGHT/3, 0, 0 };
         drawText(levelEndText, textRect, 0xFF7A0927, *spriteFont);}
 
         {char levelEndText[32];
-        sprintf(levelEndText, "A GAME BY SEORAS MACDONALD", playerData->levelNumber + 1);
+        sprintf(levelEndText, "A GAME BY SEORAS MACDONALD");
         SDL_Rect textRect = { SCREEN_WIDTH / 4 - 20, (SCREEN_HEIGHT * 9/10), 0, 0 };
         drawText(levelEndText, textRect, 0xFF7A0927, *spriteFont);}
 
@@ -313,6 +313,10 @@ int main(int argc, char* args[])
     bool shouldReloadLevel = false;
 
     //should encapsulate in transition object
+    bool deathEffectActive = false;
+    int deathEffectCounter = 0;
+    int deathEffectDirection = 1;
+
     float transitionFraction = 1.0f;
     float transitionSpeed = 0.01f;
     int transitionDirection = -1;
@@ -611,7 +615,11 @@ int main(int argc, char* args[])
 
                         if (rectsIntersect(playerRect, entityRect))
                         {
-                            shouldReloadLevel = true;
+                            //shouldReloadLevel = true;
+                            paused = true;
+                            deathEffectActive = true;
+                            deathEffectCounter = 0;
+                            deathEffectDirection = 1;
                         }
                         /*--------------------------------
                          *Check if monster has seen player
@@ -794,6 +802,31 @@ int main(int argc, char* args[])
                 SCREEN_WIDTH, 1 + (SCREEN_HEIGHT / 2) * transitionFraction};
             drawRect(topRect, fadeColour);
             drawRect(botRect, fadeColour);
+        }
+
+        //Draw death effect
+        if (deathEffectActive)
+        {
+            pixelateScreen((deathEffectCounter / 3) + 1);
+            fadeToColor(0x00401010, (float)deathEffectCounter / ((SCREEN_WIDTH * 3) / 8.f));
+
+            if (deathEffectDirection == 1)
+            {
+                deathEffectCounter++;
+                if ((deathEffectCounter / 3) > SCREEN_WIDTH / 8) {
+                    deathEffectDirection = -1;
+                    shouldReloadLevel = true;
+                }
+            }
+            else 
+            {
+                deathEffectCounter--;
+                if (deathEffectCounter == 1)
+                {
+                    deathEffectActive = false;
+                    paused = false;
+                }
+            }
         }
 
         //Render the pixel buffer to the screen

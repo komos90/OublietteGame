@@ -102,6 +102,10 @@ uint32_t getPixel(SDL_Surface* image, int x, int y) {
     return ((uint32_t*)image->pixels)[y * image->w + x];
 }
 
+uint32_t getPixelBufferPixel(int x, int y) {
+    return pixelBuffer.pixels[y * pixelBuffer.width + x];
+}
+
 /*------------------------------------------------------------------------------
  * Input:
  *      SDL_Surface* image: The image to be drawn
@@ -343,6 +347,37 @@ void sortSprites(EntityArray* entities, Vector2 playerPos)
             }
         }
     }
+}
+
+void pixelateScreen(int n) {
+    for (int y = 0; y < pixelBuffer.height; y += n)
+    {
+        for (int x = 0; x < pixelBuffer.width; x += n)
+        {
+            SDL_Rect tmpRect = {x, y, n, n};
+            drawRect(tmpRect, getPixelBufferPixel(x, y));
+        }
+    }
+}
+
+void fadeToColor(uint32_t addColor, float ratio)
+{
+    for (int y = 0; y < pixelBuffer.height; y += 1)
+    {
+        for (int x = 0; x < pixelBuffer.width; x += 1)
+        {
+            uint32_t inColor = getPixelBufferPixel(x, y);
+
+            uint8_t outColor8[3];
+            for (int i = 0; i < 3; i++)
+            {
+                outColor8[i] = (uint8_t)(ratio * (uint8_t)(addColor >> i * 8) + (1.f - ratio) * (uint8_t)(inColor >> i * 8));
+                //SDL_Log("ratio %f, addColori %u, inColori %u", ratio, (addColor >> i * 8), (inColor >> i * 8));
+            }
+            drawPoint(x, y, (outColor8[2] << 16) | (outColor8[1] << 8) | outColor8[0]);
+        }
+    }
+    
 }
 
 void draw(Player player, EntityArray entities)

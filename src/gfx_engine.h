@@ -29,3 +29,5 @@ void drawTextToSurface(char* text, SDL_Surface* surface, SDL_Rect rect, uint32_t
 void createPixelBuffer(int width, int height);
 PixelBuffer* getPixelBuffer(void);
 void draw(Player player, EntityArray entities);
+void pixelateScreen(int n);
+void fadeToColor(uint32_t addColor, float ratio);
