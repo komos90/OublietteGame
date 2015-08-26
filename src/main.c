@@ -814,6 +814,10 @@ int main(int argc, char* args[])
             }
         }
 
+        //Draw compass
+        Rectangle compassRect = { (SCREEN_WIDTH*7)/8, SCREEN_HEIGHT/16, 32, 32 };
+        rotatedBlitToPixelBuffer(images.compass, compassRect, 0, -player.rotation);
+
         //Draw screen fade to black
         {
             uint32_t fadeColour = 0x000000; 

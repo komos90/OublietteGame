@@ -5,11 +5,11 @@ ALWAYS:
 
 TODO:
     Get secret walls and doors to sink into the floor or something
-    Compass?
+        Generate sprite inside each door, with an invisible y-frame, and a yframe with a opening door animation. On opening the door: destroy the tile, show the sprite, and start the animation. When the animation is done, swithc back to invisibl frame, or destroy the sprite.
     3D Sounds including level end portal sound and monster roar
-    read resolution etc from config file.
     restart level feature?
     Instructions on wall in game? Or simplified controls?
+    read options from config file.
     fix ai vision bug (not seeing player when only slightly obscured by wall)
     Get sprites in sync with the rest of the display
     Add initial direction to .mon files?
@@ -21,7 +21,6 @@ TODO:
             Title menu
             Level complete?
         SFX:
-            Pick up ruby
             Footsteps
             Pick up key
             Found secret
@@ -37,6 +36,7 @@ TODO:
             Animated level end portal
 
 DONE:
+    Add compass
     Add Xclip animation functionality
     Add level end portal
     (If fullscreen) Set aspect ratio depending screen size using SDL_GetVideoInfo();

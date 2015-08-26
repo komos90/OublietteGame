@@ -31,3 +31,4 @@ PixelBuffer* getPixelBuffer(void);
 void draw(Player player, EntityArray entities);
 void pixelateScreen(int n);
 void fadeToColor(uint32_t addColor, float ratio);
+void rotatedBlitToPixelBuffer(SDL_Surface* image, Rectangle destRect, uint32_t maskColor, float angle);

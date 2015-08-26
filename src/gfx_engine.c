@@ -164,6 +164,59 @@ void blitToPixelBuffer(SDL_Surface* image, Rectangle destRect, uint32_t maskColo
     }
 }
 
+void rotatedBlitToPixelBuffer(SDL_Surface* image, Rectangle destRect, uint32_t maskColor, float angle)
+{
+    ////Keep destRect inside screen boundaries
+    //IF the left side of the rectangle < left side of screen THEN
+    //shift the rectangle to the right
+    if (destRect.x < 0)
+    {
+        destRect.w += destRect.x;
+        destRect.x = 0;
+    }
+    else if (destRect.x >= pixelBuffer.width)
+    {
+        destRect.w += (pixelBuffer.width - 1) - destRect.x;
+        destRect.x = pixelBuffer.width - 1;
+    }
+    if (destRect.y < 0)
+    {
+        destRect.h += destRect.y;
+        destRect.y = 0;
+    }
+    else if (destRect.y >= pixelBuffer.height)
+    {
+        destRect.h += (pixelBuffer.height - 1) - destRect.y;
+        destRect.y = pixelBuffer.height - 1;
+    }
+
+    float cosTheta = cosf(angle);
+    float sinTheta = sinf(angle);
+    for (int y = -destRect.h / 2; y < destRect.h / 2; y++)
+    {
+        for (int x = -destRect.w / 2; x < destRect.w / 2; x++)
+        {
+            int texCoordX = ((x * cosTheta + y * sinTheta) + destRect.w / 2) * (image->w / (float)destRect.w);
+            int texCoordY = ((- x * sinTheta + y * cosTheta) + destRect.h / 2) * (image->h / (float)destRect.h);
+            uint32_t color = 0x00000000;
+            if (texCoordX >= 0 && texCoordX < image->w &&
+                texCoordY >= 0 && texCoordY < image->h)
+            {
+                color = getPixel(image, texCoordX, texCoordY);
+            }
+            //if color not fully transparent
+            if (color & 0xFF000000)
+            {
+                if (color == 0xFFFF00FF)
+                {
+                    color = maskColor;
+                }
+                drawPoint(destRect.x + x, destRect.y + y, color);
+            }
+        }
+    }
+}
+
 void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont)
 {
     //get text length

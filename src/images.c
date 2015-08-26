@@ -39,4 +39,5 @@ void loadImages(void) {
     loadImage(&images.mainMenuTitle, "../res/sprites/main_menu_title.png");
     loadImage(&images.mainMenuStartButton, "../res/sprites/main_menu_start.png");
     loadImage(&images.levelEndPortal, "../res/sprites/level_end_portal.png");
+    loadImage(&images.compass, "../res/sprites/compass.png");
 }
