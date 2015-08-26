@@ -150,6 +150,9 @@ void onLevelStartTransitionEnd(void** args, int length)
 
 void onLevelEndTransitionEnd(void** args, int length)
 {
+    static int frameCounter = 0;
+    frameCounter++;
+
     SDL_Log("onLevelEndTransitionEnd called");
     PlayerData*     playerData =        args[0];
 
@@ -159,6 +162,32 @@ void onLevelEndTransitionEnd(void** args, int length)
     void (*onLevelStartTransitionEnd) (void**, int) = args[4];
     bool* shouldReloadLevel = args[5];
     int* transitionDirection = args[6];
+    ImageManager* images = args[7];
+    SDL_Texture** screenTexture = args[8];
+    SDL_Renderer** renderer = args[9];
+    SpriteFont* spriteFont = args[10];
+
+    uint32_t fadeColour = 0x000000; 
+    SDL_Rect topRect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+    drawRect(topRect, fadeColour);
+    SDL_Rect tmpRect = {SCREEN_WIDTH / 3 + 20, SCREEN_HEIGHT / 2, images->rubySprite->w, images->rubySprite->h};
+    blitToPixelBuffer(images->rubySprite, tmpRect, 0);
+
+    {char levelEndText[32];
+    sprintf(levelEndText, "LEVEL %d COMPLETE", playerData->levelNumber + 1);
+    SDL_Rect textRect = { SCREEN_WIDTH / 4 + 20, SCREEN_HEIGHT/3, 0, 0 };
+    drawText(levelEndText, textRect, 0xFF7A0927, *spriteFont);}
+
+    {char rubyCountStr[32];
+    sprintf(rubyCountStr, "%d/%d", playerData->rubiesCollected, getTotalLevelRubies());
+    SDL_Rect textRect = { SCREEN_WIDTH / 3 + images->rubySprite->w * 2 + 20, SCREEN_HEIGHT/2, 0, 0 };
+    drawText(rubyCountStr, textRect, 0xFF7A0927, *spriteFont);}
+
+    //Render the pixel buffer to the screen
+    SDL_UpdateTexture(*screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));        
+    SDL_RenderCopy(*renderer, *screenTexture, NULL, NULL);
+    SDL_RenderPresent(*renderer);
+    SDL_Delay(4000);
 
     (*playerData).levelNumber++;
     //loadLevel(entities, player, playerData, rubyTemplate, keyTemplate, monsterTemplate);
@@ -167,6 +196,7 @@ void onLevelEndTransitionEnd(void** args, int length)
     *onTransitionDone = onLevelStartTransitionEnd;
     *transitionDirection = -1;
     SDL_Log("onLevelEndTransitionEnd call ended");
+
 }
 
 bool sign(int x) {
@@ -256,7 +286,8 @@ int main(int argc, char* args[])
     //Setup level end transition
     void* levelEndTransitionArgs[] = {&playerData, &transitionArgs,
         &levelStartTransitionArgs, &onTransitionDone, 
-        onLevelStartTransitionEnd, &shouldReloadLevel, &transitionDirection};
+        onLevelStartTransitionEnd, &shouldReloadLevel, &transitionDirection, &images, 
+        &screenTexture, &renderer, &spriteFont};
 
     //Get input devices' states
     SDL_Joystick* gamePad = SDL_JoystickOpen(0);
@@ -716,7 +747,7 @@ int main(int argc, char* args[])
             uint32_t fadeColour = 0x000000; 
             SDL_Rect topRect = {0, 0, SCREEN_WIDTH, (SCREEN_HEIGHT / 2) * transitionFraction};
             SDL_Rect botRect = {0, SCREEN_HEIGHT - (SCREEN_HEIGHT / 2) * transitionFraction,
-                SCREEN_WIDTH, (SCREEN_HEIGHT / 2) * transitionFraction};
+                SCREEN_WIDTH, 1 + (SCREEN_HEIGHT / 2) * transitionFraction};
             drawRect(topRect, fadeColour);
             drawRect(botRect, fadeColour);
         }

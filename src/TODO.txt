@@ -4,10 +4,10 @@ ALWAYS:
     Fix bugs
 
 TODO:
-    After level score screen
     game end screen
     death screen or something
     (If fullscreen) Set aspect ratio depending screen size using  SDL_GetVideoInfo();
+    fix ai vision bug (not seeing player when only slightly obscured by wall)
     Add Animated level end portal
     Save/load game system
     Add sprite animation functionality based on time (xClip)
@@ -54,6 +54,7 @@ TODO:
     Add initial direction to .mon files
 
 DONE:
+    After level score screen
     Title Menu
     Stop monsters from seeing through walls
     Add more sofisticated monster AI (A*)
