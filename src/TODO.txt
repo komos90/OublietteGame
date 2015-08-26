@@ -19,7 +19,8 @@ TODO:
     Add more variey to wall textures?
     Compass?
     3D Sounds including level end portal sound and monster roar
-    read resolution etc from config file. 
+    read resolution etc from config file.
+    restart level feature?
 
     Assets:
         Music:

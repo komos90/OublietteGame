@@ -94,6 +94,8 @@ typedef struct
     int levelNumber;
     int rubiesCollected;
     bool keysCollected[MAX_KEYS];
+    int totalRubiesCollected;
+    int totalRubies;
 } PlayerData;
 
 typedef struct

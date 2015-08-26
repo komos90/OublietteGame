@@ -124,7 +124,9 @@ bool loadLevel(EntityArray* entities, Player* player,
         }
         free(entities->data);
         (*entities) = initLevel(player, playerData, rubyTemplate, keyTemplate, monsterTemplate);
+        return true;
     }
+    else return false;
 }
 
 void toggleFullscreen(SDL_Window* window)
@@ -167,36 +169,78 @@ void onLevelEndTransitionEnd(void** args, int length)
     SDL_Renderer** renderer = args[9];
     SpriteFont* spriteFont = args[10];
 
-    uint32_t fadeColour = 0x000000; 
-    SDL_Rect topRect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
-    drawRect(topRect, fadeColour);
-    SDL_Rect tmpRect = {SCREEN_WIDTH / 3 + 20, SCREEN_HEIGHT / 2, images->rubySprite->w, images->rubySprite->h};
-    blitToPixelBuffer(images->rubySprite, tmpRect, 0);
+    char nextLevelFilePath[LEVEL_FILE_PATH_MAX_LEN];
+    sprintf(nextLevelFilePath, "../res/levels/level%d.lvl", playerData->levelNumber + 1);
+    if(fileExists(nextLevelFilePath))
+    { 
 
-    {char levelEndText[32];
-    sprintf(levelEndText, "LEVEL %d COMPLETE", playerData->levelNumber + 1);
-    SDL_Rect textRect = { SCREEN_WIDTH / 4 + 20, SCREEN_HEIGHT/3, 0, 0 };
-    drawText(levelEndText, textRect, 0xFF7A0927, *spriteFont);}
+        uint32_t fadeColour = 0x000000; 
+        SDL_Rect topRect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+        drawRect(topRect, fadeColour);
+        SDL_Rect tmpRect = {SCREEN_WIDTH / 3 + 20, SCREEN_HEIGHT / 2, images->rubySprite->w, images->rubySprite->h};
+        blitToPixelBuffer(images->rubySprite, tmpRect, 0);
 
-    {char rubyCountStr[32];
-    sprintf(rubyCountStr, "%d/%d", playerData->rubiesCollected, getTotalLevelRubies());
-    SDL_Rect textRect = { SCREEN_WIDTH / 3 + images->rubySprite->w * 2 + 20, SCREEN_HEIGHT/2, 0, 0 };
-    drawText(rubyCountStr, textRect, 0xFF7A0927, *spriteFont);}
+        {char levelEndText[32];
+        sprintf(levelEndText, "LEVEL %d COMPLETE", playerData->levelNumber + 1);
+        SDL_Rect textRect = { SCREEN_WIDTH / 4 + 20, SCREEN_HEIGHT/3, 0, 0 };
+        drawText(levelEndText, textRect, 0xFF7A0927, *spriteFont);}
 
-    //Render the pixel buffer to the screen
-    SDL_UpdateTexture(*screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));        
-    SDL_RenderCopy(*renderer, *screenTexture, NULL, NULL);
-    SDL_RenderPresent(*renderer);
-    SDL_Delay(4000);
+        {char rubyCountStr[32];
+        sprintf(rubyCountStr, "%d/%d", playerData->rubiesCollected, getTotalLevelRubies());
+        SDL_Rect textRect = { SCREEN_WIDTH / 3 + images->rubySprite->w * 2 + 20, SCREEN_HEIGHT/2, 0, 0 };
+        drawText(rubyCountStr, textRect, 0xFF7A0927, *spriteFont);}
 
-    (*playerData).levelNumber++;
-    //loadLevel(entities, player, playerData, rubyTemplate, keyTemplate, monsterTemplate);
-    *shouldReloadLevel = true;
-    *transitionArgs = (void**)levelStartTransitionArgs;
-    *onTransitionDone = onLevelStartTransitionEnd;
-    *transitionDirection = -1;
+        //Render the pixel buffer to the screen
+        SDL_UpdateTexture(*screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));        
+        SDL_RenderCopy(*renderer, *screenTexture, NULL, NULL);
+        SDL_RenderPresent(*renderer);
+        SDL_Delay(4000);
+
+        (*playerData).levelNumber++;
+        (*playerData).totalRubiesCollected += (*playerData).rubiesCollected;
+        (*playerData).totalRubies += getTotalLevelRubies();
+        //loadLevel(entities, player, playerData, rubyTemplate, keyTemplate, monsterTemplate);
+        *shouldReloadLevel = true;
+        *transitionArgs = (void**)levelStartTransitionArgs;
+        *onTransitionDone = onLevelStartTransitionEnd;
+        *transitionDirection = -1;
+    }
+    else
+    {
+        (*playerData).levelNumber++;
+        (*playerData).totalRubiesCollected += (*playerData).rubiesCollected;
+        (*playerData).totalRubies += getTotalLevelRubies();
+
+        uint32_t fadeColour = 0x000000; 
+        SDL_Rect topRect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+        drawRect(topRect, fadeColour);
+
+        SDL_Rect tmpRect = {SCREEN_WIDTH / 3 + 20, SCREEN_HEIGHT / 2, images->rubySprite->w, images->rubySprite->h};
+        blitToPixelBuffer(images->rubySprite, tmpRect, 0);
+
+        {char levelEndText[32];
+        sprintf(levelEndText, "THE END", playerData->levelNumber + 1);
+        SDL_Rect textRect = { SCREEN_WIDTH / 2 - 26, SCREEN_HEIGHT/3, 0, 0 };
+        drawText(levelEndText, textRect, 0xFF7A0927, *spriteFont);}
+
+        {char levelEndText[32];
+        sprintf(levelEndText, "A GAME BY SEORAS MACDONALD", playerData->levelNumber + 1);
+        SDL_Rect textRect = { SCREEN_WIDTH / 4 - 20, (SCREEN_HEIGHT * 9/10), 0, 0 };
+        drawText(levelEndText, textRect, 0xFF7A0927, *spriteFont);}
+
+        {char rubyCountStr[32];
+        sprintf(rubyCountStr, "%d/%d", playerData->totalRubiesCollected, playerData->totalRubies);
+        SDL_Rect textRect = { SCREEN_WIDTH / 3 + images->rubySprite->w * 2 + 20, SCREEN_HEIGHT/2, 0, 0 };
+        drawText(rubyCountStr, textRect, 0xFF7A0927, *spriteFont);}
+
+        //Render the pixel buffer to the screen
+        SDL_UpdateTexture(*screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));        
+        SDL_RenderCopy(*renderer, *screenTexture, NULL, NULL);
+        SDL_RenderPresent(*renderer);
+        SDL_Delay(8000);
+        exit(0);
+    }
     SDL_Log("onLevelEndTransitionEnd call ended");
-
 }
 
 bool sign(int x) {
