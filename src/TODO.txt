@@ -1,9 +1,5 @@
-ALWAYS:     
-    Clean code
-    Optimize
-    Fix bugs
-
 TODO:
+    Have a total of 10 levels.
     Get secret walls and doors to sink into the floor or something
         Generate sprite inside each door, with an invisible y-frame, and a yframe with a opening door animation. On opening the door: destroy the tile, show the sprite, and start the animation. When the animation is done, swithc back to invisibl frame, or destroy the sprite.
     3D Sounds including level end portal sound and monster roar
