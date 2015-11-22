@@ -6,6 +6,8 @@ seoras1@gmail.com
 */
 #pragma once
 
+#include <stdbool.h>
+
 #ifdef __linux__
     #include "SDL2/SDL.h"
     #include "SDL2/SDL_image.h"
@@ -16,15 +18,15 @@ seoras1@gmail.com
 
 #include "engine_types.h"
 
+
 //Aspect Ratio
 static const float H_FOV = M_PI/3;
 static const float V_FOV = M_PI/4;//(3*M_PI)/16;
 
-
 void drawRect(SDL_Rect rect, uint32_t color);
 void drawPoint(int x, int y, uint32_t color);
 void blitToPixelBuffer(SDL_Surface* image, Rectangle destRect, uint32_t maskColor);
-void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont);
+void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont, bool centered);
 void drawTextToSurface(char* text, SDL_Surface* surface, SDL_Rect rect, uint32_t color, SpriteFont spriteFont);
 void createPixelBuffer(int width, int height);
 PixelBuffer* getPixelBuffer(void);

@@ -24,6 +24,7 @@ seoras1@gmail.com
 #include "images.h"
 #include "monster.h"
 
+
 static uint32_t keyColors[MAX_KEYS] = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFF00AA88};
 
 static PixelBuffer pixelBuffer = {0};
@@ -217,11 +218,17 @@ void rotatedBlitToPixelBuffer(SDL_Surface* image, Rectangle destRect, uint32_t m
     }
 }
 
-void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont)
+void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont, bool centered)
 {
     //get text length
     int textLength = 0;
     for (textLength = 0; text[textLength] != '\0'; textLength++);
+
+    if (centered)
+    {
+        rect.x -= (int)((textLength / 2.0) * spriteFont.charW);
+        rect.y -= spriteFont.charH / 2;
+    }
 
     for (int i = 0; i < textLength; i++)
     {

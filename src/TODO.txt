@@ -1,16 +1,14 @@
 TODO:
-    Have a total of 10 levels.
     Get secret walls and doors to sink into the floor or something
         Generate sprite inside each door, with an invisible y-frame, and a yframe with a opening door animation. On opening the door: destroy the tile, show the sprite, and start the animation. When the animation is done, swithc back to invisibl frame, or destroy the sprite.
-    3D Sounds including level end portal sound and monster roar
+    3D Sounds for monster roar.
     restart level feature?
     Instructions on wall in game? Or simplified controls?
     read options from config file.
     fix ai vision bug (not seeing player when only slightly obscured by wall)
     Get sprites in sync with the rest of the display
     Add initial direction to .mon files?
-    Asjust alignment of text etc. with new resolution
-    Make level end transition more magic-portaly (Swirl transition? Freeze frame, screen spirals)
+    
 
     Assets:
         Music:
@@ -32,6 +30,8 @@ TODO:
             Animated level end portal
 
 DONE:
+    Adjust alignment of text and UI elements
+    Have a total of 10 levels.
     Add compass
     Add Xclip animation functionality
     Add level end portal

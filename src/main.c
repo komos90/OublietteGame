@@ -182,18 +182,18 @@ void onLevelEndTransitionEnd(void** args, int length)
         uint32_t fadeColour = 0x000000; 
         SDL_Rect topRect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
         drawRect(topRect, fadeColour);
-        SDL_Rect tmpRect = {SCREEN_WIDTH / 3 + 20, SCREEN_HEIGHT / 2, images->rubySprite->w, images->rubySprite->h};
+        SDL_Rect tmpRect = {SCREEN_WIDTH / 2 - 2 * images->rubySprite->w + 2, SCREEN_HEIGHT / 2 - 4, images->rubySprite->w, images->rubySprite->h};
         blitToPixelBuffer(images->rubySprite, tmpRect, 0);
 
         {char levelEndText[32];
         sprintf(levelEndText, "LEVEL %d COMPLETE", playerData->levelNumber + 1);
-        SDL_Rect textRect = { SCREEN_WIDTH / 4 + 20, SCREEN_HEIGHT/3, 0, 0 };
-        drawText(levelEndText, textRect, 0xFF7A0927, *spriteFont);}
+        SDL_Rect textRect = { SCREEN_WIDTH / 2, SCREEN_HEIGHT/3, 0, 0 };
+        drawText(levelEndText, textRect, 0xFF7A0927, *spriteFont, true);}
 
         {char rubyCountStr[32];
         sprintf(rubyCountStr, "%d/%d", playerData->rubiesCollected, getTotalLevelRubies());
-        SDL_Rect textRect = { SCREEN_WIDTH / 3 + images->rubySprite->w * 2 + 20, SCREEN_HEIGHT/2, 0, 0 };
-        drawText(rubyCountStr, textRect, 0xFF7A0927, *spriteFont);}
+        SDL_Rect textRect = { SCREEN_WIDTH / 2 - 2, SCREEN_HEIGHT/2, 0, 0 };
+        drawText(rubyCountStr, textRect, 0xFF7A0927, *spriteFont, false);}
 
         //Render the pixel buffer to the screen
         SDL_UpdateTexture(*screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));        
@@ -220,23 +220,23 @@ void onLevelEndTransitionEnd(void** args, int length)
         SDL_Rect topRect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
         drawRect(topRect, fadeColour);
 
-        SDL_Rect tmpRect = {SCREEN_WIDTH / 3 + 20, SCREEN_HEIGHT / 2, images->rubySprite->w, images->rubySprite->h};
+        SDL_Rect tmpRect = {SCREEN_WIDTH / 2 - 2 * images->rubySprite->w + 2, SCREEN_HEIGHT / 2 - 4, images->rubySprite->w, images->rubySprite->h};
         blitToPixelBuffer(images->rubySprite, tmpRect, 0);
 
         {char levelEndText[32];
         sprintf(levelEndText, "THE END");
-        SDL_Rect textRect = { SCREEN_WIDTH / 2 - 26, SCREEN_HEIGHT/3, 0, 0 };
-        drawText(levelEndText, textRect, 0xFF7A0927, *spriteFont);}
+        SDL_Rect textRect = { SCREEN_WIDTH / 2, SCREEN_HEIGHT/3, 0, 0 };
+        drawText(levelEndText, textRect, 0xFF7A0927, *spriteFont, true);}
 
         {char levelEndText[32];
         sprintf(levelEndText, "A GAME BY SEORAS MACDONALD");
-        SDL_Rect textRect = { SCREEN_WIDTH / 4 - 20, (SCREEN_HEIGHT * 9/10), 0, 0 };
-        drawText(levelEndText, textRect, 0xFF7A0927, *spriteFont);}
+        SDL_Rect textRect = { SCREEN_WIDTH / 2, (SCREEN_HEIGHT * 9/10), 0, 0 };
+        drawText(levelEndText, textRect, 0xFF7A0927, *spriteFont, true);}
 
         {char rubyCountStr[32];
         sprintf(rubyCountStr, "%d/%d", playerData->totalRubiesCollected, playerData->totalRubies);
-        SDL_Rect textRect = { SCREEN_WIDTH / 3 + images->rubySprite->w * 2 + 20, SCREEN_HEIGHT/2, 0, 0 };
-        drawText(rubyCountStr, textRect, 0xFF7A0927, *spriteFont);}
+        SDL_Rect textRect = { SCREEN_WIDTH / 2 - 2, SCREEN_HEIGHT/2, 0, 0 };
+        drawText(rubyCountStr, textRect, 0xFF7A0927, *spriteFont, false);}
 
         //Render the pixel buffer to the screen
         SDL_UpdateTexture(*screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));        
@@ -794,12 +794,12 @@ int main(int argc, char* args[])
         //All this should be in a drawUI() function in gfx_engine.c
         //Draw rubies collected
         {
-            Rectangle rubyImageRect = { SCREEN_WIDTH/32, SCREEN_HEIGHT/32, 11, 11 };
+            Rectangle rubyImageRect = { SCREEN_WIDTH/8 - 1.5 * images.rubySprite->w, SCREEN_HEIGHT/16 - 2, 11, 11 };
             blitToPixelBuffer(images.rubySprite, rubyImageRect, 0);
             char rubyCountStr[32];
             sprintf(rubyCountStr, "%d/%d", playerData.rubiesCollected, getTotalLevelRubies());
             SDL_Rect textRect = { SCREEN_WIDTH/8, SCREEN_HEIGHT/16, 0, 0 };
-            drawText(rubyCountStr, textRect, 0xFF7A0927, spriteFont);
+            drawText(rubyCountStr, textRect, 0xFF7A0927, spriteFont, false);
         }
 
         //Draw keys collected
@@ -808,14 +808,14 @@ int main(int argc, char* args[])
             {
                 if (playerData.keysCollected[i] == true)
                 {
-                    Rectangle keyImageRect = { SCREEN_WIDTH/3 + i * 16, SCREEN_HEIGHT/32, 11, 11 };
+                    Rectangle keyImageRect = { SCREEN_WIDTH/3 + i * 16, SCREEN_HEIGHT/16, 11, 11 };
                     blitToPixelBuffer(images.keySprite, keyImageRect, keyColorsTemp[i]);
                 }
             }
         }
 
         //Draw compass
-        Rectangle compassRect = { (SCREEN_WIDTH*7)/8, SCREEN_HEIGHT/16, 32, 32 };
+        Rectangle compassRect = { (SCREEN_WIDTH*7)/8, SCREEN_HEIGHT/8 - 8, 32, 32 };
         rotatedBlitToPixelBuffer(images.compass, compassRect, 0, -player.rotation);
 
         //Draw screen fade to black
