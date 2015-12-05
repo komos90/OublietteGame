@@ -289,6 +289,8 @@ int main(int argc, char* args[])
     //Audio SHOULD EXTRACT TO SEPARATE FILE
     Mix_Music* gameBackgroundMusic = Mix_LoadMUS("../res/music/game_back.ogg");
     Mix_Chunk* rubySfx = Mix_LoadWAV("../res/sfx/ruby_pickup.ogg");
+    Mix_Chunk* keySfx = Mix_LoadWAV("../res/sfx/key_pickup.ogg");
+    Mix_Chunk* doorSfx = Mix_LoadWAV("../res/sfx/unlock_door.ogg");
 
     //Create player
     Player player = { .width=32, .height=32 };
@@ -537,6 +539,7 @@ int main(int argc, char* args[])
                 if (tile == TILE_SECRET_DOOR)
                 {
                     setTileTo(posVecToIndex(actionTile), TILE_FLOOR);
+                    Mix_PlayChannel(-1, doorSfx, 0);
                 }
                 else if ((tile == TILE_DOOR0 && playerData.keysCollected[0] == true) ||
                     (tile == TILE_DOOR1 && playerData.keysCollected[1] == true) ||
@@ -544,6 +547,7 @@ int main(int argc, char* args[])
                     (tile == TILE_DOOR3 && playerData.keysCollected[3] == true))
                 {
                     setTileTo(posVecToIndex(actionTile), TILE_FLOOR);
+                    Mix_PlayChannel(-1, doorSfx, 0);
                 }
             }
             //Normalise moveVector
@@ -615,6 +619,8 @@ int main(int argc, char* args[])
                             //Remove entity
                             entities.data[i] = entities.data[entities.size - 1];
                             entities.size--;
+                            //Play SFX
+                            Mix_PlayChannel(-1, keySfx, 0);
                         }
                         break;
                     }
