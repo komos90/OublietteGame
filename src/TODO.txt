@@ -2,13 +2,14 @@ TODO:
     Get secret walls and doors to sink into the floor or something
         Generate sprite inside each door, with an invisible y-frame, and a yframe with a opening door animation. On opening the door: destroy the tile, show the sprite, and start the animation. When the animation is done, swithc back to invisibl frame, or destroy the sprite.
     3D Sounds for monster roar.
-    restart level feature?
-    Instructions on wall in game? Or simplified controls?
-    read options from config file.
     fix ai vision bug (not seeing player when only slightly obscured by wall)
-    Get sprites in sync with the rest of the display
+    restart level feature?
+    Instructions on wall in game!
+    read options from config file.
+    Tweak exisiting levels?
     Add initial direction to .mon files?
-    
+    Add more levels?    
+    Get sprites in sync with the rest of the display
 
     Assets:
         Music:
