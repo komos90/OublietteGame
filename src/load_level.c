@@ -21,7 +21,7 @@
 
 static Level level = {0};
 //TEMP
-static char monsterFile[128];
+//static char monsterFile[128];
 
 bool isTileIndexValid(int i)
 {
@@ -247,7 +247,11 @@ EntityArray getLevelMonsters(EntityTemplate* monsterTemplate, int levelNumber)
     if (monsterArray.size >= 1)
     {
         char line [256];
-        fgets(line, 255, file);
+        if(fgets(line, 255, file) == NULL)
+        {
+            SDL_Log("Error reading a line in the monster file.");
+            exit(-1);
+        }
         int monsterIndex = 0;
         while (!feof(file))
         {
@@ -316,7 +320,11 @@ EntityArray getLevelMonsters(EntityTemplate* monsterTemplate, int levelNumber)
             monsterArray.data[monsterIndex].base = monsterTemplate;
 
             monsterIndex++;
-            fgets(line, 255, file);
+            if(fgets(line, 255, file) == NULL && ferror(file))
+            {
+                SDL_Log("Error reading a line in the monster file.");
+                exit(-1);
+            }
         }
     }
 
@@ -340,6 +348,8 @@ SDL_Surface* getTileTexture(int index) {
     {
         return images.secretDoorTexture;
     }
+    SDL_Log("Imposible value at data[index], cannot getTileTexture().");
+    exit(-1);
 }
 
 bool fileExists(char* filePath)

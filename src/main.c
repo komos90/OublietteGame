@@ -38,7 +38,7 @@ static const int SCREEN_HEIGHT = 256;
 static uint32_t keyColorsTemp[MAX_KEYS] = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFF00AA88};
 static float monsterSightRadius = 256.f;    //Should be in monster entity base
 static float monsterFov = M_PI/2;           //Should be in monster entity base
-static float monsterChaseTimeLimit = 5000;           //Should be in monster entity base
+static float monsterChaseTimeLimit = 5000;  //Should be in monster entity base
 
 
 EntityArray initLevel(
@@ -56,7 +56,12 @@ EntityArray initLevel(
     EntityArray rubies = getLevelRubies(rubyTemplate);
     EntityArray keys = getLevelKeys(keyTemplate);
     EntityArray monsters = getLevelMonsters(monsterTemplate, playerData->levelNumber);
-    Entity endPortalEntity = { .pos=getLevelEndPos(), .base=endPortalTemplate};
+    Entity endPortalEntity = { .pos=getLevelEndPos(),
+                               .zPos=0,
+                               .xClip=0,
+                               .yClip=0,
+                               .base=endPortalTemplate,
+                               .sub=NULL};
 
     EntityArray entities;
     entities.size = rubies.size + keys.size + monsters.size + 1;
@@ -149,10 +154,8 @@ void toggleFullscreen(SDL_Window* window)
 
 void onLevelStartTransitionEnd(void** args, int length)
 {
-    SDL_Log("onLevelStartTransitionEnd called");
     bool* paused = args[0];
     *paused = false;
-    SDL_Log("onLevelStartTransitionEnd call ended");
 }
 
 void onLevelEndTransitionEnd(void** args, int length)
@@ -160,7 +163,6 @@ void onLevelEndTransitionEnd(void** args, int length)
     static int frameCounter = 0;
     frameCounter++;
 
-    SDL_Log("onLevelEndTransitionEnd called");
     PlayerData*     playerData =        args[0];
 
     void***  transitionArgs =            args[1];
@@ -245,7 +247,6 @@ void onLevelEndTransitionEnd(void** args, int length)
         SDL_Delay(8000);
         exit(0);
     }
-    SDL_Log("onLevelEndTransitionEnd call ended");
 }
 
 bool sign(int x) {
@@ -271,7 +272,6 @@ int main(int argc, char* args[])
         SDL_Log("screenTexture is NULL.");
         return 1;
     }
-    SDL_Log("WIDTH %d", SCREEN_WIDTH);
 
     //Grab cursor
     SDL_SetRelativeMouseMode(true);
@@ -352,7 +352,7 @@ int main(int argc, char* args[])
     const uint8_t* keyState = SDL_GetKeyboardState(NULL);    
     
     bool running = true;
-    int currentFps = 0;
+    //int currentFps = 0;
 
     //Main Menu Loop (Complete hack but whatever)
     while(running) {
@@ -411,7 +411,7 @@ int main(int argc, char* args[])
         {
             SDL_Delay(1000/60 - delta);
         }
-        currentFps = 1000/(SDL_GetTicks() - frameStartTime);
+        //currentFps = 1000/(SDL_GetTicks() - frameStartTime);
     }
     running = true;
 
@@ -457,9 +457,6 @@ int main(int argc, char* args[])
         if (!paused)
         {
         //Joystick input
-        Vector2 oldPlayerPos = player.pos;
-        Vector2 moveVector = {0};
-        int moveVel = 4;
         {
             const int JOYSTICK_DEAD_ZONE = 8000;
             Vector2 oldPlayerPos = player.pos;
@@ -763,7 +760,9 @@ int main(int argc, char* args[])
                          *-------*/
                         monsterMove(&entities.data[i]);
                         break;
-                    } 
+                    }
+                    case ENTITY_TYPE_PORTAL:
+                        break;
                 }
             }
         }
@@ -870,7 +869,7 @@ int main(int argc, char* args[])
         {
             SDL_Delay(1000/60 - delta);
         }
-        currentFps = 1000/(SDL_GetTicks() - frameStartTime);
+        //currentFps = 1000/(SDL_GetTicks() - frameStartTime);
     }
     return 0;
 }

@@ -21,6 +21,8 @@ float getMonsterAngle(Entity* this)
     case DIR_UP:
         monsterAngle = -M_PI/2;
         break;
+    default:
+        break;
     }
     return monsterAngle;
 }
@@ -61,7 +63,6 @@ void monsterMove(Entity* this)
     if (((Monster*)this->sub)->direction == DIR_NONE || crossedCenter)
     {
         Vector2 curTile = posToTileCoord(this->pos);
-        Vector2 minTile = curTile;
         float minDistance = FLT_MAX; 
 
         for (int i = DIR_UP; i <= DIR_RIGHT; i++)
@@ -78,8 +79,7 @@ void monsterMove(Entity* this)
             if (distance < minDistance)
             {
                 minDistance = distance;
-                minTile = consideringTile;
-                ((Monster*)this->sub)->direction = i; //THIS IS A BIT DANGEROUS
+                ((Monster*)this->sub)->direction = i; // THIS IS A BIT DANGEROUS
             }
         }
     }
@@ -87,11 +87,9 @@ void monsterMove(Entity* this)
     if ((int)(this->pos.x / TILE_DIMS) == targetTile.x &&
         (int)(this->pos.y / TILE_DIMS) == targetTile.y)
     {
-        
         linkedListRemoveFront(&monster->pathList);
         monsterMoveAStar(this);
     }
-
 }
 
 bool isValidTileForPath(int x, int y)

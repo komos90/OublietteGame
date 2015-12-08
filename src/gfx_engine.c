@@ -456,7 +456,7 @@ void draw(Player player, EntityArray entities)
          --------------------------------------------------------------------*/
         const float sinAngle = sinf(angle);
         const float cosAngle = cosf(angle);
-        const float tanAngle = tanf(angle);
+        //const float tanAngle = tanf(angle);
         //const float sinScreenAngle = sinf(angle - player.rotation);
         const float cosScreenAngle = cosf(angle - player.rotation);
         
