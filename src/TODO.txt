@@ -19,6 +19,7 @@ TODO:
             monster (movement in 4 directions, walk, attack)
 
 DONE:
+    Music:Level Complete
     Music:Title menu
     Music:Better in game music
     SFX:Unlock door

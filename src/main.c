@@ -292,6 +292,7 @@ int main(int argc, char* args[])
 
     //Audio SHOULD EXTRACT TO SEPARATE FILE
     Mix_Music* gameBackgroundMusic = Mix_LoadMUS("../res/music/thrum.ogg");
+    Mix_Music* levelEndMusic = Mix_LoadMUS("../res/music/thrum_outsync_double_reverse.ogg");
     Mix_Music* titleMusic = Mix_LoadMUS("../res/music/title_menu.ogg");
     Mix_Chunk* rubySfx = Mix_LoadWAV("../res/sfx/ruby_pickup.ogg");
     Mix_Chunk* keySfx = Mix_LoadWAV("../res/sfx/key_pickup.ogg");
@@ -436,6 +437,8 @@ int main(int argc, char* args[])
         
         if (shouldReloadLevel)
         {
+            Mix_HaltMusic();
+            Mix_PlayMusic(gameBackgroundMusic, -1);
             loadLevel(&entities, &player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate, &endPortalTemplate);
             shouldReloadLevel = false;
         }
@@ -596,6 +599,8 @@ int main(int argc, char* args[])
             {
                 //Load next level
                 Mix_PlayChannel(-1, playerFinishedLevelSfx, 0);
+                Mix_HaltMusic();
+                Mix_PlayMusic(levelEndMusic, -1);
                 onTransitionDone = (void (*)(void*, int))onLevelEndTransitionEnd;
                 transitionArgs = levelEndTransitionArgs;
                 transitionDirection = 1;
