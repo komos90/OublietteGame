@@ -9,9 +9,11 @@ seoras1@gmail.com
 #ifdef __linux__
     #include <SDL2/SDL.h>
     #include <SDL2/SDL_image.h>
+    #include <SDL2/SDL_mixer.h>
 #elif _WIN32
     #include <SDL.h>
-    #include <SDL_image.h> 
+    #include <SDL_image.h>
+    #include <SDL_mixer.h>
 #endif
 
 #include "engine_types.h"
@@ -42,6 +44,7 @@ typedef struct
     LinkedList pathList;
     AIMode aiState;
     CountdownTimer giveUpChaseTimer;
+    int roarSoundChannel;
 } Monster;
 
 float getMonsterAngle(Entity* this);

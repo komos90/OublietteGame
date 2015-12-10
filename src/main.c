@@ -41,6 +41,10 @@ static float monsterFov = M_PI/2;           //Should be in monster entity base
 static float monsterChaseTimeLimit = 5000;  //Should be in monster entity base
 
 
+bool oneInXChance(int x) {
+    return rand() % x == 0;
+}
+
 EntityArray initLevel(
     Player* player, PlayerData* playerData, EntityTemplate* rubyTemplate,
     EntityTemplate* keyTemplate, EntityTemplate* monsterTemplate, EntityTemplate* endPortalTemplate)
@@ -287,24 +291,33 @@ int main(int argc, char* args[])
     spriteFont.sprite = SDL_ConvertSurfaceFormat(spriteFont.sprite, SDL_PIXELFORMAT_ARGB8888, 0);
 
     //Audio SHOULD EXTRACT TO SEPARATE FILE
-    Mix_Music* gameBackgroundMusic = Mix_LoadMUS("../res/music/game_back.ogg");
+    Mix_Music* gameBackgroundMusic = Mix_LoadMUS("../res/music/thrum.ogg");
+    Mix_Music* titleMusic = Mix_LoadMUS("../res/music/title_menu.ogg");
     Mix_Chunk* rubySfx = Mix_LoadWAV("../res/sfx/ruby_pickup.ogg");
     Mix_Chunk* keySfx = Mix_LoadWAV("../res/sfx/key_pickup.ogg");
-    Mix_Chunk* doorSfx = Mix_LoadWAV("../res/sfx/unlock_door.ogg");
+    Mix_Chunk* unlockDoorSfx = Mix_LoadWAV("../res/sfx/unlock_door.ogg");
+    Mix_Chunk* lockedDoorSfx = Mix_LoadWAV("../res/sfx/locked_door.ogg");
+    Mix_Chunk* playerFootstepSfx = Mix_LoadWAV("../res/sfx/player_footstep.ogg");
+    Mix_Chunk* roarSfx = Mix_LoadWAV("../res/sfx/monster_roar.ogg");
+    Mix_Chunk* playerFinishedLevelSfx = Mix_LoadWAV("../res/sfx/player_finished_level.ogg");
+    Mix_Chunk* secretDoorSfx = Mix_LoadWAV("../res/sfx/secret_door.ogg");
+    Mix_VolumeChunk(roarSfx, 128);
+    Mix_VolumeChunk(playerFootstepSfx, 40);
 
     //Create player
-    Player player = { .width=32, .height=32 };
+    Player player = { .width=32, .height=32, .footstepSoundChannel=-1};
     PlayerData playerData = { .levelNumber=0 };
     EntityTemplate rubyTemplate = { .sprite=images.rubySprite, .width=16, .height=16, .spriteWidth=16, .spriteHeight=16, .type=ENTITY_TYPE_RUBY };
     EntityTemplate keyTemplate = { .sprite=images.keySprite, .width=16, .width=16, .spriteWidth=16, .spriteHeight=16, .type=ENTITY_TYPE_KEY};
     EntityTemplate monsterTemplate = { .sprite=images.monsterSprite, .width=64, .height=64, .spriteWidth=64, .spriteHeight=64, .type=ENTITY_TYPE_MONSTER};
-    EntityTemplate endPortalTemplate = { .sprite=images.levelEndPortal, .width=256, .height=64, .spriteWidth=64, .spriteHeight=64, .animationSpeed=30, .type=ENTITY_TYPE_PORTAL};
+    EntityTemplate endPortalTemplate = { .sprite=images.levelEndPortal, .width=64, .height=64, .spriteWidth=64, .spriteHeight=64, .animationSpeed=30, .type=ENTITY_TYPE_PORTAL};
 
     //Init level
     EntityArray entities = {0};
     loadLevel(&entities, &player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate, &endPortalTemplate);
     //TEMP START PLAYING MUSIC
-    Mix_FadeInMusic(gameBackgroundMusic, -1, 1000);
+    Mix_FadeInMusic(titleMusic, -1, 1000);
+    
 
     //WRITING TEST
     /*{
@@ -413,8 +426,9 @@ int main(int argc, char* args[])
         }
         //currentFps = 1000/(SDL_GetTicks() - frameStartTime);
     }
+    Mix_FadeOutMusic(1000);
+    Mix_FadeInMusic(gameBackgroundMusic, -1, 1000);
     running = true;
-
     //Main Loop ====
     while(running) 
     {
@@ -447,6 +461,35 @@ int main(int argc, char* args[])
                     case SDLK_ESCAPE:
                         running = false;
                         break;
+                    case SDLK_SPACE: {
+                        Vector2 actionTile = player.pos;
+                        actionTile.x += cosf(player.rotation) * TILE_DIMS;
+                        actionTile.y += sinf(player.rotation) * TILE_DIMS;
+                        actionTile = posToTileCoord(actionTile);
+
+                        char tile = getLevelTile(posVecToIndex(actionTile));
+                        if (tile == TILE_SECRET_DOOR)
+                        {
+                            setTileTo(posVecToIndex(actionTile), TILE_FLOOR);
+                            Mix_PlayChannel(-1, secretDoorSfx, 0);
+                        }
+                        else if ((tile == TILE_DOOR0 && playerData.keysCollected[0] == true) ||
+                            (tile == TILE_DOOR1 && playerData.keysCollected[1] == true) ||
+                            (tile == TILE_DOOR2 && playerData.keysCollected[2] == true) ||
+                            (tile == TILE_DOOR3 && playerData.keysCollected[3] == true))
+                        {
+                            setTileTo(posVecToIndex(actionTile), TILE_FLOOR);
+                            Mix_PlayChannel(-1, unlockDoorSfx, 0);
+                        }
+                        else if (tile == TILE_DOOR0 ||
+                            tile == TILE_DOOR1 ||
+                            tile == TILE_DOOR2 ||
+                            tile == TILE_DOOR3)
+                        {
+                            Mix_PlayChannel(-1, lockedDoorSfx, 0);
+                        }
+                    }
+                    break;
                 }
                 break;
             case SDL_MOUSEMOTION:
@@ -525,32 +568,22 @@ int main(int argc, char* args[])
             {
                 player.rotation -= 0.02;
             }
-            if (keyState[SDL_SCANCODE_SPACE])
-            {
-                Vector2 actionTile = player.pos;
-                actionTile.x += cosf(player.rotation) * TILE_DIMS;
-                actionTile.y += sinf(player.rotation) * TILE_DIMS;
-                actionTile = posToTileCoord(actionTile);
-
-                char tile = getLevelTile(posVecToIndex(actionTile));
-                if (tile == TILE_SECRET_DOOR)
-                {
-                    setTileTo(posVecToIndex(actionTile), TILE_FLOOR);
-                    Mix_PlayChannel(-1, doorSfx, 0);
-                }
-                else if ((tile == TILE_DOOR0 && playerData.keysCollected[0] == true) ||
-                    (tile == TILE_DOOR1 && playerData.keysCollected[1] == true) ||
-                    (tile == TILE_DOOR2 && playerData.keysCollected[2] == true) ||
-                    (tile == TILE_DOOR3 && playerData.keysCollected[3] == true))
-                {
-                    setTileTo(posVecToIndex(actionTile), TILE_FLOOR);
-                    Mix_PlayChannel(-1, doorSfx, 0);
-                }
+            if (keyState[SDL_SCANCODE_R]) {
+                shouldReloadLevel = true;
             }
+            
             //Normalise moveVector
             moveVector = vec2Unit(moveVector);
             player.pos.x += moveVector.x * moveVel;
             player.pos.y += moveVector.y * moveVel;
+            if (moveVector.x == 0 && moveVector.y == 0)
+            {
+                //Mix_HaltChannel(player.footstepSoundChannel);
+            }
+            else if (!Mix_Playing(player.footstepSoundChannel))
+            {
+                player.footstepSoundChannel = Mix_PlayChannel(-1, playerFootstepSfx, 0);
+            }
 
             //Collision
             int tileIndex = posVecToTileIndex(player.pos);
@@ -562,6 +595,7 @@ int main(int argc, char* args[])
             else if (tile == TILE_LEVEL_END)
             {
                 //Load next level
+                Mix_PlayChannel(-1, playerFinishedLevelSfx, 0);
                 onTransitionDone = (void (*)(void*, int))onLevelEndTransitionEnd;
                 transitionArgs = levelEndTransitionArgs;
                 transitionDirection = 1;
@@ -749,6 +783,10 @@ int main(int argc, char* args[])
                             }
                             case AI_CHASE:
                             {
+                                if (!Mix_Playing(monster->roarSoundChannel) && oneInXChance(60))
+                                {
+                                    monster->roarSoundChannel = Mix_PlayChannel(-1, roarSfx, 0);
+                                }
                                 Vector2Int tmp = { .x=player.pos.x / TILE_DIMS, .y=player.pos.y / TILE_DIMS};
                                 monster->targetTile = tmp;
                                 break;
@@ -759,6 +797,12 @@ int main(int argc, char* args[])
                          * Pathfind
                          *-------*/
                         monsterMove(&entities.data[i]);
+                        int distVolume = distanceFormula(player.pos, entity->pos) / 4;
+                        Mix_SetPosition(
+                            monster->roarSoundChannel,
+                            (constrainAngle(getMonsterAngle(entity) - player.rotation) + M_PI) * (360.0 / (2 * M_PI)),
+                            distVolume > 255 ? 255 : distVolume
+                        );
                         break;
                     }
                     case ENTITY_TYPE_PORTAL:
@@ -769,6 +813,7 @@ int main(int argc, char* args[])
         //Update screen fade
         if (transitionDirection != 0)
         {
+            //Mix_HaltChannel(player.footstepSoundChannel);
             transitionFraction += transitionDirection * transitionSpeed;
             if (transitionDirection > 0 && transitionFraction > 1.f) 
             {

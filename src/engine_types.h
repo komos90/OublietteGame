@@ -56,6 +56,7 @@ typedef struct
     int width;
     int height;
     float rotation;
+    int footstepSoundChannel;
 } Player;
 
 typedef struct

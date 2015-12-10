@@ -310,6 +310,7 @@ EntityArray getLevelMonsters(EntityTemplate* monsterTemplate, int levelNumber)
             ((Monster*)monsterArray.data[monsterIndex].sub)->aiState = AI_PATROL;
             ((Monster*)monsterArray.data[monsterIndex].sub)->giveUpChaseTimer.active = false;
             ((Monster*)monsterArray.data[monsterIndex].sub)->pathList.front = NULL;
+            ((Monster*)monsterArray.data[monsterIndex].sub)->roarSoundChannel = -1;
 
             Vector2 tmp = { ((Monster*)monsterArray.data[monsterIndex].sub)->patrolPoints[0].x * TILE_DIMS + TILE_DIMS/2,
                             ((Monster*)monsterArray.data[monsterIndex].sub)->patrolPoints[0].y * TILE_DIMS + TILE_DIMS/2 };

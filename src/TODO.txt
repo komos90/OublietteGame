@@ -1,36 +1,33 @@
 TODO:
+    Add initial direction to .mon files?
+    Instructions on wall in game!
+    fix ai vision bug (not seeing player when only slightly obscured by wall)
+    Get sprites in sync with the rest of the display
     Get secret walls and doors to sink into the floor or something
         Generate sprite inside each door, with an invisible y-frame, and a yframe with a opening door animation. On opening the door: destroy the tile, show the sprite, and start the animation. When the animation is done, swithc back to invisibl frame, or destroy the sprite.
-    3D Sounds for monster roar.
-    fix ai vision bug (not seeing player when only slightly obscured by wall)
-    restart level feature?
-    Instructions on wall in game!
-    read options from config file.
+    Vary ambient music per level
     Tweak exisiting levels?
-    Add initial direction to .mon files?
-    Add more levels?    
-    Get sprites in sync with the rest of the display
+    Add more levels?
+    Transition restart level feature
 
     Assets:
         Music:
-            Title menu
-            Level complete?
+            Game complete
         SFX:
-            Footsteps
-            Pick up key
-            Found secret
-            Unlock door
-            Locked door
-            Level end
-            Monster proximity
             Monster attack / player death
         Animations:
             monster (movement in 4 directions, walk, attack)
-            level end portal
-        Sprites/Textures:
-            Animated level end portal
 
 DONE:
+    Music:Title menu
+    Music:Better in game music
+    SFX:Unlock door
+    SFX:Found secret
+    SFX:Level end (ladder sound)
+    Sprites/Textures:Ladder
+    SFX:Footsteps
+    restart level feature
+    3D Sounds for monster proximity roar.
     Adjust alignment of text and UI elements
     Have a total of 10 levels.
     Add compass

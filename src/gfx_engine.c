@@ -32,7 +32,7 @@ static float* zBuffer = NULL;
 
 /*---------------------
  * Precomputed tangents
- --------------------*/
+ *-------------------*/
 static float tanHFovOver2;
 static float tanVFovOver2;
 
@@ -442,22 +442,16 @@ void fadeToColor(uint32_t addColor, float ratio)
 
 void draw(Player player, EntityArray entities)
 {
-    /*------------------------------------------------------------------------
-     *player rotation is now fixed, so precomputing trig functions to speed up
-     -----------------------------------------------------------------------*/
+    //player rotation is now fixed, so precomputing trig functions to speed up
     const float sinPlayerAngle = sinf(player.rotation);
     const float cosPlayerAngle = cosf(player.rotation);
 
     float angle = -H_FOV/2 + player.rotation;
     for (int screenColumn = 0; screenColumn < pixelBuffer.width; screenColumn++)
     {
-        /*---------------------------------------------------------------------
-         *angle, and player rotation are now fixed, so precomputing to speed up
-         --------------------------------------------------------------------*/
+        //angle, and player rotation are now fixed, so precomputing to speed up
         const float sinAngle = sinf(angle);
         const float cosAngle = cosf(angle);
-        //const float tanAngle = tanf(angle);
-        //const float sinScreenAngle = sinf(angle - player.rotation);
         const float cosScreenAngle = cosf(angle - player.rotation);
         
         //Get distance and intersect pos
