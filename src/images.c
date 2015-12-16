@@ -40,4 +40,8 @@ void loadImages(void) {
     loadImage(&images.mainMenuStartButton, "../res/sprites/main_menu_start.png");
     loadImage(&images.levelEndPortal, "../res/sprites/level_end_portal.png");
     loadImage(&images.compass, "../res/sprites/compass.png");
+    loadImage(&images.instructionsTexture1, "../res/textures/instructions1.png");
+    loadImage(&images.instructionsTexture2, "../res/textures/instructions2.png");
+    loadImage(&images.instructionsTexture3, "../res/textures/instructions3.png");
+    loadImage(&images.instructionsTexture4, "../res/textures/instructions4.png");
 }

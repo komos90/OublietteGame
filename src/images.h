@@ -20,6 +20,10 @@ typedef struct
     SDL_Surface* secretDoorTexture;
     SDL_Surface* floorTexture;
     SDL_Surface* ceilingTexture;
+    SDL_Surface* instructionsTexture1;
+    SDL_Surface* instructionsTexture2;
+    SDL_Surface* instructionsTexture3;
+    SDL_Surface* instructionsTexture4;
 
     SDL_Surface* rubySprite;
     SDL_Surface* keySprite;

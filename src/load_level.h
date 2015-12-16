@@ -27,6 +27,10 @@ static const char TILE_DOOR1        = 'w';
 static const char TILE_DOOR2        = 'e';
 static const char TILE_DOOR3        = 'r';
 static const char TILE_SECRET_DOOR  = '?';
+static const char TILE_INSTRUCTIONS1= 'i';
+static const char TILE_INSTRUCTIONS2= 'j';
+static const char TILE_INSTRUCTIONS3= 'k';
+static const char TILE_INSTRUCTIONS4= 'l';
 
 static const int LEVEL_FILE_PATH_MAX_LEN = 32;
 

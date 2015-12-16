@@ -615,9 +615,9 @@ int main(int argc, char* args[])
             for (int i = 0; i < entities.size; i++)
             {
                 //Entity Collision
-                SDL_Rect playerRect = { player.pos.x, player.pos.y, player.width, player.height };
+                SDL_Rect playerRect = { player.pos.x - player.width / 2, player.pos.y - player.height / 2, player.width, player.height };
                 Entity entity = entities.data[i];
-                SDL_Rect entityRect = { entity.pos.x, entity.pos.y, entity.base->width, entity.base->height };
+                SDL_Rect entityRect = { entity.pos.x - entity.base->width / 2, entity.pos.y - entity.base->height / 2, entity.base->width, entity.base->height };
                 
                 //update animation
                 entities.data[i].xClipCounter++;
@@ -709,7 +709,7 @@ int main(int argc, char* args[])
                                     int dif[] = {player.pos.x - entity->pos.x, player.pos.y - entity->pos.y};
                                     int maxAxis = 1;
                                     int minAxis = 0;
-
+                                    //SDL_Log("%d, %d", playerPos[0] % TILE_DIMS, playerPos[1] % TILE_DIMS);
                                     if (abs(dif[0]) > abs(dif[1]))
                                     {
                                         maxAxis = 0;

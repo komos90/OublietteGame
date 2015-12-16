@@ -1,14 +1,12 @@
 TODO:
     Add initial direction to .mon files?
-    Instructions on wall in game!
     fix ai vision bug (not seeing player when only slightly obscured by wall)
-    Get sprites in sync with the rest of the display
-    Get secret walls and doors to sink into the floor or something
-        Generate sprite inside each door, with an invisible y-frame, and a yframe with a opening door animation. On opening the door: destroy the tile, show the sprite, and start the animation. When the animation is done, swithc back to invisibl frame, or destroy the sprite.
-    Vary ambient music per level
     Tweak exisiting levels?
     Add more levels?
     Transition restart level feature
+    Vary ambient music per level?
+    Get sprites in sync with the rest of the display?
+    Fix rendering messing up text?
 
     Assets:
         Music:
@@ -19,6 +17,7 @@ TODO:
             monster (movement in 4 directions, walk, attack)
 
 DONE:
+    Instructions on wall in game!
     Music:Level Complete
     Music:Title menu
     Music:Better in game music

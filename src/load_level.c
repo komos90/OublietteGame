@@ -83,7 +83,11 @@ bool isTileSolid(int index)
            level.data[index] == TILE_DOOR0 ||
            level.data[index] == TILE_DOOR1 ||
            level.data[index] == TILE_DOOR2 ||
-           level.data[index] == TILE_DOOR3;
+           level.data[index] == TILE_DOOR3 ||
+           level.data[index] == TILE_INSTRUCTIONS1 ||
+           level.data[index] == TILE_INSTRUCTIONS2 ||
+           level.data[index] == TILE_INSTRUCTIONS3 ||
+           level.data[index] == TILE_INSTRUCTIONS4;
 }
 
 void setTileTo(int index, char tile)
@@ -348,6 +352,18 @@ SDL_Surface* getTileTexture(int index) {
     else if (level.data[index] == TILE_SECRET_DOOR)
     {
         return images.secretDoorTexture;
+    }
+    else if (level.data[index] == TILE_INSTRUCTIONS1) {
+        return images.instructionsTexture1;
+    }
+    else if (level.data[index] == TILE_INSTRUCTIONS2) {
+        return images.instructionsTexture2;
+    }
+    else if (level.data[index] == TILE_INSTRUCTIONS3) {
+        return images.instructionsTexture3;
+    }
+    else if (level.data[index] == TILE_INSTRUCTIONS4) {
+        return images.instructionsTexture4;
     }
     SDL_Log("Imposible value at data[index], cannot getTileTexture().");
     exit(-1);
