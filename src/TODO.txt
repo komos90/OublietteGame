@@ -1,12 +1,9 @@
 TODO:
+    Fix roar
     Add initial direction to .mon files?
     fix ai vision bug (not seeing player when only slightly obscured by wall)
     Tweak exisiting levels?
-    Add more levels?
     Transition restart level feature
-    Vary ambient music per level?
-    Get sprites in sync with the rest of the display?
-    Fix rendering messing up text?
 
     Assets:
         Music:
@@ -17,6 +14,7 @@ TODO:
             monster (movement in 4 directions, walk, attack)
 
 DONE:
+    Corrected collision detection bug.
     Instructions on wall in game!
     Music:Level Complete
     Music:Title menu

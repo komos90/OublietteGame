@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 
+
 typedef struct ListNode_ ListNode;
 
 typedef struct {
@@ -21,13 +22,13 @@ typedef struct ListNode_
 typedef struct
 {
     ListNode* front;
-    //ListNode* back;
 } LinkedList;
 
-bool linkedListContainsTile(LinkedList* list, PathTile tile);
-void linkedListRemoveTile(LinkedList* list, PathTile tile);
-void linkedListMinPriorityAdd(LinkedList* list, PathTile tile);
-void linkedListAddFront(LinkedList* list, PathTile tile);
-void linkedListAddBack(LinkedList* list, PathTile tile);
-void linkedListRemoveFront(LinkedList* list);
-PathTile* linkedListFindTile(LinkedList* list, int x, int y);
+
+PathTile* linkedListFindTile      (LinkedList* list, int x, int y);
+bool      linkedListContainsTile  (LinkedList* list, PathTile tile);
+void      linkedListRemoveTile    (LinkedList* list, PathTile tile);
+void      linkedListMinPriorityAdd(LinkedList* list, PathTile tile);
+void      linkedListAddFront      (LinkedList* list, PathTile tile);
+void      linkedListAddBack       (LinkedList* list, PathTile tile);
+void      linkedListRemoveFront   (LinkedList* list);

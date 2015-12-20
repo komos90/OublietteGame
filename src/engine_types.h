@@ -111,7 +111,7 @@ typedef SDL_Rect Rectangle;
 
 //TODO should have tile type with properties such as isSolid, keyId
 
-Vector2 vec2Unit(Vector2 vector);
-float constrainAngle(float angle);
-float distanceFormula(Vector2 vec0, Vector2 vec1);
-bool rectsIntersect(SDL_Rect rect0, SDL_Rect rect1);
+Vector2 vec2Unit       (Vector2 vector);
+float   constrainAngle (float angle);
+float   distanceFormula(Vector2 vec0, Vector2 vec1);
+bool    rectsIntersect (SDL_Rect rect0, SDL_Rect rect1);

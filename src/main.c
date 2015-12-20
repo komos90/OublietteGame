@@ -36,7 +36,7 @@ static const int SCREEN_HEIGHT = 256;
 
 //Temp Globals
 static uint32_t keyColorsTemp[MAX_KEYS] = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFF00AA88};
-static float monsterSightRadius = 256.f;    //Should be in monster entity base
+static float monsterSightRadius = 128.f;    //Should be in monster entity base
 static float monsterFov = M_PI/2;           //Should be in monster entity base
 static float monsterChaseTimeLimit = 5000;  //Should be in monster entity base
 
@@ -704,7 +704,7 @@ int main(int argc, char* args[])
                                 //SDL_Log("In sight cone.");
                                 bool isWallBetween = false;
                                 {
-                                    int playerPos[] = {player.pos.x, player.pos.y};
+                                    /*int playerPos[] = {player.pos.x, player.pos.y};
                                     int cursorPoint[] = {entity->pos.x, entity->pos.y};
                                     int dif[] = {player.pos.x - entity->pos.x, player.pos.y - entity->pos.y};
                                     int maxAxis = 1;
@@ -737,6 +737,24 @@ int main(int argc, char* args[])
                                             cursorPoint[maxAxis] += step;
                                             cursorPoint[minAxis] += step * gradient;
                                         } while (sign(dif[maxAxis]) == sign(playerPos[maxAxis] - cursorPoint[maxAxis]));
+                                    }*/
+                                    Vector2 distanceVec = {.x=(entity->pos.x - player.pos.x),
+                                                           .y=(entity->pos.y - player.pos.y)};
+                                    Vector2 dirVec = vec2Unit(distanceVec);
+                                    Vector2 counterVec = {.x=entity->pos.x, .y=entity->pos.y};
+                                    while ( fabs(entity->pos.x - counterVec.x) < fabs(distanceVec.x) && 
+                                            fabs(entity->pos.y - counterVec.y) < fabs(distanceVec.y))
+                                    {
+                                        int tileIndex = posToTileIndex(counterVec.x, counterVec.y);
+                                        if (!isTileIndexValid(tileIndex)) break;
+                                        if (isTileSolid(tileIndex))
+                                        {
+                                            isWallBetween = true;
+                                            SDL_Log("Solid tile %d,%d", (int)counterVec.x/TILE_DIMS, (int)counterVec.y / TILE_DIMS);
+                                            break;
+                                        }
+                                        counterVec.x += TILE_DIMS * dirVec.x;
+                                        counterVec.y += TILE_DIMS * dirVec.y;
                                     }
                                 }
 

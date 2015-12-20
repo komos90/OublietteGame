@@ -29,8 +29,6 @@ float getMonsterAngle(Entity* this)
 
 void monsterMove(Entity* this)
 {
-
-    //Should probably check entity is actually a monster
     Monster* monster = (Monster*)this->sub;
     if (monster->pathList.front == NULL)
     {
@@ -112,21 +110,8 @@ bool reachedPlayer(ListNode* current, Vector2Int target)
             current->tile.y == target.y);
 }
 
-void findPath() {
-
-}
-
 void monsterMoveAStar(Entity* this)
 {
-    //NOTE:
-    //  + Monster struct should have Vector2Int targetTile. pathfinding should use this target.
-    //  Changing from patrol to chasing player and back should be done outside of the pathfinding function, by changing targetTile
-    //TODO, monster should:
-    //  + Patrol
-    //  + Check if player is in line of sight
-    //  + if so, chase down using A*
-    //  + if player not in line of sight for X seconds, resume patrol
-
     LinkedList searchTiles = {0};
     LinkedList removedTiles = {0};
     LinkedList finalPath = {0};
@@ -138,8 +123,6 @@ void monsterMoveAStar(Entity* this)
     {
         return;
     }
-
-    //Vector2Int target = {1, 3};
 
     PathTile nearMon[4] = { { x:thisTile.x - 1, y:thisTile.y     },
                             { x:thisTile.x + 1, y:thisTile.y     }, 
@@ -154,7 +137,7 @@ void monsterMoveAStar(Entity* this)
             linkedListMinPriorityAdd(&searchTiles, nearMon[i]);
         }
     }
-    //TMP
+
     for (ListNode* current = searchTiles.front;
          current != NULL && !reachedPlayer(current, target);
          current = searchTiles.front)

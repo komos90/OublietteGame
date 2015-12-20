@@ -19,9 +19,9 @@
 #include "images.h"
 #include "monster.h"
 
+
 static Level level = {0};
-//TEMP
-//static char monsterFile[128];
+
 
 bool isTileIndexValid(int i)
 {

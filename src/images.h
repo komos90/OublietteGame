@@ -35,6 +35,7 @@ typedef struct
     SDL_Surface* compass;
 } ImageManager;
 
+//??
 extern ImageManager images;
 
 

@@ -23,14 +23,15 @@ seoras1@gmail.com
 static const float H_FOV = M_PI/3;
 static const float V_FOV = M_PI/4;//(3*M_PI)/16;
 
-void drawRect(SDL_Rect rect, uint32_t color);
-void drawPoint(int x, int y, uint32_t color);
-void blitToPixelBuffer(SDL_Surface* image, Rectangle destRect, uint32_t maskColor);
-void drawText(char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont, bool centered);
-void drawTextToSurface(char* text, SDL_Surface* surface, SDL_Rect rect, uint32_t color, SpriteFont spriteFont);
-void createPixelBuffer(int width, int height);
-PixelBuffer* getPixelBuffer(void);
-void draw(Player player, EntityArray entities);
-void pixelateScreen(int n);
-void fadeToColor(uint32_t addColor, float ratio);
+
+PixelBuffer* getPixelBuffer  (void);
+void drawRect                (SDL_Rect rect, uint32_t color);
+void drawPoint               (int x, int y, uint32_t color);
+void blitToPixelBuffer       (SDL_Surface* image, Rectangle destRect, uint32_t maskColor);
+void drawText                (char* text, SDL_Rect rect, uint32_t color, SpriteFont spriteFont, bool centered);
+void drawTextToSurface       (char* text, SDL_Surface* surface, SDL_Rect rect, uint32_t color, SpriteFont spriteFont);
+void createPixelBuffer       (int width, int height);
+void draw                    (Player player, EntityArray entities);
+void pixelateScreen          (int n);
+void fadeToColor             (uint32_t addColor, float ratio);
 void rotatedBlitToPixelBuffer(SDL_Surface* image, Rectangle destRect, uint32_t maskColor, float angle);

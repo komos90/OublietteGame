@@ -10,6 +10,7 @@
 
 #include "engine_types.h"
 
+
 static const int TILE_DIMS = 64;
 
 static const char TILE_PLAYER_START = 'p';
@@ -34,6 +35,7 @@ static const char TILE_INSTRUCTIONS4= 'l';
 
 static const int LEVEL_FILE_PATH_MAX_LEN = 32;
 
+
 typedef struct
 {
     int width;
@@ -43,21 +45,22 @@ typedef struct
     int rubyCount;
 } Level;
 
-bool isTileIndexValid(int i);
-void loadLevelTiles(char* fileName);
-int posVecToTileIndex(Vector2 pos);
-int posVecToIndex(Vector2 pos);
-int posToTileIndex(int x, int y);
-int coordToTileIndex(int x, int y);
-Vector2 posToTileCoord(Vector2 pos);
-Vector2 getPlayerStartPos(void);
-EntityArray getLevelRubies(EntityTemplate* rubyTemplate);
-EntityArray getLevelKeys(EntityTemplate* keyTemplate);
-EntityArray getLevelMonsters(EntityTemplate* monsterTemplate, int levelNumber);
-bool isTileSolid(int index);
-void setTileTo(int index, char tile);
-int getTotalLevelRubies(void);
-char getLevelTile(int index);
-SDL_Surface* getTileTexture(int index);
-bool fileExists(char* filePath);
-Vector2 getLevelEndPos();
+
+EntityArray     getLevelRubies      (EntityTemplate* rubyTemplate);
+EntityArray     getLevelKeys        (EntityTemplate* keyTemplate);
+EntityArray     getLevelMonsters    (EntityTemplate* monsterTemplate, int levelNumber);
+SDL_Surface*    getTileTexture      (int index);
+Vector2         posToTileCoord      (Vector2 pos);
+Vector2         getPlayerStartPos   (void);
+Vector2         getLevelEndPos      ();
+int             posVecToTileIndex   (Vector2 pos);
+int             posVecToIndex       (Vector2 pos);
+int             posToTileIndex      (int x, int y);
+int             coordToTileIndex    (int x, int y);
+int             getTotalLevelRubies (void);
+char            getLevelTile        (int index);
+bool            fileExists          (char* filePath);
+bool            isTileIndexValid    (int i);
+bool            isTileSolid         (int index);
+void            loadLevelTiles      (char* fileName);
+void            setTileTo           (int index, char tile);
