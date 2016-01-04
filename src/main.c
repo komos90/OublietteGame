@@ -704,7 +704,7 @@ int main(int argc, char* args[])
                                 //SDL_Log("In sight cone.");
                                 bool isWallBetween = false;
                                 {
-                                    /*int playerPos[] = {player.pos.x, player.pos.y};
+                                    int playerPos[] = {player.pos.x, player.pos.y};
                                     int cursorPoint[] = {entity->pos.x, entity->pos.y};
                                     int dif[] = {player.pos.x - entity->pos.x, player.pos.y - entity->pos.y};
                                     int maxAxis = 1;
@@ -737,8 +737,8 @@ int main(int argc, char* args[])
                                             cursorPoint[maxAxis] += step;
                                             cursorPoint[minAxis] += step * gradient;
                                         } while (sign(dif[maxAxis]) == sign(playerPos[maxAxis] - cursorPoint[maxAxis]));
-                                    }*/
-                                    Vector2 distanceVec = {.x=(entity->pos.x - player.pos.x),
+                                    }
+                                    /*Vector2 distanceVec = {.x=(entity->pos.x - player.pos.x),
                                                            .y=(entity->pos.y - player.pos.y)};
                                     Vector2 dirVec = vec2Unit(distanceVec);
                                     Vector2 counterVec = {.x=entity->pos.x, .y=entity->pos.y};
@@ -755,7 +755,7 @@ int main(int argc, char* args[])
                                         }
                                         counterVec.x += TILE_DIMS * dirVec.x;
                                         counterVec.y += TILE_DIMS * dirVec.y;
-                                    }
+                                    }*/
                                 }
 
                                 if (!isWallBetween)
