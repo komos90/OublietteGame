@@ -65,7 +65,7 @@ void drawRect(Rectangle rect, uint32_t color)
     //of the rect acordingly.
     if (rect.x + rect.w >= pixelBuffer.width) rect.w -= rect.x + rect.w - pixelBuffer.width;
     //Same as above but for bottom of rect and screen height
-    if (rect.y + rect.h >= pixelBuffer.height) rect.h -= rect.y + rect.h - pixelBuffer.height;  
+    if (rect.y + rect.h >= pixelBuffer.height) rect.h -= rect.y + rect.h - pixelBuffer.height;
     //Cut off part of rect above the screen.
     if (rect.y < 0)
     {
@@ -306,7 +306,7 @@ Vector2Int getTileHorzIntersection(Vector2 pos, float angle, int* tileIndex)
     int yDir = yPositive ? -1 : 1;
     while (isTileIndexValid(posToTileIndex(xInter + xDir, yInter + yDir)) &&
            !isTileSolid(posToTileIndex(xInter + xDir, yInter + yDir)))
-    {   
+    {
         yInter += yPositive ? -TILE_DIMS : TILE_DIMS;
         xInter += xInc;
     }
@@ -333,7 +333,7 @@ Vector2Int getTileVertIntersection(Vector2 pos, float angle, int* tileIndex)
     int yDir = yPositive ? -1 : 1;
     while (isTileIndexValid(posToTileIndex(xInter + xDir, yInter + yDir)) &&
            !isTileSolid(posToTileIndex(xInter + xDir, yInter + yDir)))
-    {   
+    {
         xInter += xPositive ? TILE_DIMS : -TILE_DIMS;
         yInter += yInc;
     }
@@ -397,7 +397,7 @@ void sortSprites(EntityArray* entities, Vector2 playerPos)
     {
         for (int j = 0; j < i; j++)
         {
-            if (distanceFormula(entities->data[j].pos, playerPos) < 
+            if (distanceFormula(entities->data[j].pos, playerPos) <
                 distanceFormula(entities->data[j + 1].pos, playerPos))
             {
                 //Swap
@@ -437,7 +437,7 @@ void fadeToColor(uint32_t addColor, float ratio)
             drawPoint(x, y, (outColor8[2] << 16) | (outColor8[1] << 8) | outColor8[0]);
         }
     }
-    
+
 }
 
 void draw(Player player, EntityArray entities)
@@ -453,7 +453,7 @@ void draw(Player player, EntityArray entities)
         const float sinAngle = sinf(angle);
         const float cosAngle = cosf(angle);
         const float cosScreenAngle = cosf(angle - player.rotation);
-        
+
         //Get distance and intersect pos
         Vector2Int intersectPos;
         int intersectTileIndex;
@@ -492,7 +492,7 @@ void draw(Player player, EntityArray entities)
                 else if (tile == TILE_DOOR2) color32 = keyColors[2];
                 else if (tile == TILE_DOOR3) color32 = keyColors[3];
             }
-                        
+
             //Shade pixels for depth effect
             color32 = depthShading(color32, distance);
             drawPoint(screenColumn, y, color32);
@@ -513,7 +513,7 @@ void draw(Player player, EntityArray entities)
     {
         Entity entity = entities.data[entityIndex];
         Vector2 entityPos = {entity.pos.x - player.pos.x, entity.pos.y - player.pos.y};
-        
+
         {
             Vector2 rotatedPos;
             rotatedPos.x = (entityPos.x * cosPlayerAngle + entityPos.y * sinPlayerAngle);
@@ -531,11 +531,10 @@ void draw(Player player, EntityArray entities)
         int scaledSpriteX = projWRatio * entityPos.y + pixelBuffer.width / 2 - scaledSpriteW/2;
         int scaledSpriteY = pixelBuffer.height / 2 - scaledSpriteH/2 - entity.zPos * projHRatio;
 
-        //I dont't think xClip, yClip should be members of entity
         if (entity.base->type == ENTITY_TYPE_MONSTER)
         {
             float monsterAngle = constrainAngle(player.rotation - getMonsterAngle(&entity));
-            
+
             if (monsterAngle <= -3*M_PI/4 || monsterAngle >= 3*M_PI/4)
             {
                 entity.yClip = 0;
@@ -554,13 +553,16 @@ void draw(Player player, EntityArray entities)
             }
         }
 
-        for (int x = scaledSpriteX; x < scaledSpriteX + scaledSpriteW; x++) 
+        for (int x = scaledSpriteX; x < scaledSpriteX + scaledSpriteW; x++)
         {
             if (x >= pixelBuffer.width) break;
-            if (x < 0 || zBuffer[x] < entityPos.x) continue;
+            //SDL_Log("%f < %f", zBuffer[x], entityPos.x);
+            float angle = -H_FOV/2 + player.rotation + (H_FOV / pixelBuffer.width) * x;
+            float spriteDistance = sqrt(pow(entityPos.x, 2) + pow(entityPos.y, 2)) * cosf(angle - player.rotation);
+            if (x < 0 || zBuffer[x] < spriteDistance) continue;
 
             for (int y = scaledSpriteY; y < scaledSpriteY + scaledSpriteH; y++)
-            {    
+            {
                 if (y < 0) y = 0;
                 if (y >= pixelBuffer.height) break;
 
@@ -577,7 +579,7 @@ void draw(Player player, EntityArray entities)
                     }
 
                     //Not sure if this is in sync with texture shading
-                    uint32_t finalColor32 = depthShading(pixelColor, entityPos.x);
+                    uint32_t finalColor32 = depthShading(pixelColor, spriteDistance);
 
                     pixelBuffer.pixels[y * pixelBuffer.width + x] = finalColor32;
                 }

@@ -13,6 +13,12 @@ TODO:
         Animations:
             monster (movement in 4 directions, walk, attack)
 
+    v2:
+        Procedurally generated levels (selectable from main menu)
+        Cool effects like chromashifting, more retro screen effects.
+        NPCs with talking animations and speech text popup at bottom of screen.
+        
+
 DONE:
     Corrected collision detection bug.
     Instructions on wall in game!

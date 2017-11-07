@@ -20,7 +20,6 @@ seoras1@gmail.com
 
 ImageManager images = {0};
 
-
 void loadImage(SDL_Surface** image, char* filePath) {
     //MALLOC no need to free, needed throughout program
     *image = IMG_Load(filePath);

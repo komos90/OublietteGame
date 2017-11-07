@@ -12,7 +12,6 @@ seoras1@gmail.com
     #include <SDL.h>
 #endif
 
-
 typedef struct
 {
     SDL_Surface* caveTexture;

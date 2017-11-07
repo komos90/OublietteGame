@@ -1,2 +1,0 @@
-Ocasional crash on level load.
-Ocasisonal freeze on game start.

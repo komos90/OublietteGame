@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <string.h> 
+#include <string.h>
 
 #ifdef __linux__
     #include <SDL2/SDL.h>
@@ -201,7 +201,7 @@ EntityArray getLevelKeys(EntityTemplate* keyTemplate)
                 {
                     ((Key*)(keyArray.data[keyIndex].sub))->id = 3;
                 }
-                
+
                 keyIndex++;
             }
         }
@@ -420,13 +420,13 @@ void loadLevelTiles(char* fileName)
         level.height = lineCount;
         level.width = (charCount / lineCount) - 1;
     }
-    
+
     //Go back to beginning of file
     fsetpos(file, &filePos);
     //MALLOC should free when loading a new level
     if (level.data != NULL) free(level.data);
     level.data = (char*)malloc(level.width * level.height * sizeof(char));
-    //Re-read the file, loading the actual data into the level structure. 
+    //Re-read the file, loading the actual data into the level structure.
     {
         int ch;
         int i = 0;

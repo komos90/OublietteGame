@@ -36,7 +36,7 @@ static const int SCREEN_HEIGHT = 256;
 
 //Temp Globals
 static uint32_t keyColorsTemp[MAX_KEYS] = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFF00AA88};
-static float monsterSightRadius = 128.f;    //Should be in monster entity base
+static float monsterSightRadius = 256.f;    //Should be in monster entity base
 static float monsterFov = M_PI/2;           //Should be in monster entity base
 static float monsterChaseTimeLimit = 5000;  //Should be in monster entity base
 
@@ -107,8 +107,8 @@ bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
     SCREEN_WIDTH = (int)SCREEN_HEIGHT * ((float)displayMode.w / (float)displayMode.h);
     *window = SDL_CreateWindow(
         "The Caves", SDL_WINDOWPOS_UNDEFINED,
-        SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, 
-        SDL_WINDOW_FULLSCREEN_DESKTOP);
+        SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT,
+        0);
     if (*window == NULL)
     {
         printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -126,7 +126,7 @@ bool loadLevel(EntityArray* entities, Player* player,
     char nextLevelFilePath[LEVEL_FILE_PATH_MAX_LEN];
     sprintf(nextLevelFilePath, "../res/levels/level%d.lvl", playerData->levelNumber);
     if(fileExists(nextLevelFilePath))
-    { 
+    {
         loadLevelTiles(nextLevelFilePath);
         for (int i = 0; i < entities->size; i++)
         {
@@ -183,9 +183,9 @@ void onLevelEndTransitionEnd(void** args, int length)
     char nextLevelFilePath[LEVEL_FILE_PATH_MAX_LEN];
     sprintf(nextLevelFilePath, "../res/levels/level%d.lvl", playerData->levelNumber + 1);
     if(fileExists(nextLevelFilePath))
-    { 
+    {
 
-        uint32_t fadeColour = 0x000000; 
+        uint32_t fadeColour = 0x000000;
         SDL_Rect topRect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
         drawRect(topRect, fadeColour);
         SDL_Rect tmpRect = {SCREEN_WIDTH / 2 - 2 * images->rubySprite->w + 2, SCREEN_HEIGHT / 2 - 4, images->rubySprite->w, images->rubySprite->h};
@@ -202,7 +202,7 @@ void onLevelEndTransitionEnd(void** args, int length)
         drawText(rubyCountStr, textRect, 0xFF7A0927, *spriteFont, false);}
 
         //Render the pixel buffer to the screen
-        SDL_UpdateTexture(*screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));        
+        SDL_UpdateTexture(*screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));
         SDL_RenderCopy(*renderer, *screenTexture, NULL, NULL);
         SDL_RenderPresent(*renderer);
         SDL_Delay(4000);
@@ -222,7 +222,7 @@ void onLevelEndTransitionEnd(void** args, int length)
         (*playerData).totalRubiesCollected += (*playerData).rubiesCollected;
         (*playerData).totalRubies += getTotalLevelRubies();
 
-        uint32_t fadeColour = 0x000000; 
+        uint32_t fadeColour = 0x000000;
         SDL_Rect topRect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
         drawRect(topRect, fadeColour);
 
@@ -245,7 +245,7 @@ void onLevelEndTransitionEnd(void** args, int length)
         drawText(rubyCountStr, textRect, 0xFF7A0927, *spriteFont, false);}
 
         //Render the pixel buffer to the screen
-        SDL_UpdateTexture(*screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));        
+        SDL_UpdateTexture(*screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));
         SDL_RenderCopy(*renderer, *screenTexture, NULL, NULL);
         SDL_RenderPresent(*renderer);
         SDL_Delay(8000);
@@ -253,7 +253,7 @@ void onLevelEndTransitionEnd(void** args, int length)
     }
 }
 
-bool sign(int x) {
+int sign(int x) {
     return (x > 0) - (x < 0);
 }
 
@@ -266,7 +266,7 @@ int main(int argc, char* args[])
         SDL_Log("SDLinit failed.");
         return 1;
     }
-    
+
     SDL_Texture* screenTexture = SDL_CreateTexture(
         renderer, SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH,
@@ -302,6 +302,8 @@ int main(int argc, char* args[])
     Mix_Chunk* roarSfx = Mix_LoadWAV("../res/sfx/monster_roar.ogg");
     Mix_Chunk* playerFinishedLevelSfx = Mix_LoadWAV("../res/sfx/player_finished_level.ogg");
     Mix_Chunk* secretDoorSfx = Mix_LoadWAV("../res/sfx/secret_door.ogg");
+    Mix_Chunk* playerDeathSfx = Mix_LoadWAV("../res/sfx/player_death.ogg");
+
     Mix_VolumeChunk(roarSfx, 128);
     Mix_VolumeChunk(playerFootstepSfx, 40);
 
@@ -318,20 +320,6 @@ int main(int argc, char* args[])
     loadLevel(&entities, &player, &playerData, &rubyTemplate, &keyTemplate, &monsterTemplate, &endPortalTemplate);
     //TEMP START PLAYING MUSIC
     Mix_FadeInMusic(titleMusic, -1, 1000);
-    
-
-    //WRITING TEST
-    /*{
-        char* rubyCountStr = "They";
-        SDL_Rect textRect = { 1, 0, 0, 0 };
-        drawTextToSurface(rubyCountStr, images.secretDoorTexture, textRect, 0xFFFFFFFF, spriteFont);
-        rubyCountStr = "are";
-        textRect.y = 8;
-        drawTextToSurface(rubyCountStr, images.secretDoorTexture, textRect, 0xFFFFFFFF, spriteFont);
-        rubyCountStr = "coming";
-        textRect.y = 16;
-        drawTextToSurface(rubyCountStr, images.secretDoorTexture, textRect, 0xFFFF0000, spriteFont);
-    }*/
 
     bool paused = true;
     bool shouldReloadLevel = false;
@@ -357,14 +345,14 @@ int main(int argc, char* args[])
 
     //Setup level end transition
     void* levelEndTransitionArgs[] = {&playerData, &transitionArgs,
-        &levelStartTransitionArgs, &onTransitionDone, 
-        onLevelStartTransitionEnd, &shouldReloadLevel, &transitionDirection, &images, 
+        &levelStartTransitionArgs, &onTransitionDone,
+        onLevelStartTransitionEnd, &shouldReloadLevel, &transitionDirection, &images,
         &screenTexture, &renderer, &spriteFont};
 
     //Get input devices' states
     SDL_Joystick* gamePad = SDL_JoystickOpen(0);
-    const uint8_t* keyState = SDL_GetKeyboardState(NULL);    
-    
+    const uint8_t* keyState = SDL_GetKeyboardState(NULL);
+
     bool running = true;
     //int currentFps = 0;
 
@@ -404,18 +392,18 @@ int main(int argc, char* args[])
             blitToPixelBuffer(images.mainMenuBack, tmpRect, 0);
         }
         {
-                SDL_Rect tmpRect = {(SCREEN_WIDTH - images.mainMenuTitle->w) / 2, 
+                SDL_Rect tmpRect = {(SCREEN_WIDTH - images.mainMenuTitle->w) / 2,
                 SCREEN_HEIGHT / 5, images.mainMenuTitle->w, images.mainMenuTitle->h};
             blitToPixelBuffer(images.mainMenuTitle, tmpRect, 0);
         }
         {
-                SDL_Rect tmpRect = {2.f * sinf(SDL_GetTicks() / 600.0) + (SCREEN_WIDTH - images.mainMenuStartButton->w) / 2, 
+                SDL_Rect tmpRect = {2.f * sinf(SDL_GetTicks() / 600.0) + (SCREEN_WIDTH - images.mainMenuStartButton->w) / 2,
                 6.f * sinf(SDL_GetTicks() / 300.0) + (SCREEN_HEIGHT * 4) / 5, images.mainMenuStartButton->w, images.mainMenuStartButton->h};
             blitToPixelBuffer(images.mainMenuStartButton, tmpRect, 0);
         }
 
         //Render the pixel buffer to the screen
-        SDL_UpdateTexture(screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));        
+        SDL_UpdateTexture(screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));
         SDL_RenderCopy(renderer, screenTexture, NULL, NULL);
         SDL_RenderPresent(renderer);
 
@@ -429,12 +417,13 @@ int main(int argc, char* args[])
     }
     Mix_FadeOutMusic(1000);
     Mix_FadeInMusic(gameBackgroundMusic, -1, 1000);
+
     running = true;
     //Main Loop ====
-    while(running) 
+    while(running)
     {
         int frameStartTime = SDL_GetTicks();
-        
+
         if (shouldReloadLevel)
         {
             Mix_HaltMusic();
@@ -574,7 +563,7 @@ int main(int argc, char* args[])
             if (keyState[SDL_SCANCODE_R]) {
                 shouldReloadLevel = true;
             }
-            
+
             //Normalise moveVector
             moveVector = vec2Unit(moveVector);
             player.pos.x += moveVector.x * moveVel;
@@ -601,6 +590,7 @@ int main(int argc, char* args[])
                 Mix_PlayChannel(-1, playerFinishedLevelSfx, 0);
                 Mix_HaltMusic();
                 Mix_PlayMusic(levelEndMusic, -1);
+
                 onTransitionDone = (void (*)(void*, int))onLevelEndTransitionEnd;
                 transitionArgs = levelEndTransitionArgs;
                 transitionDirection = 1;
@@ -618,7 +608,7 @@ int main(int argc, char* args[])
                 SDL_Rect playerRect = { player.pos.x - player.width / 2, player.pos.y - player.height / 2, player.width, player.height };
                 Entity entity = entities.data[i];
                 SDL_Rect entityRect = { entity.pos.x - entity.base->width / 2, entity.pos.y - entity.base->height / 2, entity.base->width, entity.base->height };
-                
+
                 //update animation
                 entities.data[i].xClipCounter++;
                 if (entities.data[i].xClipCounter > entities.data[i].base->animationSpeed)
@@ -682,6 +672,7 @@ int main(int argc, char* args[])
                             deathEffectActive = true;
                             deathEffectCounter = 0;
                             deathEffectDirection = 1;
+                            Mix_PlayChannel(-1, playerDeathSfx, 0);
                         }
                         /*--------------------------------
                          *Check if monster has seen player
@@ -694,14 +685,13 @@ int main(int argc, char* args[])
                             tmp2.x = cos(monsterAngle) * tmp1.x + sin(monsterAngle) * tmp1.y;
                             tmp2.y = -sin(monsterAngle) * tmp1.x + cos(monsterAngle) * tmp1.y;
                             float playerAngle = atan2(tmp2.y, tmp2.x);
-                            //SDL_Log("In sight range.");
+
                             if (fabs(playerAngle) < monsterFov / 2)
                             {
                                 /*------------------------------------
                                  *Cast ray and check for walls between
                                  *player and monster
                                  *----------------------------------*/
-                                //SDL_Log("In sight cone.");
                                 bool isWallBetween = false;
                                 {
                                     int playerPos[] = {player.pos.x, player.pos.y};
@@ -709,23 +699,17 @@ int main(int argc, char* args[])
                                     int dif[] = {player.pos.x - entity->pos.x, player.pos.y - entity->pos.y};
                                     int maxAxis = 1;
                                     int minAxis = 0;
-                                    //SDL_Log("%d, %d", playerPos[0] % TILE_DIMS, playerPos[1] % TILE_DIMS);
                                     if (abs(dif[0]) > abs(dif[1]))
                                     {
                                         maxAxis = 0;
                                         minAxis = 1;
                                     }
-                                    //SDL_Log("maxAxis:%d, ", maxAxis);
-                                    //SDL_Log("difMA:%d, difmA:%d", dif[maxAxis], dif[minAxis]);
                                     if (dif[maxAxis] != 0)
                                     {
-                                        
                                         float gradient = (float)dif[minAxis] / (float)dif[maxAxis];
                                         float step = dif[maxAxis] < 0 ? - TILE_DIMS : TILE_DIMS;
                                         do
                                         {
-                                            //SDL_Log("cp1 %d cp2 %d", cursorPoint[0], cursorPoint[1]);
-                                            //SDL_Log("pp1 %d pp2 %d", playerPos[0], playerPos[1]);
                                             int tileIndex = posToTileIndex(cursorPoint[0], cursorPoint[1]);
                                             if (!isTileIndexValid(tileIndex)) break;
                                             if (isTileSolid(tileIndex))
@@ -733,34 +717,14 @@ int main(int argc, char* args[])
                                                 isWallBetween = true;
                                                 break;
                                             }
-                                            //SDL_Log("step%f, gradient%f", step, gradient);
                                             cursorPoint[maxAxis] += step;
                                             cursorPoint[minAxis] += step * gradient;
                                         } while (sign(dif[maxAxis]) == sign(playerPos[maxAxis] - cursorPoint[maxAxis]));
                                     }
-                                    /*Vector2 distanceVec = {.x=(entity->pos.x - player.pos.x),
-                                                           .y=(entity->pos.y - player.pos.y)};
-                                    Vector2 dirVec = vec2Unit(distanceVec);
-                                    Vector2 counterVec = {.x=entity->pos.x, .y=entity->pos.y};
-                                    while ( fabs(entity->pos.x - counterVec.x) < fabs(distanceVec.x) && 
-                                            fabs(entity->pos.y - counterVec.y) < fabs(distanceVec.y))
-                                    {
-                                        int tileIndex = posToTileIndex(counterVec.x, counterVec.y);
-                                        if (!isTileIndexValid(tileIndex)) break;
-                                        if (isTileSolid(tileIndex))
-                                        {
-                                            isWallBetween = true;
-                                            SDL_Log("Solid tile %d,%d", (int)counterVec.x/TILE_DIMS, (int)counterVec.y / TILE_DIMS);
-                                            break;
-                                        }
-                                        counterVec.x += TILE_DIMS * dirVec.x;
-                                        counterVec.y += TILE_DIMS * dirVec.y;
-                                    }*/
                                 }
 
                                 if (!isWallBetween)
                                 {
-                                    //SDL_Log("No walls between.");
                                     switch(monster->aiState)
                                     {
                                         case AI_PATROL:
@@ -768,6 +732,7 @@ int main(int argc, char* args[])
                                             monster->aiState = AI_CHASE;
                                             monster->giveUpChaseTimer.active = true;
                                             monster->giveUpChaseTimer.endTime = SDL_GetTicks() + monsterChaseTimeLimit;
+                                            Mix_PlayChannel(-1, roarSfx, 0);
                                             break;
                                         }
                                         case AI_CHASE:
@@ -784,7 +749,7 @@ int main(int argc, char* args[])
                                 monster->aiState = AI_PATROL;
                             }
                         }
-                        
+
                         /*-------------------------------------
                          * Select target tile, based on aiState
                          *-----------------------------------*/
@@ -815,7 +780,7 @@ int main(int argc, char* args[])
                                 break;
                             }
                         }
-                        
+
                         /*---------
                          * Pathfind
                          *-------*/
@@ -838,7 +803,7 @@ int main(int argc, char* args[])
         {
             //Mix_HaltChannel(player.footstepSoundChannel);
             transitionFraction += transitionDirection * transitionSpeed;
-            if (transitionDirection > 0 && transitionFraction > 1.f) 
+            if (transitionDirection > 0 && transitionFraction > 1.f)
             {
                 transitionFraction = 1.f;
                 transitionJustFinished = true;
@@ -862,7 +827,7 @@ int main(int argc, char* args[])
             }
         }
         //Draw ====
-        //Send game entities to gfx engine to be rendered 
+        //Send game entities to gfx engine to be rendered
         draw(player, entities);
         //All this should be in a drawUI() function in gfx_engine.c
         //Draw rubies collected
@@ -893,7 +858,7 @@ int main(int argc, char* args[])
 
         //Draw screen fade to black
         {
-            uint32_t fadeColour = 0x000000; 
+            uint32_t fadeColour = 0x000000;
             SDL_Rect topRect = {0, 0, SCREEN_WIDTH, (SCREEN_HEIGHT / 2) * transitionFraction};
             SDL_Rect botRect = {0, SCREEN_HEIGHT - (SCREEN_HEIGHT / 2) * transitionFraction,
                 SCREEN_WIDTH, 1 + (SCREEN_HEIGHT / 2) * transitionFraction};
@@ -915,7 +880,7 @@ int main(int argc, char* args[])
                     shouldReloadLevel = true;
                 }
             }
-            else 
+            else
             {
                 deathEffectCounter--;
                 if (deathEffectCounter == 1)
@@ -927,7 +892,7 @@ int main(int argc, char* args[])
         }
 
         //Render the pixel buffer to the screen
-        SDL_UpdateTexture(screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));        
+        SDL_UpdateTexture(screenTexture, NULL, getPixelBuffer()->pixels, SCREEN_WIDTH * sizeof(uint32_t));
         SDL_RenderCopy(renderer, screenTexture, NULL, NULL);
         SDL_RenderPresent(renderer);
 
