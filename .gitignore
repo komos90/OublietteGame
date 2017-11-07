@@ -3,4 +3,10 @@
 com.bat
 bin/gmon.out
 resprojects/
-libs/SDL/
+libs/SDL2_image-2.0.0
+libs/SDL2_mixer-2.0.2
+libs/SDL2-2.0.7
+bin/*.exe
+bin/*.dll
+bin/*.lib
+bin/*.exp

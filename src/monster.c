@@ -43,17 +43,17 @@ void monsterMove(Entity* this)
     Vector2 dirOffsets[5] = { {0}, { .y=-1 }, { .y=1 }, { .x=-1 }, { .x=1 } };
 
     //Store old center to check whether center of tile was crossed.
-    Vector2Int oldTileByCenter = { 
+    Vector2Int oldTileByCenter = {
         .x=this->pos.x / TILE_DIMS + 0.5,
         .y=this->pos.y / TILE_DIMS + 0.5 };
 
     //Move in current direction
-    float monsterVel = 2.f; 
+    float monsterVel = 2.f;
     this->pos.x += monsterVel * dirOffsets[((Monster*)this->sub)->direction].x;
     this->pos.y += monsterVel * dirOffsets[((Monster*)this->sub)->direction].y;
 
     //Did monster cross tile centre?
-    Vector2Int newTileByCenter = { 
+    Vector2Int newTileByCenter = {
         .x=this->pos.x / TILE_DIMS + 0.5,
         .y=this->pos.y / TILE_DIMS + 0.5 };
     bool crossedCenter = oldTileByCenter.x != newTileByCenter.x || oldTileByCenter.y != newTileByCenter.y;
@@ -61,7 +61,7 @@ void monsterMove(Entity* this)
     if (((Monster*)this->sub)->direction == DIR_NONE || crossedCenter)
     {
         Vector2 curTile = posToTileCoord(this->pos);
-        float minDistance = FLT_MAX; 
+        float minDistance = FLT_MAX;
 
         for (int i = DIR_UP; i <= DIR_RIGHT; i++)
         {
@@ -81,7 +81,7 @@ void monsterMove(Entity* this)
             }
         }
     }
-    
+
     if ((int)(this->pos.x / TILE_DIMS) == targetTile.x &&
         (int)(this->pos.y / TILE_DIMS) == targetTile.y)
     {
@@ -117,17 +117,17 @@ void monsterMoveAStar(Entity* this)
     LinkedList finalPath = {0};
     Vector2 thisTile = posToTileCoord(this->pos);
     Vector2Int target = ((Monster*)this->sub)->targetTile;
-    
+
     if ((int)(this->pos.x / TILE_DIMS) == target.x &&
         (int)(this->pos.y / TILE_DIMS) == target.y)
     {
         return;
     }
 
-    PathTile nearMon[4] = { { x:thisTile.x - 1, y:thisTile.y     },
-                            { x:thisTile.x + 1, y:thisTile.y     }, 
-                            { x:thisTile.x,     y:thisTile.y - 1 }, 
-                            { x:thisTile.x,     y:thisTile.y + 1 } };
+    PathTile nearMon[4] = { { .x=thisTile.x - 1, .y=thisTile.y     },
+                            { .x=thisTile.x + 1, .y=thisTile.y     },
+                            { .x=thisTile.x,     .y=thisTile.y - 1 },
+                            { .x=thisTile.x,     .y=thisTile.y + 1 } };
 
     for (int i = 0; i < 4; i++)
     {
@@ -145,10 +145,10 @@ void monsterMoveAStar(Entity* this)
         thisTile.x = current->tile.x;
         thisTile.y = current->tile.y;
 
-        PathTile nearMonCur[4] = { { x:thisTile.x - 1, y:thisTile.y    , parentX: thisTile.x, parentY: thisTile.y},
-                                   { x:thisTile.x + 1, y:thisTile.y    , parentX: thisTile.x, parentY: thisTile.y}, 
-                                   { x:thisTile.x,     y:thisTile.y - 1, parentX: thisTile.x, parentY: thisTile.y}, 
-                                   { x:thisTile.x,     y:thisTile.y + 1, parentX: thisTile.x, parentY: thisTile.y} };
+        PathTile nearMonCur[4] = { { .x=thisTile.x - 1, .y=thisTile.y    , .parentX= thisTile.x, .parentY= thisTile.y},
+                                   { .x=thisTile.x + 1, .y=thisTile.y    , .parentX= thisTile.x, .parentY= thisTile.y},
+                                   { .x=thisTile.x,     .y=thisTile.y - 1, .parentX= thisTile.x, .parentY= thisTile.y},
+                                   { .x=thisTile.x,     .y=thisTile.y + 1, .parentX= thisTile.x, .parentY= thisTile.y} };
 
         for (int i = 0; i < 4; i++)
         {
@@ -158,7 +158,7 @@ void monsterMoveAStar(Entity* this)
             {
                 nearMonCur[i].heuristic = generateHeuristic(nearMonCur[i], target, this);
                 linkedListMinPriorityAdd(&searchTiles, nearMonCur[i]);
-            }   
+            }
         }
         linkedListAddFront(&removedTiles, current->tile);
         linkedListRemoveTile(&searchTiles, current->tile);
@@ -173,7 +173,7 @@ void monsterMoveAStar(Entity* this)
             if (tmp.parentX == 0 && tmp.parentY == 0) break;
             linkedListAddFront(&finalPath, tmp);
             PathTile* tmpPtr = linkedListFindTile(&removedTiles, tmp.parentX, tmp.parentY);
-            if (tmpPtr == NULL) 
+            if (tmpPtr == NULL)
             {
                 break;
             } else {
@@ -181,7 +181,7 @@ void monsterMoveAStar(Entity* this)
             }
         }
     }
-    
+
     ((Monster*)this->sub)->pathList = finalPath;
 
     // NEED TO DELETE LINKED LISTS

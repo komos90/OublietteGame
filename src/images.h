@@ -8,7 +8,7 @@ seoras1@gmail.com
 
 #ifdef __linux__
     #include <SDL2/SDL.h>
-#elif __WIN32
+#elif _WIN32
     #include <SDL.h>
 #endif
 

@@ -299,7 +299,7 @@ Vector2Int getTileHorzIntersection(Vector2 pos, float angle, int* tileIndex)
 
     float xAngle = yPositive ? angle - M_PI/2 : -(angle - M_PI/2);
     float tanXAngle = tanf(xAngle);
-    float xInter = (abs(yInter - pos.y) * tanXAngle) + pos.x;
+    float xInter = (fabsf(yInter - pos.y) * tanXAngle) + pos.x;
     float xInc = TILE_DIMS * tanXAngle;
 
     int xDir = xPositive ? 1 : -1;
@@ -326,7 +326,7 @@ Vector2Int getTileVertIntersection(Vector2 pos, float angle, int* tileIndex)
 
     float yAngle = xPositive ? angle : M_PI - angle;
     float tanYAngle = tanf(yAngle);
-    float yInter = (abs(xInter - pos.x) * tanYAngle) + pos.y;
+    float yInter = (fabsf(xInter - pos.x) * tanYAngle) + pos.y;
     float yInc = TILE_DIMS * tanYAngle;
 
     int xDir = xPositive ? 1 : -1;

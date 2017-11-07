@@ -1,7 +1,9 @@
-
 Dependencies:
-    SDL2 (SDL2_Image, SDL2_Mixer)
+    SDL2(2.0.7), SDL2_Image(2.0.0), SDL2_Mixer(2.0.2)
 
+To Build on windows:
+    Download the above dependencies into the libs folder.
+    run winbuild.bat
 
 Controls:
 	WASD:         Move forwards, left, back, and right
