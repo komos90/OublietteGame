@@ -15,9 +15,9 @@ To Build on windows:
         zlib1.dll
 
 Controls:
-	WASD:         Move forwards, left, back, and right
-	Left Key:     Rotate camera left
-	Right Key:    Rotate camera right
+    WASD:         Move forwards, left, back, and right
+    Left Key:     Rotate camera left
+    Right Key:    Rotate camera right
     Mouse:        Rotate camera
     Space:        Action (e.g. open doors)
     ALt-Enter:    Fullscreen
