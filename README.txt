@@ -4,6 +4,15 @@ Dependencies:
 To Build on windows:
     Download the above dependencies into the libs folder.
     run winbuild.bat
+    Copy the required DLLs into the bin folder:
+        libogg-0.dll
+        libpng16-16.dll
+        libvorbis-0.dll
+        libvorbisfile-3.dll
+        SDL2.dll
+        SDL2_image.dll
+        SDL2_mixer.dll
+        zlib1.dll
 
 Controls:
 	WASD:         Move forwards, left, back, and right
