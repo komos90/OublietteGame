@@ -1,5 +1,8 @@
 Dependencies:
-    SDL2(2.0.7), SDL2_Image(2.0.0), SDL2_Mixer(2.0.2)
+    SDL2(2.0.7), SDL2_Image(2.0.2), SDL2_Mixer(2.0.1)
+
+Note:
+    SDL2_Mixer(2.0.2) will not initialise with ogg vorbis support.
 
 To Build on windows:
     Download the above dependencies into the libs folder.
@@ -13,6 +16,7 @@ To Build on windows:
         SDL2_image.dll
         SDL2_mixer.dll
         zlib1.dll
+    Copy (or make a symlink to) the res folder into the bin folder.
 
 Controls:
     WASD:         Move forwards, left, back, and right

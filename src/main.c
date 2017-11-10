@@ -124,7 +124,7 @@ bool loadLevel(EntityArray* entities, Player* player,
     EntityTemplate* keyTemplate, EntityTemplate* monsterTemplate, EntityTemplate* levelEndPortal)
 {
     char nextLevelFilePath[LEVEL_FILE_PATH_MAX_LEN];
-    sprintf(nextLevelFilePath, "../res/levels/level%d.lvl", playerData->levelNumber);
+    sprintf(nextLevelFilePath, "res/levels/level%d.lvl", playerData->levelNumber);
     if(fileExists(nextLevelFilePath))
     {
         loadLevelTiles(nextLevelFilePath);
@@ -181,7 +181,7 @@ void onLevelEndTransitionEnd(void** args, int length)
     SpriteFont* spriteFont = args[10];
 
     char nextLevelFilePath[LEVEL_FILE_PATH_MAX_LEN];
-    sprintf(nextLevelFilePath, "../res/levels/level%d.lvl", playerData->levelNumber + 1);
+    sprintf(nextLevelFilePath, "res/levels/level%d.lvl", playerData->levelNumber + 1);
     if(fileExists(nextLevelFilePath))
     {
 
@@ -287,22 +287,22 @@ int main(int argc, char* args[])
 
     //Load sprite font
     SpriteFont spriteFont = { .charW=8, .charH=8 };
-    spriteFont.sprite = IMG_Load("../res/fonts/atari_font.png");
+    spriteFont.sprite = IMG_Load("res/fonts/atari_font.png");
     spriteFont.sprite = SDL_ConvertSurfaceFormat(spriteFont.sprite, SDL_PIXELFORMAT_ARGB8888, 0);
 
     //Audio SHOULD EXTRACT TO SEPARATE FILE
-    Mix_Music* gameBackgroundMusic = Mix_LoadMUS("../res/music/thrum.ogg");
-    Mix_Music* levelEndMusic = Mix_LoadMUS("../res/music/thrum_outsync_double_reverse.ogg");
-    Mix_Music* titleMusic = Mix_LoadMUS("../res/music/title_menu.ogg");
-    Mix_Chunk* rubySfx = Mix_LoadWAV("../res/sfx/ruby_pickup.ogg");
-    Mix_Chunk* keySfx = Mix_LoadWAV("../res/sfx/key_pickup.ogg");
-    Mix_Chunk* unlockDoorSfx = Mix_LoadWAV("../res/sfx/unlock_door.ogg");
-    Mix_Chunk* lockedDoorSfx = Mix_LoadWAV("../res/sfx/locked_door.ogg");
-    Mix_Chunk* playerFootstepSfx = Mix_LoadWAV("../res/sfx/player_footstep.ogg");
-    Mix_Chunk* roarSfx = Mix_LoadWAV("../res/sfx/monster_roar.ogg");
-    Mix_Chunk* playerFinishedLevelSfx = Mix_LoadWAV("../res/sfx/player_finished_level.ogg");
-    Mix_Chunk* secretDoorSfx = Mix_LoadWAV("../res/sfx/secret_door.ogg");
-    Mix_Chunk* playerDeathSfx = Mix_LoadWAV("../res/sfx/player_death.ogg");
+    Mix_Music* gameBackgroundMusic = Mix_LoadMUS("res/music/thrum.ogg");
+    Mix_Music* levelEndMusic = Mix_LoadMUS("res/music/thrum_outsync_double_reverse.ogg");
+    Mix_Music* titleMusic = Mix_LoadMUS("res/music/title_menu.ogg");
+    Mix_Chunk* rubySfx = Mix_LoadWAV("res/sfx/ruby_pickup.ogg");
+    Mix_Chunk* keySfx = Mix_LoadWAV("res/sfx/key_pickup.ogg");
+    Mix_Chunk* unlockDoorSfx = Mix_LoadWAV("res/sfx/unlock_door.ogg");
+    Mix_Chunk* lockedDoorSfx = Mix_LoadWAV("res/sfx/locked_door.ogg");
+    Mix_Chunk* playerFootstepSfx = Mix_LoadWAV("res/sfx/player_footstep.ogg");
+    Mix_Chunk* roarSfx = Mix_LoadWAV("res/sfx/monster_roar.ogg");
+    Mix_Chunk* playerFinishedLevelSfx = Mix_LoadWAV("res/sfx/player_finished_level.ogg");
+    Mix_Chunk* secretDoorSfx = Mix_LoadWAV("res/sfx/secret_door.ogg");
+    Mix_Chunk* playerDeathSfx = Mix_LoadWAV("res/sfx/player_death.ogg");
 
     Mix_VolumeChunk(roarSfx, 128);
     Mix_VolumeChunk(playerFootstepSfx, 40);

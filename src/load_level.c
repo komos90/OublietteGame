@@ -215,8 +215,8 @@ EntityArray getLevelMonsters(EntityTemplate* monsterTemplate, int levelNumber)
     //Should store monster patrol array in level struct (loaded in the loadLevel function)
     //And then initialise the monsterArray using the patrol array in the level struct
     //Should patrol points be stored in monster struct? Probably.
-    char fileName[128];// = "../res/levels/level0.mon";
-    sprintf(fileName, "../res/levels/level%d.mon", levelNumber);
+    char fileName[128];// = "res/levels/level0.mon";
+    sprintf(fileName, "res/levels/level%d.mon", levelNumber);
     FILE* file = fopen(fileName, "r");
     if (file == NULL)
     {
