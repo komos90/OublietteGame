@@ -1,2 +1,2 @@
-cd bin && wingame.exe && cd ..
+cd bin && oubliette.exe && cd ..
 pause
