@@ -3,14 +3,8 @@
 com.bat
 bin/gmon.out
 resprojects/
-libs/SDL2_image-2.0.2
-libs/SDL2_mixer-2.0.1
-libs/SDL2-2.0.7
-bin/*.exe
-bin/*.dll
-bin/*.lib
-bin/*.exp
-bin/res
+libs/*
+bin/*
 
-!latest_windows_binary/Oubliette/*
-!latest_windows_binary/Oubliette/res/*
+!bin/placeholder.txt
+!libs/placeholder.txt

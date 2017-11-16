@@ -18,6 +18,16 @@ To Build on windows:
         zlib1.dll
     Copy (or make a symlink to) the res folder into the bin folder.
 
+To Build on Linux:
+    Install the following using your distro's package manager:
+        libsdl2-dev
+        libsdl2-image-dev
+        libsdl2-mixer-dev
+        clang 
+    Give build.sh execution permissions
+    Run build.sh
+    Copy (or make soft link to) the res folder into the bin folder.
+
 Controls:
     WASD:         Move forwards, left, back, and right
     Left Key:     Rotate camera left

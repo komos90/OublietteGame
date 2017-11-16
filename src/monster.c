@@ -163,7 +163,7 @@ void monsterMoveAStar(Entity* this)
         linkedListAddFront(&removedTiles, current->tile);
         linkedListRemoveTile(&searchTiles, current->tile);
     }
-    PathTile tmp = { x:target.x, y:target.y};
+    PathTile tmp = { .x=target.x, .y=target.y};
     linkedListAddFront(&finalPath, tmp);
     if (removedTiles.front != NULL)
     {

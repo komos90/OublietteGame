@@ -106,7 +106,7 @@ bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
     SDL_GetCurrentDisplayMode(0, &displayMode);
     SCREEN_WIDTH = (int)SCREEN_HEIGHT * ((float)displayMode.w / (float)displayMode.h);
     *window = SDL_CreateWindow(
-        "The Caves", SDL_WINDOWPOS_UNDEFINED,
+        "Oubliette", SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT,
         0);
     if (*window == NULL)
