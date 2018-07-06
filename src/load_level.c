@@ -221,7 +221,7 @@ EntityArray getLevelMonsters(EntityTemplate* monsterTemplate, int levelNumber)
     if (file == NULL)
     {
         SDL_Log("Could not open monster file.");
-        SDL_Log(fileName);
+        SDL_Log("%s", fileName);
         exit(1);
     }
 
@@ -399,7 +399,7 @@ void loadLevelTiles(char* fileName)
     if (file == NULL)
     {
         SDL_Log("Could not open level file.");
-        SDL_Log(fileName);
+        SDL_Log("%s", fileName);
         exit(1);
     }
 

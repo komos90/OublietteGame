@@ -99,8 +99,8 @@ bool isValidTileForPath(int x, int y)
 
 float generateHeuristic(PathTile pathTile, Vector2Int target, Entity* monster)
 {
-    float f = abs(pathTile.x - monster->pos.x) + abs(pathTile.y - monster->pos.y);
-    float g = abs(pathTile.x - target.x) + abs(pathTile.y - target.y);
+    float f = fabsf(pathTile.x - monster->pos.x) + fabsf(pathTile.y - monster->pos.y);
+    float g = fabsf(pathTile.x - (float)target.x) + fabsf(pathTile.y - (float)target.y);
     return f + 2 * g;
 }
 

@@ -446,63 +446,65 @@ void draw(Player player, EntityArray entities)
     const float sinPlayerAngle = sinf(player.rotation);
     const float cosPlayerAngle = cosf(player.rotation);
 
-    float angle = -H_FOV/2 + player.rotation;
-    for (int screenColumn = 0; screenColumn < pixelBuffer.width; screenColumn++)
     {
-        //angle, and player rotation are now fixed, so precomputing to speed up
-        const float sinAngle = sinf(angle);
-        const float cosAngle = cosf(angle);
-        const float cosScreenAngle = cosf(angle - player.rotation);
-
-        //Get distance and intersect pos
-        Vector2Int intersectPos;
-        int intersectTileIndex;
-        float distance = getWallIntersectionData(&intersectPos, &intersectTileIndex, &player, angle, cosScreenAngle);
-        float height = wallDistanceToHeight(distance);
-        SDL_Surface* tileTexture = getTileTexture(intersectTileIndex);
-
-        //Save column distance in zBuffer
-        zBuffer[screenColumn] = distance;
-
-        int playerHeight = TILE_DIMS / 2;  //Should be stored somewhere else and probably used in other calculations
-        //This should be extracted into a function
-        int y = 0;
-        //Ceiling
-        for (; y < (pixelBuffer.height - height) / 2; y++)
+        float angle = -H_FOV/2 + player.rotation;
+        for (int screenColumn = 0; screenColumn < pixelBuffer.width; screenColumn++)
         {
-            drawFloorCeiling(y, screenColumn, sinAngle, cosAngle, cosScreenAngle, &player, playerHeight, images.ceilingTexture);
-        }
-        //walls
-        for (; y < (pixelBuffer.height + height) / 2; y++)
-        {
-            //Range corrections
-            if (y >= pixelBuffer.height) break;
+            //angle, and player rotation are now fixed, so precomputing to speed up
+            const float sinAngle = sinf(angle);
+            const float cosAngle = cosf(angle);
+            const float cosScreenAngle = cosf(angle - player.rotation);
 
-            //Texture Mapping
-            int yTexCoord = ((TILE_DIMS / (height)) * (y - (pixelBuffer.height - height) / 2));
-            int xTexCoord = intersectPos.x % TILE_DIMS + intersectPos.y % TILE_DIMS;
-            uint32_t color32 = getPixel(tileTexture, xTexCoord, yTexCoord);
+            //Get distance and intersect pos
+            Vector2Int intersectPos;
+            int intersectTileIndex;
+            float distance = getWallIntersectionData(&intersectPos, &intersectTileIndex, &player, angle, cosScreenAngle);
+            float height = wallDistanceToHeight(distance);
+            SDL_Surface* tileTexture = getTileTexture(intersectTileIndex);
 
-            //ColorKey for doors
-            if (color32 == 0xFFFF00FF)
+            //Save column distance in zBuffer
+            zBuffer[screenColumn] = distance;
+
+            int playerHeight = TILE_DIMS / 2;  //Should be stored somewhere else and probably used in other calculations
+            //This should be extracted into a function
+            int y = 0;
+            //Ceiling
+            for (; y < (pixelBuffer.height - height) / 2; y++)
             {
-                char tile = getLevelTile(intersectTileIndex);
-                if (tile == TILE_DOOR0) color32 = keyColors[0];
-                else if (tile == TILE_DOOR1) color32 = keyColors[1];
-                else if (tile == TILE_DOOR2) color32 = keyColors[2];
-                else if (tile == TILE_DOOR3) color32 = keyColors[3];
+                drawFloorCeiling(y, screenColumn, sinAngle, cosAngle, cosScreenAngle, &player, playerHeight, images.ceilingTexture);
             }
+            //walls
+            for (; y < (pixelBuffer.height + height) / 2; y++)
+            {
+                //Range corrections
+                if (y >= pixelBuffer.height) break;
 
-            //Shade pixels for depth effect
-            color32 = depthShading(color32, distance);
-            drawPoint(screenColumn, y, color32);
+                //Texture Mapping
+                int yTexCoord = ((TILE_DIMS / (height)) * (y - (pixelBuffer.height - height) / 2));
+                int xTexCoord = intersectPos.x % TILE_DIMS + intersectPos.y % TILE_DIMS;
+                uint32_t color32 = getPixel(tileTexture, xTexCoord, yTexCoord);
+
+                //ColorKey for doors
+                if (color32 == 0xFFFF00FF)
+                {
+                    char tile = getLevelTile(intersectTileIndex);
+                    if (tile == TILE_DOOR0) color32 = keyColors[0];
+                    else if (tile == TILE_DOOR1) color32 = keyColors[1];
+                    else if (tile == TILE_DOOR2) color32 = keyColors[2];
+                    else if (tile == TILE_DOOR3) color32 = keyColors[3];
+                }
+
+                //Shade pixels for depth effect
+                color32 = depthShading(color32, distance);
+                drawPoint(screenColumn, y, color32);
+            }
+            //Draw floor
+            for (; y < pixelBuffer.height; y++)
+            {
+                drawFloorCeiling(y, screenColumn, sinAngle, cosAngle, cosScreenAngle, &player, playerHeight, images.floorTexture);
+            }
+            angle += (H_FOV / pixelBuffer.width);
         }
-        //Draw floor
-        for (; y < pixelBuffer.height; y++)
-        {
-            drawFloorCeiling(y, screenColumn, sinAngle, cosAngle, cosScreenAngle, &player, playerHeight, images.floorTexture);
-        }
-        angle += (H_FOV / pixelBuffer.width);
     }
 
     //Sprite drawing ====

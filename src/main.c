@@ -115,7 +115,7 @@ bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
         return false;
     }
 
-    *renderer = SDL_CreateRenderer(*window, -1, 0);
+    *renderer = SDL_CreateRenderer(*window, -1, SDL_RENDERER_PRESENTVSYNC);
     return true;
 }
 
@@ -175,7 +175,7 @@ void onLevelEndTransitionEnd(void** args, int length)
     void (*onLevelStartTransitionEnd) (void**, int) = args[4];
     bool* shouldReloadLevel = args[5];
     int* transitionDirection = args[6];
-    ImageManager* images = args[7];
+    //ImageManager* images = args[7]; // images is global, no need to pass.
     SDL_Texture** screenTexture = args[8];
     SDL_Renderer** renderer = args[9];
     SpriteFont* spriteFont = args[10];
@@ -188,8 +188,8 @@ void onLevelEndTransitionEnd(void** args, int length)
         uint32_t fadeColour = 0x000000;
         SDL_Rect topRect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
         drawRect(topRect, fadeColour);
-        SDL_Rect tmpRect = {SCREEN_WIDTH / 2 - 2 * images->rubySprite->w + 2, SCREEN_HEIGHT / 2 - 4, images->rubySprite->w, images->rubySprite->h};
-        blitToPixelBuffer(images->rubySprite, tmpRect, 0);
+        SDL_Rect tmpRect = {SCREEN_WIDTH / 2 - 2 * images.rubySprite->w + 2, SCREEN_HEIGHT / 2 - 4, images.rubySprite->w, images.rubySprite->h};
+        blitToPixelBuffer(images.rubySprite, tmpRect, 0);
 
         {char levelEndText[32];
         sprintf(levelEndText, "LEVEL %d COMPLETE", playerData->levelNumber + 1);
@@ -226,8 +226,8 @@ void onLevelEndTransitionEnd(void** args, int length)
         SDL_Rect topRect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
         drawRect(topRect, fadeColour);
 
-        SDL_Rect tmpRect = {SCREEN_WIDTH / 2 - 2 * images->rubySprite->w + 2, SCREEN_HEIGHT / 2 - 4, images->rubySprite->w, images->rubySprite->h};
-        blitToPixelBuffer(images->rubySprite, tmpRect, 0);
+        SDL_Rect tmpRect = {SCREEN_WIDTH / 2 - 2 * images.rubySprite->w + 2, SCREEN_HEIGHT / 2 - 4, images.rubySprite->w, images.rubySprite->h};
+        blitToPixelBuffer(images.rubySprite, tmpRect, 0);
 
         {char levelEndText[32];
         sprintf(levelEndText, "THE END");
@@ -311,7 +311,7 @@ int main(int argc, char* args[])
     Player player = { .width=32, .height=32, .footstepSoundChannel=-1};
     PlayerData playerData = { .levelNumber=0 };
     EntityTemplate rubyTemplate = { .sprite=images.rubySprite, .width=16, .height=16, .spriteWidth=16, .spriteHeight=16, .type=ENTITY_TYPE_RUBY };
-    EntityTemplate keyTemplate = { .sprite=images.keySprite, .width=16, .width=16, .spriteWidth=16, .spriteHeight=16, .type=ENTITY_TYPE_KEY};
+    EntityTemplate keyTemplate = { .sprite=images.keySprite, .width=16, .height=16, .spriteWidth=16, .spriteHeight=16, .type=ENTITY_TYPE_KEY};
     EntityTemplate monsterTemplate = { .sprite=images.monsterSprite, .width=64, .height=64, .spriteWidth=64, .spriteHeight=64, .type=ENTITY_TYPE_MONSTER};
     EntityTemplate endPortalTemplate = { .sprite=images.levelEndPortal, .width=64, .height=64, .spriteWidth=64, .spriteHeight=64, .animationSpeed=30, .type=ENTITY_TYPE_PORTAL};
 
@@ -606,8 +606,8 @@ int main(int argc, char* args[])
             {
                 //Entity Collision
                 SDL_Rect playerRect = { player.pos.x - player.width / 2, player.pos.y - player.height / 2, player.width, player.height };
-                Entity entity = entities.data[i];
-                SDL_Rect entityRect = { entity.pos.x - entity.base->width / 2, entity.pos.y - entity.base->height / 2, entity.base->width, entity.base->height };
+                Entity *entity = &entities.data[i];
+                SDL_Rect entityRect = { entity->pos.x - entity->base->width / 2, entity->pos.y - entity->base->height / 2, entity->base->width, entity->base->height };
 
                 //update animation
                 entities.data[i].xClipCounter++;
@@ -621,7 +621,7 @@ int main(int argc, char* args[])
                     }
                 }
 
-                switch(entity.base->type)
+                switch(entity->base->type)
                 {
                 case ENTITY_TYPE_RUBY:
                     {
@@ -659,7 +659,6 @@ int main(int argc, char* args[])
                         //          updateTargetTile(void);
                         //          pathFind(void);
                         //      }
-                        Entity* entity = &entities.data[i];
                         Monster* monster = (Monster*)entity->sub;
                         /*-----------------------------
                          *Check for aiState transitions
