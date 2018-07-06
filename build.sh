@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 #W_FLAGS="-Wall -Werror -Wshadow" #-fmudflap
 W_FLAGS="-Wall -Wshadow" #-fmudflap
 

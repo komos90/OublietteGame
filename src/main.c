@@ -91,14 +91,14 @@ bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
         return false;
     }
     //Init audio
-    if (Mix_Init(MIX_INIT_OGG) != MIX_INIT_OGG)
-    {
-        printf ("SDL_mixer could not initialize! SDL_Error: %s\n", SDL_GetError());
-        return false;
-    }
     if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 1024) == -1)
     {
         printf ("SDL_mixer could not open audio! SDL_Error: %s\n", SDL_GetError());
+        return false;
+    }
+    if (Mix_Init(MIX_INIT_OGG) != MIX_INIT_OGG)
+    {
+        printf ("SDL_mixer could not initialize! SDL_Error: %s\n", SDL_GetError());
         return false;
     }
     //Set screen size depending on aspect ratio
