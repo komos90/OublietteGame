@@ -1,1 +1,2 @@
-cd bin && ./game.elf && cd ..
+#!/bin/bash
+bin/game

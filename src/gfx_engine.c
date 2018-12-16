@@ -31,10 +31,21 @@ static PixelBuffer pixelBuffer = {0};
 static float* zBuffer = NULL;
 
 /*---------------------
+ * Defines
+ *-------------------*/
+#define PLAYER_HEIGHT (TILE_DIMS / 2)
+
+
+/*---------------------
  * Precomputed tangents
  *-------------------*/
 static float tanHFovOver2;
 static float tanVFovOver2;
+
+/*---------------------------------
+ * Precompute floorCeilingDistances
+ *-------------------------------*/
+static float *floorCeilingDistanceTable;
 
 /*------------------------------------------------------------------------------
  * Input:
@@ -281,6 +292,13 @@ void createPixelBuffer(int width, int height)
     //Init precomputed trig functions
     tanHFovOver2 = tanf(H_FOV/2.f);
     tanVFovOver2 = tanf(V_FOV/2.f);
+
+    // Precompute distances for floor / ceiling rendering.
+    // MALLOC: No free, used for duration of program
+    floorCeilingDistanceTable = malloc(sizeof(float) * height);
+    for (int i = 0; i < SCREEN_HEIGHT; i++) {
+        floorCeilingDistanceTable[i] = (TILE_DIMS - PLAYER_HEIGHT) / fabs(tanf((i - pixelBuffer.height/2) * (V_FOV / pixelBuffer.height)));
+    }
 }
 
 PixelBuffer* getPixelBuffer(void)
@@ -377,8 +395,8 @@ uint32_t depthShading(uint32_t inColor, float distance)
     return (outColor8[2] << 16) | (outColor8[1] << 8) | outColor8[0];
 }
 
-void drawFloorCeiling(int y, int screenColumn, float sinAngle, float cosAngle, float cosScreenAngle, Player* player, int playerHeight, SDL_Surface* texture) {
-    float distance = (TILE_DIMS - playerHeight) / fabs(tanf((y - pixelBuffer.height/2) * (V_FOV / pixelBuffer.height)));
+void drawFloorCeiling(int y, int screenColumn, float sinAngle, float cosAngle, float cosScreenAngle, Player* player, SDL_Surface* texture) {
+    float distance = floorCeilingDistanceTable[y];
 
     int texX = (int)((cosAngle * distance) * (1/cosScreenAngle) + player->pos.x) % TILE_DIMS;
     int texY = (int)((sinAngle * distance) * (1/cosScreenAngle) + player->pos.y) % TILE_DIMS;
@@ -465,13 +483,12 @@ void draw(Player player, EntityArray entities)
             //Save column distance in zBuffer
             zBuffer[screenColumn] = distance;
 
-            int playerHeight = TILE_DIMS / 2;  //Should be stored somewhere else and probably used in other calculations
             //This should be extracted into a function
             int y = 0;
             //Ceiling
             for (; y < (pixelBuffer.height - height) / 2; y++)
             {
-                drawFloorCeiling(y, screenColumn, sinAngle, cosAngle, cosScreenAngle, &player, playerHeight, images.ceilingTexture);
+                drawFloorCeiling(y, screenColumn, sinAngle, cosAngle, cosScreenAngle, &player, images.ceilingTexture);
             }
             //walls
             for (; y < (pixelBuffer.height + height) / 2; y++)
@@ -501,7 +518,7 @@ void draw(Player player, EntityArray entities)
             //Draw floor
             for (; y < pixelBuffer.height; y++)
             {
-                drawFloorCeiling(y, screenColumn, sinAngle, cosAngle, cosScreenAngle, &player, playerHeight, images.floorTexture);
+                drawFloorCeiling(y, screenColumn, sinAngle, cosAngle, cosScreenAngle, &player, images.floorTexture);
             }
             angle += (H_FOV / pixelBuffer.width);
         }

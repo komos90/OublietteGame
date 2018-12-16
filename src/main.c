@@ -30,10 +30,6 @@ seoras1@gmail.com
 #include "monster.h"
 
 
-//Resolution
-static int SCREEN_WIDTH  = 0;
-static const int SCREEN_HEIGHT = 256;
-
 //Temp Globals
 static uint32_t keyColorsTemp[MAX_KEYS] = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFF00AA88};
 static float monsterSightRadius = 256.f;    //Should be in monster entity base
@@ -354,7 +350,6 @@ int main(int argc, char* args[])
     const uint8_t* keyState = SDL_GetKeyboardState(NULL);
 
     bool running = true;
-    //int currentFps = 0;
 
     //Main Menu Loop (Complete hack but whatever)
     while(running) {

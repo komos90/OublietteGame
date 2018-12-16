@@ -14,10 +14,14 @@ seoras1@gmail.com
 #elif _WIN32
     #include "SDL.h"
     #include "SDL_image.h"
-#endif 
+#endif
 
 #include "engine_types.h"
 
+
+//Resolution
+static int SCREEN_WIDTH        = 0;
+static const int SCREEN_HEIGHT = 256;
 
 //Aspect Ratio
 static const float H_FOV = M_PI/3;

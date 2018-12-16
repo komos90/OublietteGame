@@ -3,9 +3,8 @@
 #include <stdbool.h>
 
 
-typedef struct ListNode_ ListNode;
-
-typedef struct {
+typedef struct
+{
     int x;
     int y;
     int parentX;
@@ -13,10 +12,10 @@ typedef struct {
     float heuristic;
 } PathTile;
 
-typedef struct ListNode_
+typedef struct ListNode
 {
     PathTile tile;
-    struct ListNode_* next;
+    struct ListNode* next;
 } ListNode;
 
 typedef struct
